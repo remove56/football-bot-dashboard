@@ -96,8 +96,17 @@ export default function Home() {
   const [weeklyStats, setWeeklyStats] = useState([]);
   const [wsMonth, setWsMonth] = useState(new Date().getMonth() + 1);
   const [wsYear, setWsYear] = useState(new Date().getFullYear());
-  const [wsEditing, setWsEditing] = useState(null); // {groupId, week, value}
+  const [wsEditing, setWsEditing] = useState(null);
   const [wsSaving, setWsSaving] = useState(false);
+
+  // Posting tracker
+  const [postTracker, setPostTracker] = useState([]);
+  const [ptGroup, setPtGroup] = useState('');
+  const [ptCycle, setPtCycle] = useState(1);
+  const [ptType, setPtType] = useState('gambar1'); // gambar1, gambar2, video
+  const [ptLink, setPtLink] = useState('');
+  const [ptMsg, setPtMsg] = useState('');
+  const [ptPeriod, setPtPeriod] = useState(() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; });
 
   useEffect(() => {
     // Check saved session
@@ -241,6 +250,69 @@ export default function Home() {
 
   const MONTH_NAMES = ['','Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
 
+  // Posting tracker functions
+  const loadPostTracker = async (period) => {
+    const { data } = await supabase.from('posting_tracker').select('*').eq('period', period).order('created_at');
+    setPostTracker(data || []);
+  };
+
+  const submitPostLink = async () => {
+    if (!ptLink.trim() || !ptGroup) { setPtMsg('Link dan grup wajib diisi!'); return; }
+    const grp = groups.find(g => g.id === ptGroup);
+    // Cari existing entry untuk user + grup + cycle + period
+    const existing = postTracker.find(p => p.user_id === user.id && p.group_id === ptGroup && p.cycle === ptCycle && p.period === ptPeriod);
+
+    if (existing) {
+      // Update field yang sesuai
+      const updates = {};
+      updates[`${ptType}_link`] = ptLink.trim();
+      updates[`${ptType}_at`] = new Date().toISOString();
+      // Cek apakah complete setelah update
+      const g1 = ptType === 'gambar1' ? ptLink.trim() : existing.gambar1_link;
+      const g2 = ptType === 'gambar2' ? ptLink.trim() : existing.gambar2_link;
+      const v = ptType === 'video' ? ptLink.trim() : existing.video_link;
+      updates.is_complete = !!(g1 && g2 && v);
+      await supabase.from('posting_tracker').update(updates).eq('id', existing.id);
+    } else {
+      // Insert baru
+      const entry = {
+        user_id: user.id, user_name: user.name, group_id: ptGroup, group_name: grp?.name || '',
+        cycle: ptCycle, period: ptPeriod,
+        gambar1_link: ptType === 'gambar1' ? ptLink.trim() : null,
+        gambar2_link: ptType === 'gambar2' ? ptLink.trim() : null,
+        video_link: ptType === 'video' ? ptLink.trim() : null,
+        gambar1_at: ptType === 'gambar1' ? new Date().toISOString() : null,
+        gambar2_at: ptType === 'gambar2' ? new Date().toISOString() : null,
+        video_at: ptType === 'video' ? new Date().toISOString() : null,
+        is_complete: false,
+      };
+      await supabase.from('posting_tracker').insert(entry);
+    }
+    setPtLink(''); setPtMsg('Link berhasil disimpan!');
+    loadPostTracker(ptPeriod);
+  };
+
+  const deletePostEntry = async (id) => {
+    if (!confirm('Hapus entry ini?')) return;
+    await supabase.from('posting_tracker').delete().eq('id', id);
+    loadPostTracker(ptPeriod);
+  };
+
+  // Summary per member
+  const getMemberPostSummary = () => {
+    const map = {};
+    postTracker.forEach(p => {
+      if (!map[p.user_name]) map[p.user_name] = { name: p.user_name, totalCycles: 0, completeCycles: 0, gambar: 0, video: 0, groups: new Set() };
+      map[p.user_name].totalCycles++;
+      if (p.is_complete) map[p.user_name].completeCycles++;
+      if (p.gambar1_link) map[p.user_name].gambar++;
+      if (p.gambar2_link) map[p.user_name].gambar++;
+      if (p.video_link) map[p.user_name].video++;
+      if (p.group_id) map[p.user_name].groups.add(p.group_id);
+    });
+    return Object.values(map).map(m => ({ ...m, groups: m.groups.size })).sort((a, b) => b.completeCycles - a.completeCycles);
+  };
+
   if (!user) return <LoginScreen onLogin={login} />;
 
   const isAdmin = user.role === 'admin';
@@ -248,6 +320,7 @@ export default function Home() {
     { id: 'overview', label: 'Overview' },
     { id: 'analytics', label: 'Analytics' },
     { id: 'weekly', label: 'Data Mingguan' },
+    { id: 'posttrack', label: 'Tracking Postingan' },
     { id: 'groups', label: `Grup (${groups.length})` },
     { id: 'submitlink', label: 'Link Postingan' },
     { id: 'users', label: 'Kelola User' },
@@ -256,6 +329,7 @@ export default function Home() {
   const memberTabs = [
     { id: 'groups', label: 'Daftar Grup' },
     { id: 'weekly', label: 'Data Mingguan' },
+    { id: 'posttrack', label: 'Tracking Postingan' },
     { id: 'submitlink', label: 'Submit Link' },
   ];
   const tabs = isAdmin ? adminTabs : memberTabs;
@@ -299,7 +373,7 @@ export default function Home() {
 
       {/* TABS */}
       <div style={S.tabs}>
-        {tabs.map(t => <div key={t.id} style={S.tab(tab===t.id)} onClick={() => { setTab(t.id); if(t.id==='weekly') loadWeeklyStats(wsYear, wsMonth); }}>{t.label}</div>)}
+        {tabs.map(t => <div key={t.id} style={S.tab(tab===t.id)} onClick={() => { setTab(t.id); if(t.id==='weekly') loadWeeklyStats(wsYear, wsMonth); if(t.id==='posttrack') loadPostTracker(ptPeriod); }}>{t.label}</div>)}
       </div>
 
       <div style={S.main}>
@@ -469,6 +543,131 @@ export default function Home() {
                       </tr>
                     ))}
                     {getMemberStats().length === 0 && <tr><td colSpan={5} style={{...S.td,textAlign:'center',color:'#6b7280'}}>Belum ada data</td></tr>}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* TRACKING POSTINGAN */}
+        {tab === 'posttrack' && (
+          <>
+            {/* Form submit */}
+            <div style={S.box}>
+              <h3 style={{color:'#FFD700',marginBottom:8,fontSize:16}}>Submit Postingan</h3>
+              <p style={{color:'#9ca3af',fontSize:12,marginBottom:16}}>Target per grup: <strong>4 siklus</strong> (2 gambar + 1 video = 1 siklus)</p>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:10,marginBottom:10}}>
+                <div><label style={{display:'block',fontSize:12,color:'#9ca3af',marginBottom:4}}>Grup</label>
+                  <select style={S.input} value={ptGroup} onChange={e=>setPtGroup(e.target.value)}>
+                    <option value="">Pilih Grup</option>
+                    {groups.map(g=><option key={g.id} value={g.id}>{g.name} ({g.club})</option>)}
+                  </select>
+                </div>
+                <div><label style={{display:'block',fontSize:12,color:'#9ca3af',marginBottom:4}}>Siklus ke-</label>
+                  <select style={S.input} value={ptCycle} onChange={e=>setPtCycle(parseInt(e.target.value))}>
+                    <option value={1}>Siklus 1</option><option value={2}>Siklus 2</option>
+                    <option value={3}>Siklus 3</option><option value={4}>Siklus 4</option>
+                  </select>
+                </div>
+                <div><label style={{display:'block',fontSize:12,color:'#9ca3af',marginBottom:4}}>Jenis</label>
+                  <select style={S.input} value={ptType} onChange={e=>setPtType(e.target.value)}>
+                    <option value="gambar1">Gambar 1</option><option value="gambar2">Gambar 2</option>
+                    <option value="video">Video</option>
+                  </select>
+                </div>
+              </div>
+              <div style={{display:'grid',gridTemplateColumns:'1fr auto',gap:10,alignItems:'end'}}>
+                <div><label style={{display:'block',fontSize:12,color:'#9ca3af',marginBottom:4}}>Link Postingan</label>
+                  <input style={S.input} placeholder="https://www.facebook.com/groups/.../posts/..." value={ptLink} onChange={e=>setPtLink(e.target.value)} /></div>
+                <button onClick={submitPostLink} style={{...S.btn('#065f46'),padding:'10px 24px'}}>Submit</button>
+              </div>
+              <div style={{display:'flex',gap:10,alignItems:'center',marginTop:10}}>
+                <label style={{fontSize:12,color:'#9ca3af'}}>Periode:</label>
+                <input type="month" style={{...S.input,width:180}} value={ptPeriod} onChange={e=>{setPtPeriod(e.target.value);loadPostTracker(e.target.value)}} />
+              </div>
+              {ptMsg && <p style={{marginTop:8,fontSize:13,color:ptMsg.includes('Error')?'#ef4444':'#10b981'}}>{ptMsg}</p>}
+            </div>
+
+            {/* Tabel tracking per grup */}
+            <div style={{...S.box,padding:0,overflow:'auto'}}>
+              <div style={{padding:'16px 20px',borderBottom:'1px solid #1f2937'}}>
+                <h3 style={{color:'#FFD700',fontSize:16,margin:0}}>Progress Postingan — {ptPeriod}</h3>
+              </div>
+              <table style={{width:'100%',borderCollapse:'collapse',minWidth:900}}>
+                <thead>
+                  <tr>
+                    <th style={S.th}>#</th>
+                    <th style={{...S.th,minWidth:180}}>Grup</th>
+                    <th style={{...S.th,minWidth:60}}>Member</th>
+                    <th style={{...S.th,textAlign:'center',background:'#1a2744'}}>Siklus 1<br/><span style={{fontSize:10,fontWeight:400}}>G1 G2 V</span></th>
+                    <th style={{...S.th,textAlign:'center',background:'#1a2744'}}>Siklus 2<br/><span style={{fontSize:10,fontWeight:400}}>G1 G2 V</span></th>
+                    <th style={{...S.th,textAlign:'center',background:'#1a2744'}}>Siklus 3<br/><span style={{fontSize:10,fontWeight:400}}>G1 G2 V</span></th>
+                    <th style={{...S.th,textAlign:'center',background:'#1a2744'}}>Siklus 4<br/><span style={{fontSize:10,fontWeight:400}}>G1 G2 V</span></th>
+                    <th style={{...S.th,textAlign:'center',background:'#162415'}}>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {groups.map((g, idx) => {
+                    const gEntries = postTracker.filter(p => p.group_id === g.id);
+                    const completeCycles = gEntries.filter(p => p.is_complete).length;
+                    const memberName = gEntries.length > 0 ? gEntries[0].user_name : '-';
+                    return (
+                      <tr key={g.id}>
+                        <td style={S.td}>{idx+1}</td>
+                        <td style={S.td}><div style={{fontWeight:600,fontSize:13}}>{g.name}</div><div style={{fontSize:11,color:'#6b7280'}}>{g.club}</div></td>
+                        <td style={{...S.td,fontSize:12,color:'#9ca3af'}}>{memberName}</td>
+                        {[1,2,3,4].map(cycle => {
+                          const entry = gEntries.find(p => p.cycle === cycle);
+                          const g1 = entry?.gambar1_link;
+                          const g2 = entry?.gambar2_link;
+                          const v = entry?.video_link;
+                          return (
+                            <td key={cycle} style={{...S.td,textAlign:'center',padding:6}}>
+                              <div style={{display:'flex',gap:4,justifyContent:'center'}}>
+                                <span title={g1||'Belum'} style={{width:22,height:22,borderRadius:4,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:700,background:g1?'#065f46':'#1f2937',color:g1?'#6ee7b7':'#374151',cursor:g1?'pointer':'default'}} onClick={()=>g1&&window.open(g1,'_blank')}>G1</span>
+                                <span title={g2||'Belum'} style={{width:22,height:22,borderRadius:4,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:700,background:g2?'#065f46':'#1f2937',color:g2?'#6ee7b7':'#374151',cursor:g2?'pointer':'default'}} onClick={()=>g2&&window.open(g2,'_blank')}>G2</span>
+                                <span title={v||'Belum'} style={{width:22,height:22,borderRadius:4,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:700,background:v?'#3b0764':'#1f2937',color:v?'#c084fc':'#374151',cursor:v?'pointer':'default'}} onClick={()=>v&&window.open(v,'_blank')}>V</span>
+                              </div>
+                            </td>
+                          );
+                        })}
+                        <td style={{...S.td,textAlign:'center'}}>
+                          <span style={{fontSize:13,fontWeight:700,color: completeCycles>=4?'#10b981':completeCycles>=2?'#f59e0b':completeCycles>=1?'#60a5fa':'#374151'}}>
+                            {completeCycles}/4
+                          </span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Summary member (admin) */}
+            {isAdmin && (
+              <div style={{...S.box,marginTop:24}}>
+                <h3 style={{color:'#FFD700',marginBottom:16,fontSize:16}}>Performa Member — {ptPeriod}</h3>
+                <table style={{width:'100%',borderCollapse:'collapse'}}>
+                  <thead><tr><th style={S.th}>#</th><th style={S.th}>Member</th><th style={S.th}>Grup</th><th style={S.th}>Gambar</th><th style={S.th}>Video</th><th style={S.th}>Siklus Selesai</th><th style={S.th}>Target (4/grup)</th><th style={S.th}>Progress</th></tr></thead>
+                  <tbody>
+                    {getMemberPostSummary().map((m, i) => {
+                      const target = m.groups * 4;
+                      const pct = target > 0 ? Math.round(m.completeCycles / target * 100) : 0;
+                      return (
+                        <tr key={m.name}>
+                          <td style={S.td}>{i+1}</td>
+                          <td style={{...S.td,fontWeight:600}}>{m.name}</td>
+                          <td style={S.td}>{m.groups}</td>
+                          <td style={S.td}>{m.gambar}</td>
+                          <td style={S.td}>{m.video}</td>
+                          <td style={{...S.td,fontWeight:700,color:'#FFD700'}}>{m.completeCycles}</td>
+                          <td style={S.td}>{target}</td>
+                          <td style={S.td}><div style={{display:'flex',alignItems:'center',gap:6}}><div style={{width:80,height:6,background:'#1f2937',borderRadius:3}}><div style={{width:`${pct}%`,height:'100%',background:pct>=80?'#10b981':pct>=50?'#f59e0b':'#ef4444',borderRadius:3}}/></div><span style={{fontSize:11}}>{pct}%</span></div></td>
+                        </tr>
+                      );
+                    })}
+                    {getMemberPostSummary().length === 0 && <tr><td colSpan={8} style={{...S.td,textAlign:'center',color:'#6b7280'}}>Belum ada data</td></tr>}
                   </tbody>
                 </table>
               </div>
