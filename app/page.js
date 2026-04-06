@@ -84,6 +84,14 @@ export default function Home() {
   const [newName, setNewName] = useState('');
   const [userMsg, setUserMsg] = useState('');
 
+  // Group form
+  const [grpId, setGrpId] = useState('');
+  const [grpClub, setGrpClub] = useState('');
+  const [grpName, setGrpName] = useState('');
+  const [grpUrl, setGrpUrl] = useState('');
+  const [grpLeague, setGrpLeague] = useState('La Liga');
+  const [grpMsg, setGrpMsg] = useState('');
+
   useEffect(() => {
     // Check saved session
     const saved = localStorage.getItem('fb-dash-user');
@@ -146,6 +154,27 @@ export default function Home() {
   const deleteUser = async (id) => {
     if (!confirm('Hapus user?')) return;
     await supabase.from('users').delete().eq('id', id);
+    loadData();
+  };
+
+  // Group management
+  const addGroup = async () => {
+    if (!grpClub || !grpName || !grpUrl) { setGrpMsg('Klub, nama grup, dan URL wajib diisi!'); return; }
+    const id = grpId.trim() || grpClub.toLowerCase().replace(/\s+/g, '').substring(0, 10) + (groups.length + 1);
+    const { error } = await supabase.from('groups').insert({
+      id, club: grpClub.trim(), name: grpName.trim(), url: grpUrl.trim(), league: grpLeague, team_id: null,
+    });
+    if (error) { setGrpMsg('Error: ' + error.message); }
+    else {
+      setGrpMsg(`Grup "${grpName}" berhasil ditambahkan!`);
+      setGrpId(''); setGrpClub(''); setGrpName(''); setGrpUrl('');
+      loadData();
+    }
+  };
+
+  const deleteGroup = async (id) => {
+    if (!confirm('Hapus grup ini? Link submissions terkait juga akan terpengaruh.')) return;
+    await supabase.from('groups').delete().eq('id', id);
     loadData();
   };
 
@@ -256,22 +285,46 @@ export default function Home() {
         {/* GROUPS (semua) */}
         {tab === 'groups' && (
           <>
+            {/* Form tambah grup (admin only) */}
+            {isAdmin && (
+              <div style={S.box}>
+                <h3 style={{color:'#FFD700',marginBottom:16,fontSize:16}}>Tambah Grup Baru</h3>
+                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:10,marginBottom:10}}>
+                  <div><label style={{display:'block',fontSize:12,color:'#9ca3af',marginBottom:4}}>Nama Klub</label><input style={S.input} placeholder="Real Madrid" value={grpClub} onChange={e=>setGrpClub(e.target.value)} /></div>
+                  <div><label style={{display:'block',fontSize:12,color:'#9ca3af',marginBottom:4}}>Nama Grup</label><input style={S.input} placeholder="Info Seputar Real Madrid" value={grpName} onChange={e=>setGrpName(e.target.value)} /></div>
+                  <div><label style={{display:'block',fontSize:12,color:'#9ca3af',marginBottom:4}}>Liga</label>
+                    <select style={S.input} value={grpLeague} onChange={e=>setGrpLeague(e.target.value)}>
+                      {['La Liga','Premier League','Serie A','Bundesliga','Ligue 1','Liga 1','Timnas','Pemain','Lainnya'].map(l=><option key={l} value={l}>{l}</option>)}
+                    </select>
+                  </div>
+                </div>
+                <div style={{display:'grid',gridTemplateColumns:'2fr 1fr auto',gap:10,alignItems:'end'}}>
+                  <div><label style={{display:'block',fontSize:12,color:'#9ca3af',marginBottom:4}}>URL Grup Facebook</label><input style={S.input} placeholder="https://www.facebook.com/groups/123456" value={grpUrl} onChange={e=>setGrpUrl(e.target.value)} /></div>
+                  <div><label style={{display:'block',fontSize:12,color:'#9ca3af',marginBottom:4}}>ID (opsional)</label><input style={S.input} placeholder="auto" value={grpId} onChange={e=>setGrpId(e.target.value)} /></div>
+                  <button onClick={addGroup} style={{...S.btn('#065f46'),padding:'10px 24px',marginBottom:0}}>Tambah</button>
+                </div>
+                {grpMsg && <p style={{marginTop:10,fontSize:13,color:grpMsg.includes('Error')?'#ef4444':'#10b981'}}>{grpMsg}</p>}
+              </div>
+            )}
+
             <div style={{display:'flex',gap:8,marginBottom:16,flexWrap:'wrap'}}>
               <select style={S.input} value={leagueFilter} onChange={e=>setLeagueFilter(e.target.value)}>
                 <option value="">Semua Liga</option>
-                {['La Liga','Premier League','Serie A','Bundesliga','Ligue 1','Liga 1','Timnas','Pemain'].map(l=><option key={l} value={l}>{l}</option>)}
+                {['La Liga','Premier League','Serie A','Bundesliga','Ligue 1','Liga 1','Timnas','Pemain','Lainnya'].map(l=><option key={l} value={l}>{l}</option>)}
               </select>
               <input style={{...S.input,maxWidth:200}} placeholder="Cari grup..." value={search} onChange={e=>setSearch(e.target.value)} />
+              <span style={{fontSize:12,color:'#6b7280',alignSelf:'center'}}>{filteredGroups.length} grup</span>
             </div>
             <table style={{width:'100%',borderCollapse:'collapse',background:'#111827',borderRadius:12,overflow:'hidden',border:'1px solid #1f2937'}}>
-              <thead><tr><th style={S.th}>#</th><th style={S.th}>Nama Grup</th><th style={S.th}>Klub</th><th style={S.th}>Liga</th></tr></thead>
+              <thead><tr><th style={S.th}>#</th><th style={S.th}>Nama Grup</th><th style={S.th}>Klub</th><th style={S.th}>Liga</th>{isAdmin && <th style={S.th}>Aksi</th>}</tr></thead>
               <tbody>
                 {filteredGroups.map((g, i) => (
-                  <tr key={g.id} style={{':hover':{background:'#1a1a2e'}}}>
+                  <tr key={g.id}>
                     <td style={S.td}>{i+1}</td>
                     <td style={S.td}><a href={g.url} target="_blank" style={S.link}>{g.name}</a></td>
                     <td style={S.td}>{g.club}</td>
                     <td style={S.td}><span style={{...S.badge('ok'),background:LEAGUE_COLORS[g.league]?'#1e3a5f':'#1f2937'}}>{g.league}</span></td>
+                    {isAdmin && <td style={S.td}><button onClick={()=>deleteGroup(g.id)} style={{...S.btn('#7f1d1d'),padding:'3px 8px',fontSize:11}}>Hapus</button></td>}
                   </tr>
                 ))}
               </tbody>
