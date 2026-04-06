@@ -106,7 +106,7 @@ export default function Home() {
   const [ptType, setPtType] = useState('gambar1'); // gambar1, gambar2, video
   const [ptLink, setPtLink] = useState('');
   const [ptMsg, setPtMsg] = useState('');
-  const [ptPeriod, setPtPeriod] = useState(() => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`; });
+  const [ptPeriod, setPtPeriod] = useState(() => new Date().toISOString().split('T')[0]);
 
   useEffect(() => {
     // Check saved session
@@ -592,8 +592,8 @@ export default function Home() {
                 <button onClick={submitPostLink} style={{...S.btn('#065f46'),padding:'10px 24px'}}>Submit</button>
               </div>
               <div style={{display:'flex',gap:10,alignItems:'center',marginTop:10}}>
-                <label style={{fontSize:12,color:'#9ca3af'}}>Periode:</label>
-                <input type="month" style={{...S.input,width:180}} value={ptPeriod} onChange={e=>{setPtPeriod(e.target.value);loadPostTracker(e.target.value)}} />
+                <label style={{fontSize:12,color:'#9ca3af'}}>Tanggal:</label>
+                <input type="date" style={{...S.input,width:180}} value={ptPeriod} onChange={e=>{setPtPeriod(e.target.value);loadPostTracker(e.target.value)}} />
               </div>
               {ptMsg && <p style={{marginTop:8,fontSize:13,color:ptMsg.includes('Error')?'#ef4444':'#10b981'}}>{ptMsg}</p>}
             </div>
@@ -601,7 +601,7 @@ export default function Home() {
             {/* Tabel tracking per grup */}
             <div style={{...S.box,padding:0,overflow:'auto'}}>
               <div style={{padding:'16px 20px',borderBottom:'1px solid #1f2937'}}>
-                <h3 style={{color:'#FFD700',fontSize:16,margin:0}}>Progress Postingan — {ptPeriod}</h3>
+                <h3 style={{color:'#FFD700',fontSize:16,margin:0}}>Progress Postingan — {new Date(ptPeriod).toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</h3>
               </div>
               <table style={{width:'100%',borderCollapse:'collapse',minWidth:900}}>
                 <thead>
@@ -656,7 +656,7 @@ export default function Home() {
             {/* Summary member (admin) */}
             {isAdmin && (
               <div style={{...S.box,marginTop:24}}>
-                <h3 style={{color:'#FFD700',marginBottom:16,fontSize:16}}>Performa Member — {ptPeriod}</h3>
+                <h3 style={{color:'#FFD700',marginBottom:16,fontSize:16}}>Performa Member — {new Date(ptPeriod).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})}</h3>
                 <table style={{width:'100%',borderCollapse:'collapse'}}>
                   <thead><tr><th style={S.th}>#</th><th style={S.th}>Member</th><th style={S.th}>Grup</th><th style={S.th}>Gambar</th><th style={S.th}>Video</th><th style={S.th}>Siklus Selesai</th><th style={S.th}>Target (4/grup)</th><th style={S.th}>Progress</th></tr></thead>
                   <tbody>
