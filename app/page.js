@@ -222,7 +222,15 @@ export default function Home() {
   };
 
   const getGroupTotal = (groupId) => {
-    return weeklyStats.filter(w => w.group_id === groupId).reduce((sum, w) => sum + (parseFloat(w.value) || 0), 0);
+    // Total = nilai minggu terakhir - nilai minggu pertama (penambahan/pertumbuhan)
+    const entries = weeklyStats
+      .filter(w => w.group_id === groupId && parseFloat(w.value) > 0)
+      .sort((a, b) => a.week - b.week);
+    if (entries.length === 0) return 0;
+    if (entries.length === 1) return parseFloat(entries[0].value) || 0;
+    const first = parseFloat(entries[0].value) || 0;
+    const last = parseFloat(entries[entries.length - 1].value) || 0;
+    return last - first;
   };
 
   const getMemberStats = () => {
