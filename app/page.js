@@ -92,6 +92,13 @@ export default function Home() {
   const [grpLeague, setGrpLeague] = useState('La Liga');
   const [grpMsg, setGrpMsg] = useState('');
 
+  // Weekly stats
+  const [weeklyStats, setWeeklyStats] = useState([]);
+  const [wsMonth, setWsMonth] = useState(new Date().getMonth() + 1);
+  const [wsYear, setWsYear] = useState(new Date().getFullYear());
+  const [wsEditing, setWsEditing] = useState(null); // {groupId, week, value}
+  const [wsSaving, setWsSaving] = useState(false);
+
   useEffect(() => {
     // Check saved session
     const saved = localStorage.getItem('fb-dash-user');
@@ -178,12 +185,67 @@ export default function Home() {
     loadData();
   };
 
+  // Weekly stats functions
+  const loadWeeklyStats = async (y, m) => {
+    const { data } = await supabase.from('weekly_stats').select('*').eq('year', y).eq('month', m);
+    setWeeklyStats(data || []);
+  };
+
+  const getWeekValue = (groupId, week) => {
+    const entry = weeklyStats.find(w => w.group_id === groupId && w.week === week);
+    return entry ? entry.value : '';
+  };
+
+  const getWeekUpdater = (groupId, week) => {
+    const entry = weeklyStats.find(w => w.group_id === groupId && w.week === week);
+    return entry?.updated_by || '';
+  };
+
+  const saveWeekValue = async (groupId, groupName, week, value) => {
+    setWsSaving(true);
+    const numVal = parseFloat(value) || 0;
+    const existing = weeklyStats.find(w => w.group_id === groupId && w.week === week && w.year === wsYear && w.month === wsMonth);
+
+    if (existing) {
+      await supabase.from('weekly_stats').update({
+        value: numVal, updated_by: user.name, updated_at: new Date().toISOString()
+      }).eq('id', existing.id);
+    } else {
+      await supabase.from('weekly_stats').insert({
+        group_id: groupId, group_name: groupName, year: wsYear, month: wsMonth,
+        week, value: numVal, updated_by: user.name
+      });
+    }
+    await loadWeeklyStats(wsYear, wsMonth);
+    setWsEditing(null);
+    setWsSaving(false);
+  };
+
+  const getGroupTotal = (groupId) => {
+    return weeklyStats.filter(w => w.group_id === groupId).reduce((sum, w) => sum + (parseFloat(w.value) || 0), 0);
+  };
+
+  const getMemberStats = () => {
+    const memberMap = {};
+    weeklyStats.forEach(w => {
+      if (!w.updated_by) return;
+      if (!memberMap[w.updated_by]) memberMap[w.updated_by] = { name: w.updated_by, entries: 0, totalValue: 0, groups: new Set() };
+      memberMap[w.updated_by].entries++;
+      memberMap[w.updated_by].totalValue += parseFloat(w.value) || 0;
+      if (w.group_id) memberMap[w.updated_by].groups.add(w.group_id);
+    });
+    return Object.values(memberMap).map(m => ({ ...m, groups: m.groups.size })).sort((a, b) => b.totalValue - a.totalValue);
+  };
+
+  const MONTH_NAMES = ['','Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+
   if (!user) return <LoginScreen onLogin={login} />;
 
   const isAdmin = user.role === 'admin';
   const adminTabs = [
     { id: 'overview', label: 'Overview' },
     { id: 'analytics', label: 'Analytics' },
+    { id: 'weekly', label: 'Data Mingguan' },
     { id: 'groups', label: `Grup (${groups.length})` },
     { id: 'submitlink', label: 'Link Postingan' },
     { id: 'users', label: 'Kelola User' },
@@ -191,6 +253,7 @@ export default function Home() {
   ];
   const memberTabs = [
     { id: 'groups', label: 'Daftar Grup' },
+    { id: 'weekly', label: 'Data Mingguan' },
     { id: 'submitlink', label: 'Submit Link' },
   ];
   const tabs = isAdmin ? adminTabs : memberTabs;
@@ -234,7 +297,7 @@ export default function Home() {
 
       {/* TABS */}
       <div style={S.tabs}>
-        {tabs.map(t => <div key={t.id} style={S.tab(tab===t.id)} onClick={() => setTab(t.id)}>{t.label}</div>)}
+        {tabs.map(t => <div key={t.id} style={S.tab(tab===t.id)} onClick={() => { setTab(t.id); if(t.id==='weekly') loadWeeklyStats(wsYear, wsMonth); }}>{t.label}</div>)}
       </div>
 
       <div style={S.main}>
@@ -280,6 +343,115 @@ export default function Home() {
               </tbody>
             </table>
           </div>
+        )}
+
+        {/* DATA MINGGUAN (semua role) */}
+        {tab === 'weekly' && (
+          <>
+            {/* Navigasi bulan */}
+            <div style={{display:'flex',gap:12,alignItems:'center',marginBottom:20,flexWrap:'wrap'}}>
+              <button style={S.btn('#374151')} onClick={() => { const nm = wsMonth === 1 ? 12 : wsMonth - 1; const ny = wsMonth === 1 ? wsYear - 1 : wsYear; setWsMonth(nm); setWsYear(ny); loadWeeklyStats(ny, nm); }}>&#9664; Bulan Sebelumnya</button>
+              <h3 style={{color:'#FFD700',fontSize:18,margin:'0 8px'}}>{MONTH_NAMES[wsMonth]} {wsYear}</h3>
+              <button style={S.btn('#374151')} onClick={() => { const nm = wsMonth === 12 ? 1 : wsMonth + 1; const ny = wsMonth === 12 ? wsYear + 1 : wsYear; setWsMonth(nm); setWsYear(ny); loadWeeklyStats(ny, nm); }}>Bulan Berikutnya &#9654;</button>
+              <span style={{fontSize:12,color:'#6b7280',marginLeft:8}}>{weeklyStats.length} data tercatat</span>
+            </div>
+
+            {/* Tabel spreadsheet */}
+            <div style={{...S.box,padding:0,overflow:'auto'}}>
+              <table style={{width:'100%',borderCollapse:'collapse',minWidth:800}}>
+                <thead>
+                  <tr>
+                    <th style={{...S.th,position:'sticky',left:0,background:'#1f2937',zIndex:2,minWidth:50}}>#</th>
+                    <th style={{...S.th,position:'sticky',left:50,background:'#1f2937',zIndex:2,minWidth:200}}>Nama Group</th>
+                    <th style={{...S.th,textAlign:'center',minWidth:100,background:'#1a2744'}}>Minggu ke-1</th>
+                    <th style={{...S.th,textAlign:'center',minWidth:100,background:'#1a2744'}}>Minggu ke-2</th>
+                    <th style={{...S.th,textAlign:'center',minWidth:100,background:'#1a2744'}}>Minggu ke-3</th>
+                    <th style={{...S.th,textAlign:'center',minWidth:100,background:'#1a2744'}}>Minggu ke-4</th>
+                    <th style={{...S.th,textAlign:'center',minWidth:100,background:'#1a2744'}}>Minggu ke-5</th>
+                    <th style={{...S.th,textAlign:'center',minWidth:100,background:'#162415'}}>Total</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {groups.map((g, idx) => {
+                    const total = getGroupTotal(g.id);
+                    const hasData = total > 0;
+                    return (
+                      <tr key={g.id} style={{background: hasData ? 'rgba(16,185,129,0.05)' : 'transparent'}}>
+                        <td style={{...S.td,position:'sticky',left:0,background:'#111827',zIndex:1,fontWeight:600,color:'#6b7280'}}>{idx+1}</td>
+                        <td style={{...S.td,position:'sticky',left:50,background:'#111827',zIndex:1}}>
+                          <div style={{fontWeight:600,fontSize:13}}>{g.name}</div>
+                          <div style={{fontSize:11,color:'#6b7280'}}>{g.club}</div>
+                        </td>
+                        {[1,2,3,4,5].map(week => {
+                          const val = getWeekValue(g.id, week);
+                          const updater = getWeekUpdater(g.id, week);
+                          const isEditing = wsEditing?.groupId === g.id && wsEditing?.week === week;
+
+                          return (
+                            <td key={week} style={{...S.td,textAlign:'center',padding:4,minWidth:100}}>
+                              {isEditing ? (
+                                <div style={{display:'flex',gap:2}}>
+                                  <input
+                                    type="number"
+                                    autoFocus
+                                    defaultValue={val}
+                                    style={{...S.input,padding:'6px 8px',fontSize:13,textAlign:'center',width:80}}
+                                    onKeyDown={(e) => { if (e.key === 'Enter') saveWeekValue(g.id, g.name, week, e.target.value); if (e.key === 'Escape') setWsEditing(null); }}
+                                    onBlur={(e) => { if (e.target.value !== String(val)) saveWeekValue(g.id, g.name, week, e.target.value); else setWsEditing(null); }}
+                                  />
+                                </div>
+                              ) : (
+                                <div
+                                  onClick={() => setWsEditing({groupId: g.id, week})}
+                                  style={{cursor:'pointer',padding:'6px 4px',borderRadius:4,minHeight:32,display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',border:'1px solid transparent',transition:'all 0.15s'}}
+                                  onMouseEnter={e => e.currentTarget.style.borderColor='#374151'}
+                                  onMouseLeave={e => e.currentTarget.style.borderColor='transparent'}
+                                >
+                                  {val ? (
+                                    <>
+                                      <span style={{fontWeight:700,fontSize:14,color: parseFloat(val) >= 5000 ? '#10b981' : parseFloat(val) >= 1000 ? '#f59e0b' : '#e5e7eb'}}>{Number(val).toLocaleString('id-ID')}</span>
+                                      {updater && <span style={{fontSize:9,color:'#6b7280',marginTop:1}}>{updater}</span>}
+                                    </>
+                                  ) : (
+                                    <span style={{color:'#374151',fontSize:12}}>-</span>
+                                  )}
+                                </div>
+                              )}
+                            </td>
+                          );
+                        })}
+                        <td style={{...S.td,textAlign:'center',fontWeight:700,fontSize:15,color: total >= 10000 ? '#10b981' : total >= 5000 ? '#f59e0b' : total > 0 ? '#e5e7eb' : '#374151',background:'rgba(22,36,21,0.3)'}}>
+                          {total > 0 ? Number(total).toLocaleString('id-ID') : '-'}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Performa Member */}
+            {isAdmin && (
+              <div style={{...S.box,marginTop:24}}>
+                <h3 style={{color:'#FFD700',marginBottom:16,fontSize:16}}>Performa Member — {MONTH_NAMES[wsMonth]} {wsYear}</h3>
+                <table style={{width:'100%',borderCollapse:'collapse'}}>
+                  <thead><tr><th style={S.th}>#</th><th style={S.th}>Member</th><th style={S.th}>Grup Diisi</th><th style={S.th}>Entri</th><th style={S.th}>Total Nilai</th></tr></thead>
+                  <tbody>
+                    {getMemberStats().map((m, i) => (
+                      <tr key={m.name}>
+                        <td style={S.td}>{i+1}</td>
+                        <td style={{...S.td,fontWeight:600}}>{m.name}</td>
+                        <td style={S.td}>{m.groups}</td>
+                        <td style={S.td}>{m.entries}</td>
+                        <td style={{...S.td,fontWeight:700,color:'#FFD700'}}>{Number(m.totalValue).toLocaleString('id-ID')}</td>
+                      </tr>
+                    ))}
+                    {getMemberStats().length === 0 && <tr><td colSpan={5} style={{...S.td,textAlign:'center',color:'#6b7280'}}>Belum ada data</td></tr>}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </>
         )}
 
         {/* GROUPS (semua) */}
