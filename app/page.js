@@ -99,6 +99,14 @@ export default function Home() {
   const [wsEditing, setWsEditing] = useState(null);
   const [wsSaving, setWsSaving] = useState(false);
 
+  // Task queue (admin only)
+  const [taskQueue, setTaskQueue] = useState([]);
+  const [tqMember, setTqMember] = useState('');
+  const [tqGroups, setTqGroups] = useState([]);
+  const [tqType, setTqType] = useState('full');
+  const [tqMsg, setTqMsg] = useState('');
+  const [tqSelectAll, setTqSelectAll] = useState(false);
+
   // Posting tracker
   const [postTracker, setPostTracker] = useState([]);
   const [ptGroup, setPtGroup] = useState('');
@@ -250,6 +258,58 @@ export default function Home() {
 
   const MONTH_NAMES = ['','Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
 
+  // Task queue functions (admin only)
+  const loadTaskQueue = async () => {
+    const { data } = await supabase.from('task_queue').select('*').order('created_at', { ascending: false }).limit(200);
+    setTaskQueue(data || []);
+  };
+
+  const createTasks = async () => {
+    if (!tqMember.trim()) { setTqMsg('Nama member wajib diisi!'); return; }
+    if (tqGroups.length === 0) { setTqMsg('Pilih minimal 1 grup!'); return; }
+
+    const tasks = tqGroups.map(gid => {
+      const grp = groups.find(g => g.id === gid);
+      return {
+        member_name: tqMember.trim(),
+        group_id: gid,
+        group_name: grp?.name || '',
+        group_url: grp?.url || '',
+        club: grp?.club || '',
+        task_type: tqType,
+        status: 'pending',
+      };
+    });
+
+    const { error } = await supabase.from('task_queue').insert(tasks);
+    if (error) { setTqMsg('Error: ' + error.message); }
+    else {
+      setTqMsg(`${tasks.length} tugas dibuat untuk ${tqMember}!`);
+      setTqGroups([]); setTqSelectAll(false);
+      loadTaskQueue();
+    }
+  };
+
+  const deleteTask = async (id) => {
+    await supabase.from('task_queue').delete().eq('id', id);
+    loadTaskQueue();
+  };
+
+  const clearDoneTasks = async () => {
+    if (!confirm('Hapus semua tugas yang sudah selesai?')) return;
+    await supabase.from('task_queue').delete().eq('status', 'done');
+    loadTaskQueue();
+  };
+
+  const toggleGroupSelect = (gid) => {
+    setTqGroups(prev => prev.includes(gid) ? prev.filter(id => id !== gid) : [...prev, gid]);
+  };
+
+  const toggleSelectAll = () => {
+    if (tqSelectAll) { setTqGroups([]); } else { setTqGroups(groups.map(g => g.id)); }
+    setTqSelectAll(!tqSelectAll);
+  };
+
   // Posting tracker functions
   const loadPostTracker = async (period) => {
     const { data } = await supabase.from('posting_tracker').select('*').eq('period', period).order('created_at');
@@ -332,6 +392,7 @@ export default function Home() {
     { id: 'analytics', label: 'Analytics' },
     { id: 'weekly', label: 'Data Mingguan' },
     { id: 'posttrack', label: 'Tracking Postingan' },
+    { id: 'botqueue', label: 'Jalankan Bot' },
     { id: 'groups', label: `Grup (${groups.length})` },
     { id: 'users', label: 'Kelola User' },
     { id: 'activity', label: 'Activity Log' },
@@ -382,7 +443,7 @@ export default function Home() {
 
       {/* TABS */}
       <div style={S.tabs}>
-        {tabs.map(t => <div key={t.id} style={S.tab(tab===t.id)} onClick={() => { setTab(t.id); if(t.id==='weekly') loadWeeklyStats(wsYear, wsMonth); if(t.id==='posttrack') loadPostTracker(ptPeriod); }}>{t.label}</div>)}
+        {tabs.map(t => <div key={t.id} style={S.tab(tab===t.id)} onClick={() => { setTab(t.id); if(t.id==='weekly') loadWeeklyStats(wsYear, wsMonth); if(t.id==='posttrack') loadPostTracker(ptPeriod); if(t.id==='botqueue') loadTaskQueue(); }}>{t.label}</div>)}
       </div>
 
       <div style={S.main}>
@@ -681,6 +742,94 @@ export default function Home() {
                 </table>
               </div>
             )}
+          </>
+        )}
+
+        {/* JALANKAN BOT — admin only */}
+        {tab === 'botqueue' && isAdmin && (
+          <>
+            <div style={S.box}>
+              <h3 style={{color:'#FFD700',marginBottom:8,fontSize:16}}>Buat Tugas Posting</h3>
+              <p style={{color:'#9ca3af',fontSize:12,marginBottom:16}}>Pilih member, pilih grup, bot akan posting atas nama member tersebut. Hanya admin yang bisa mengakses halaman ini.</p>
+
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:16}}>
+                <div><label style={{display:'block',fontSize:12,color:'#9ca3af',marginBottom:4}}>Nama Member (bot posting atas nama ini)</label>
+                  <input style={S.input} placeholder="Contoh: Andi, Budi, Member A" value={tqMember} onChange={e=>setTqMember(e.target.value)} /></div>
+                <div><label style={{display:'block',fontSize:12,color:'#9ca3af',marginBottom:4}}>Jenis Posting</label>
+                  <select style={S.input} value={tqType} onChange={e=>setTqType(e.target.value)}>
+                    <option value="full">2 Berita + 1 Video (Full)</option>
+                    <option value="news">2 Berita Saja</option>
+                    <option value="video">1 Video Saja</option>
+                  </select>
+                </div>
+              </div>
+
+              <label style={{display:'block',fontSize:12,color:'#9ca3af',marginBottom:8}}>Pilih Grup ({tqGroups.length} dipilih)</label>
+              <div style={{marginBottom:10}}>
+                <label style={{display:'flex',alignItems:'center',gap:6,cursor:'pointer',fontSize:13,color:'#FFD700',marginBottom:8}}>
+                  <input type="checkbox" checked={tqSelectAll} onChange={toggleSelectAll} /> Pilih Semua Grup
+                </label>
+              </div>
+              <div style={{maxHeight:300,overflowY:'auto',background:'#0d1117',borderRadius:8,padding:8,border:'1px solid #1f2937'}}>
+                {groups.map(g => (
+                  <label key={g.id} style={{display:'flex',alignItems:'center',gap:8,padding:'6px 8px',cursor:'pointer',fontSize:13,borderRadius:4,background:tqGroups.includes(g.id)?'#1a2744':'transparent'}}>
+                    <input type="checkbox" checked={tqGroups.includes(g.id)} onChange={()=>toggleGroupSelect(g.id)} />
+                    <span style={{color:tqGroups.includes(g.id)?'#60a5fa':'#9ca3af'}}>{g.name}</span>
+                    <span style={{fontSize:11,color:'#6b7280',marginLeft:'auto'}}>{g.club}</span>
+                  </label>
+                ))}
+              </div>
+
+              <div style={{display:'flex',gap:10,marginTop:16}}>
+                <button onClick={createTasks} style={{...S.btn('#065f46'),padding:'12px 32px',fontSize:14}}>Buat {tqGroups.length} Tugas</button>
+              </div>
+              {tqMsg && <p style={{marginTop:10,fontSize:13,color:tqMsg.includes('Error')?'#ef4444':'#10b981'}}>{tqMsg}</p>}
+            </div>
+
+            {/* Daftar tugas */}
+            <div style={S.box}>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
+                <h3 style={{color:'#FFD700',fontSize:16,margin:0}}>Antrian Tugas</h3>
+                <div style={{display:'flex',gap:8}}>
+                  <button onClick={loadTaskQueue} style={{...S.btn('#374151'),padding:'6px 14px',fontSize:12}}>Refresh</button>
+                  <button onClick={clearDoneTasks} style={{...S.btn('#7f1d1d'),padding:'6px 14px',fontSize:12}}>Hapus Selesai</button>
+                </div>
+              </div>
+
+              {/* Stats */}
+              <div style={{display:'flex',gap:16,marginBottom:16,fontSize:13}}>
+                <span style={{color:'#f59e0b'}}>Pending: {taskQueue.filter(t=>t.status==='pending').length}</span>
+                <span style={{color:'#60a5fa'}}>Running: {taskQueue.filter(t=>t.status==='running').length}</span>
+                <span style={{color:'#10b981'}}>Done: {taskQueue.filter(t=>t.status==='done').length}</span>
+                <span style={{color:'#ef4444'}}>Failed: {taskQueue.filter(t=>t.status==='failed').length}</span>
+              </div>
+
+              <table style={{width:'100%',borderCollapse:'collapse'}}>
+                <thead><tr><th style={S.th}>Member</th><th style={S.th}>Grup</th><th style={S.th}>Klub</th><th style={S.th}>Jenis</th><th style={S.th}>Status</th><th style={S.th}>Waktu</th><th style={S.th}>Aksi</th></tr></thead>
+                <tbody>
+                  {taskQueue.map(t => (
+                    <tr key={t.id}>
+                      <td style={{...S.td,fontWeight:600}}>{t.member_name}</td>
+                      <td style={S.td}>{t.group_name}</td>
+                      <td style={{...S.td,fontSize:12,color:'#9ca3af'}}>{t.club}</td>
+                      <td style={S.td}><span style={S.badge(t.task_type==='full'?'ok':t.task_type==='news'?'approved':'member')}>{t.task_type==='full'?'2G+1V':t.task_type==='news'?'2 Berita':'1 Video'}</span></td>
+                      <td style={S.td}><span style={S.badge(t.status==='done'?'ok':t.status==='running'?'approved':t.status==='failed'?'fail':'pending')}>{t.status}</span></td>
+                      <td style={{...S.td,fontSize:11,color:'#6b7280'}}>{t.completed_at?new Date(t.completed_at).toLocaleString('id-ID'):t.started_at?'Running...':new Date(t.created_at).toLocaleString('id-ID')}</td>
+                      <td style={S.td}>{t.status!=='running'&&<button onClick={()=>deleteTask(t.id)} style={{...S.btn('#7f1d1d'),padding:'3px 8px',fontSize:11}}>Hapus</button>}</td>
+                    </tr>
+                  ))}
+                  {taskQueue.length===0 && <tr><td colSpan={7} style={{...S.td,textAlign:'center',color:'#6b7280'}}>Belum ada tugas. Buat tugas di atas.</td></tr>}
+                </tbody>
+              </table>
+            </div>
+
+            <div style={{...S.box,background:'#0d1117',border:'1px solid #374151'}}>
+              <p style={{fontSize:13,color:'#9ca3af'}}>
+                <strong style={{color:'#FFD700'}}>Cara kerja:</strong> Setelah buat tugas, jalankan bot worker di terminal komputer kamu:<br/>
+                <code style={{background:'#1f2937',padding:'4px 8px',borderRadius:4,fontSize:12,marginTop:4,display:'inline-block'}}>node src/bot-worker.js</code><br/>
+                <span style={{fontSize:11}}>Bot akan otomatis ambil tugas dari antrian, posting ke Facebook, dan update status.</span>
+              </p>
+            </div>
           </>
         )}
 
