@@ -119,6 +119,7 @@ export default function Home() {
     await supabase.from('link_submissions').insert({
       user_id: user.id, user_name: user.name, group_id: linkGroup,
       group_name: grp?.name || '', link: linkUrl.trim(), note: linkNote.trim(),
+      status: 'approved',
     });
     setLinkUrl(''); setLinkNote(''); setLinkMsg('Link berhasil disubmit!');
     loadData();
@@ -171,14 +172,23 @@ export default function Home() {
   );
 
   const today = new Date().toISOString().split('T')[0];
-  const todayPosts = activity.filter(a => a.created_at?.startsWith(today) && a.success).length;
-  const totalSuccess = activity.filter(a => a.success).length;
+  const todayLinks = links.filter(l => l.created_at?.startsWith(today) && l.status === 'approved').length;
+  const todayBot = activity.filter(a => a.created_at?.startsWith(today) && a.success).length;
+  const todayPosts = todayLinks + todayBot;
+  const totalSuccess = activity.filter(a => a.success).length + links.filter(l => l.status === 'approved').length;
 
-  // Analytics
+  // Analytics — gabungan dari activity_log + link_submissions
   const clubs = [...new Set(groups.map(g => g.club))].sort();
   const clubStats = clubs.map(c => {
-    const ca = activity.filter(a => a.team === c);
-    return { club: c, groups: groups.filter(g => g.club === c).length, total: ca.length, success: ca.filter(a => a.success).length };
+    const clubGroups = groups.filter(g => g.club === c);
+    const clubGroupIds = clubGroups.map(g => g.id);
+    // Hitung dari activity_log (bot)
+    const botPosts = activity.filter(a => a.team === c);
+    // Hitung dari link_submissions (member manual)
+    const memberPosts = links.filter(l => clubGroupIds.includes(l.group_id) && l.status === 'approved');
+    const total = botPosts.length + memberPosts.length;
+    const success = botPosts.filter(a => a.success).length + memberPosts.length;
+    return { club: c, groups: clubGroups.length, total, success, memberPosts: memberPosts.length, botPosts: botPosts.length };
   }).sort((a, b) => b.total - a.total);
 
   return (
@@ -229,12 +239,12 @@ export default function Home() {
           <div style={S.box}>
             <h3 style={{color:'#FFD700',marginBottom:16,fontSize:16}}>Performa Per Klub</h3>
             <table style={{width:'100%',borderCollapse:'collapse'}}>
-              <thead><tr><th style={S.th}>Klub</th><th style={S.th}>Grup</th><th style={S.th}>Total</th><th style={S.th}>Berhasil</th><th style={S.th}>Rasio</th></tr></thead>
+              <thead><tr><th style={S.th}>Klub</th><th style={S.th}>Grup</th><th style={S.th}>Bot</th><th style={S.th}>Member</th><th style={S.th}>Total</th><th style={S.th}>Rasio</th></tr></thead>
               <tbody>
                 {clubStats.map(c => {
                   const r = c.total > 0 ? Math.round(c.success/c.total*100) : 0;
                   return (
-                    <tr key={c.club}><td style={S.td}><strong>{c.club}</strong></td><td style={S.td}>{c.groups}</td><td style={S.td}>{c.total}</td><td style={S.td}>{c.success}</td>
+                    <tr key={c.club}><td style={S.td}><strong>{c.club}</strong></td><td style={S.td}>{c.groups}</td><td style={S.td}>{c.botPosts}</td><td style={S.td}>{c.memberPosts}</td><td style={S.td}>{c.total}</td>
                     <td style={S.td}><div style={{display:'flex',alignItems:'center',gap:6}}><div style={{width:60,height:6,background:'#1f2937',borderRadius:3}}><div style={{width:`${r}%`,height:'100%',background:r>=80?'#10b981':r>=50?'#f59e0b':'#ef4444',borderRadius:3}}/></div><span style={{fontSize:11}}>{r}%</span></div></td></tr>
                   );
                 })}
