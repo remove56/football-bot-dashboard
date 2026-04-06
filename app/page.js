@@ -221,16 +221,10 @@ export default function Home() {
     setWsSaving(false);
   };
 
+  // Total juga manual — pakai week=6 sebagai kolom total
   const getGroupTotal = (groupId) => {
-    // Total = nilai minggu terakhir - nilai minggu pertama (penambahan/pertumbuhan)
-    const entries = weeklyStats
-      .filter(w => w.group_id === groupId && parseFloat(w.value) > 0)
-      .sort((a, b) => a.week - b.week);
-    if (entries.length === 0) return 0;
-    if (entries.length === 1) return parseFloat(entries[0].value) || 0;
-    const first = parseFloat(entries[0].value) || 0;
-    const last = parseFloat(entries[entries.length - 1].value) || 0;
-    return last - first;
+    const entry = weeklyStats.find(w => w.group_id === groupId && w.week === 6);
+    return entry ? parseFloat(entry.value) || 0 : 0;
   };
 
   const getMemberStats = () => {
@@ -428,8 +422,28 @@ export default function Home() {
                             </td>
                           );
                         })}
-                        <td style={{...S.td,textAlign:'center',fontWeight:700,fontSize:15,color: total >= 10000 ? '#10b981' : total >= 5000 ? '#f59e0b' : total > 0 ? '#e5e7eb' : '#374151',background:'rgba(22,36,21,0.3)'}}>
-                          {total > 0 ? Number(total).toLocaleString('id-ID') : '-'}
+                        <td style={{...S.td,textAlign:'center',padding:4,background:'rgba(22,36,21,0.3)'}}>
+                          {wsEditing?.groupId === g.id && wsEditing?.week === 6 ? (
+                            <input
+                              type="number"
+                              autoFocus
+                              defaultValue={total || ''}
+                              style={{...S.input,padding:'6px 8px',fontSize:14,textAlign:'center',width:90,fontWeight:700}}
+                              onKeyDown={(e) => { if (e.key === 'Enter') saveWeekValue(g.id, g.name, 6, e.target.value); if (e.key === 'Escape') setWsEditing(null); }}
+                              onBlur={(e) => { if (e.target.value !== String(total)) saveWeekValue(g.id, g.name, 6, e.target.value); else setWsEditing(null); }}
+                            />
+                          ) : (
+                            <div
+                              onClick={() => setWsEditing({groupId: g.id, week: 6})}
+                              style={{cursor:'pointer',padding:'6px 4px',borderRadius:4,minHeight:32,display:'flex',alignItems:'center',justifyContent:'center',border:'1px solid transparent'}}
+                              onMouseEnter={e => e.currentTarget.style.borderColor='#374151'}
+                              onMouseLeave={e => e.currentTarget.style.borderColor='transparent'}
+                            >
+                              <span style={{fontWeight:700,fontSize:15,color: total >= 10000 ? '#10b981' : total >= 5000 ? '#f59e0b' : total > 0 ? '#e5e7eb' : '#374151'}}>
+                                {total > 0 ? Number(total).toLocaleString('id-ID') : '-'}
+                              </span>
+                            </div>
+                          )}
                         </td>
                       </tr>
                     );
