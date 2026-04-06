@@ -258,6 +258,17 @@ export default function Home() {
 
   const submitPostLink = async () => {
     if (!ptLink.trim() || !ptGroup) { setPtMsg('Link dan grup wajib diisi!'); return; }
+
+    // Cek duplikat: link yang sama tidak boleh dipakai di siklus manapun
+    const linkTrimmed = ptLink.trim();
+    const duplicate = postTracker.find(p =>
+      (p.gambar1_link === linkTrimmed || p.gambar2_link === linkTrimmed || p.video_link === linkTrimmed)
+    );
+    if (duplicate) {
+      setPtMsg(`Link sudah dipakai di ${duplicate.group_name || 'grup lain'} Siklus ${duplicate.cycle}. Gunakan link yang berbeda!`);
+      return;
+    }
+
     const grp = groups.find(g => g.id === ptGroup);
     // Cari existing entry untuk user + grup + cycle + period
     const existing = postTracker.find(p => p.user_id === user.id && p.group_id === ptGroup && p.cycle === ptCycle && p.period === ptPeriod);
