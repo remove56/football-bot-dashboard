@@ -322,7 +322,6 @@ export default function Home() {
     { id: 'weekly', label: 'Data Mingguan' },
     { id: 'posttrack', label: 'Tracking Postingan' },
     { id: 'groups', label: `Grup (${groups.length})` },
-    { id: 'submitlink', label: 'Link Postingan' },
     { id: 'users', label: 'Kelola User' },
     { id: 'activity', label: 'Activity Log' },
   ];
@@ -330,7 +329,6 @@ export default function Home() {
     { id: 'groups', label: 'Daftar Grup' },
     { id: 'weekly', label: 'Data Mingguan' },
     { id: 'posttrack', label: 'Tracking Postingan' },
-    { id: 'submitlink', label: 'Submit Link' },
   ];
   const tabs = isAdmin ? adminTabs : memberTabs;
 
