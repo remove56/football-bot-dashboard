@@ -202,6 +202,25 @@ export default function Home() {
     loadData();
   };
 
+  // Edit grup
+  const [editingGroup, setEditingGroup] = useState(null); // {id, club, name, url, league}
+
+  const startEditGroup = (g) => {
+    setEditingGroup({ id: g.id, club: g.club, name: g.name, url: g.url, league: g.league });
+  };
+
+  const saveEditGroup = async () => {
+    if (!editingGroup) return;
+    await supabase.from('groups').update({
+      club: editingGroup.club,
+      name: editingGroup.name,
+      url: editingGroup.url,
+      league: editingGroup.league,
+    }).eq('id', editingGroup.id);
+    setEditingGroup(null);
+    loadData();
+  };
+
   // Weekly stats functions
   const loadWeeklyStats = async (y, m) => {
     const { data } = await supabase.from('weekly_stats').select('*').eq('year', y).eq('month', m);
@@ -871,11 +890,33 @@ export default function Home() {
               <tbody>
                 {filteredGroups.map((g, i) => (
                   <tr key={g.id}>
-                    <td style={S.td}>{i+1}</td>
-                    <td style={S.td}><a href={g.url} target="_blank" style={S.link}>{g.name}</a></td>
-                    <td style={S.td}>{g.club}</td>
-                    <td style={S.td}><span style={{...S.badge('ok'),background:LEAGUE_COLORS[g.league]?'#1e3a5f':'#1f2937'}}>{g.league}</span></td>
-                    {isAdmin && <td style={S.td}><button onClick={()=>deleteGroup(g.id)} style={{...S.btn('#7f1d1d'),padding:'3px 8px',fontSize:11}}>Hapus</button></td>}
+                    {editingGroup?.id === g.id ? (
+                      <>
+                        <td style={S.td}>{i+1}</td>
+                        <td style={S.td}><input style={{...S.input,padding:'4px 8px',fontSize:12}} value={editingGroup.name} onChange={e=>setEditingGroup({...editingGroup,name:e.target.value})} /></td>
+                        <td style={S.td}><input style={{...S.input,padding:'4px 8px',fontSize:12}} value={editingGroup.club} onChange={e=>setEditingGroup({...editingGroup,club:e.target.value})} /></td>
+                        <td style={S.td}>
+                          <select style={{...S.input,padding:'4px 8px',fontSize:12}} value={editingGroup.league} onChange={e=>setEditingGroup({...editingGroup,league:e.target.value})}>
+                            {['La Liga','Premier League','Serie A','Bundesliga','Ligue 1','Liga 1','Timnas','Pemain','Lainnya'].map(l=><option key={l} value={l}>{l}</option>)}
+                          </select>
+                        </td>
+                        {isAdmin && <td style={S.td}>
+                          <button onClick={saveEditGroup} style={{...S.btn('#065f46'),padding:'3px 8px',fontSize:11,marginRight:4}}>Simpan</button>
+                          <button onClick={()=>setEditingGroup(null)} style={{...S.btn('#374151'),padding:'3px 8px',fontSize:11}}>Batal</button>
+                        </td>}
+                      </>
+                    ) : (
+                      <>
+                        <td style={S.td}>{i+1}</td>
+                        <td style={S.td}><a href={g.url} target="_blank" style={S.link}>{g.name}</a></td>
+                        <td style={S.td}>{g.club}</td>
+                        <td style={S.td}><span style={{...S.badge('ok'),background:LEAGUE_COLORS[g.league]?'#1e3a5f':'#1f2937'}}>{g.league}</span></td>
+                        {isAdmin && <td style={S.td}>
+                          <button onClick={()=>startEditGroup(g)} style={{...S.btn('#1e3a5f'),padding:'3px 8px',fontSize:11,marginRight:4}}>Edit</button>
+                          <button onClick={()=>deleteGroup(g.id)} style={{...S.btn('#7f1d1d'),padding:'3px 8px',fontSize:11}}>Hapus</button>
+                        </td>}
+                      </>
+                    )}
                   </tr>
                 ))}
               </tbody>
