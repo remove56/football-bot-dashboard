@@ -150,3 +150,26 @@ ALTER TABLE content_registry ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Content registry read" ON content_registry FOR SELECT USING (true);
 CREATE POLICY "Content registry insert" ON content_registry FOR INSERT WITH CHECK (true);
 CREATE POLICY "Content registry delete" ON content_registry FOR DELETE USING (true);
+
+-- 7. IMAGE HASHES (pHash — sidik jari visual gambar anti-duplikat)
+-- Menyimpan perceptual hash untuk deteksi gambar yang sama
+-- meski sudah di-crop, resize, compress, atau upload ulang
+CREATE TABLE IF NOT EXISTS image_hashes (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  phash VARCHAR(32) NOT NULL,           -- perceptual hash (hex)
+  source_url TEXT,                       -- URL asal gambar (opsional)
+  user_name VARCHAR(100),               -- member/bot yang posting
+  group_id VARCHAR(20),
+  group_name VARCHAR(200),
+  club VARCHAR(100),
+  content_type VARCHAR(20) DEFAULT 'gambar', -- gambar / video_thumb
+  source VARCHAR(20) DEFAULT 'bot',     -- bot / member
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS idx_image_phash ON image_hashes(phash);
+
+ALTER TABLE image_hashes ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Image hashes read" ON image_hashes FOR SELECT USING (true);
+CREATE POLICY "Image hashes insert" ON image_hashes FOR INSERT WITH CHECK (true);
+CREATE POLICY "Image hashes delete" ON image_hashes FOR DELETE USING (true);

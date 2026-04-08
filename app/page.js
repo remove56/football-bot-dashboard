@@ -458,6 +458,31 @@ export default function Home() {
       }
     }
 
+    // ── CEK 3: pHash — deteksi gambar SAMA meski di-save & upload ulang ──
+    // Hanya untuk gambar (bukan video), cek visual similarity via API
+    if (ptType === 'gambar1' || ptType === 'gambar2') {
+      setPtMsg('Memeriksa keaslian gambar...');
+      try {
+        const res = await fetch('/api/check-image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ imageUrl: linkTrimmed, userName: user.name }),
+        });
+        const result = await res.json();
+        if (result.isDuplicate && result.isOtherMember) {
+          setPtMsg(`DITOLAK: ${result.message}`);
+          return;
+        }
+        if (result.isDuplicate && result.match) {
+          setPtMsg(`Peringatan: Gambar mirip ${result.similarity}% dengan posting di "${result.match.group}". Gunakan gambar berbeda!`);
+          return;
+        }
+      } catch (e) {
+        // Kalau API error, lanjut tanpa pHash check (jangan block posting)
+        console.warn('pHash check failed:', e.message);
+      }
+    }
+
     const grp = groups.find(g => g.id === ptGroup);
     // Cari existing entry untuk user + grup + cycle + period
     const existing = postTracker.find(p => p.user_id === user.id && p.group_id === ptGroup && p.cycle === ptCycle && p.period === ptPeriod);
@@ -499,6 +524,30 @@ export default function Home() {
         content_type: ptType === 'video' ? 'video' : 'gambar',
         source: 'member',
       });
+    }
+
+    // ── Simpan pHash gambar ke image_hashes (untuk deteksi visual duplikat) ──
+    if (ptType === 'gambar1' || ptType === 'gambar2') {
+      try {
+        const res = await fetch('/api/check-image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ imageUrl: linkTrimmed, userName: user.name }),
+        });
+        const result = await res.json();
+        if (result.hash) {
+          await supabase.from('image_hashes').insert({
+            phash: result.hash,
+            source_url: linkTrimmed,
+            user_name: user.name,
+            group_id: ptGroup,
+            group_name: grp?.name || '',
+            club: grp?.club || '',
+            content_type: 'gambar',
+            source: 'member',
+          });
+        }
+      } catch (e) { /* silent — hash sudah di-check sebelumnya */ }
     }
 
     setPtLink(''); setPtMsg('Link berhasil disimpan!');
