@@ -338,13 +338,17 @@ export default function Home() {
   const submitPostLink = async () => {
     if (!ptLink.trim() || !ptGroup) { setPtMsg('Link dan grup wajib diisi!'); return; }
 
-    // Cek duplikat: link yang sama tidak boleh dipakai di siklus manapun
+    // Cek duplikat: cek SEMUA data di database (semua tanggal, semua periode)
     const linkTrimmed = ptLink.trim();
-    const duplicate = postTracker.find(p =>
-      (p.gambar1_link === linkTrimmed || p.gambar2_link === linkTrimmed || p.video_link === linkTrimmed)
-    );
-    if (duplicate) {
-      setPtMsg(`Link sudah dipakai di ${duplicate.group_name || 'grup lain'} Siklus ${duplicate.cycle}. Gunakan link yang berbeda!`);
+    const { data: allMatches } = await supabase
+      .from('posting_tracker')
+      .select('group_name, cycle, period, gambar1_link, gambar2_link, video_link')
+      .or(`gambar1_link.eq.${linkTrimmed},gambar2_link.eq.${linkTrimmed},video_link.eq.${linkTrimmed}`)
+      .limit(1);
+
+    if (allMatches && allMatches.length > 0) {
+      const d = allMatches[0];
+      setPtMsg(`Link sudah pernah dipakai di "${d.group_name}" Siklus ${d.cycle} (${d.period}). Gunakan link yang berbeda!`);
       return;
     }
 
