@@ -26,6 +26,54 @@ const S = {
 const LEAGUE_COLORS = {'La Liga':'#60a5fa','Premier League':'#c084fc','Serie A':'#86efac','Bundesliga':'#fbbf24','Ligue 1':'#a5b4fc','Liga 1':'#fca5a5','Timnas':'#fca5a5','Pemain':'#6ee7b7'};
 
 // ============================================================
+// CONTENT DEDUP — Normalisasi URL untuk deteksi duplikat
+// Mengekstrak "fingerprint" konten dari URL apapun
+// Bahkan jika URL di-edit, potong parameter, ganti query string
+// ============================================================
+function normalizeContentUrl(url) {
+  if (!url) return '';
+  try {
+    let u = url.trim();
+    // Hapus trailing slash dan fragment
+    u = u.replace(/[#?].*$/, '').replace(/\/+$/, '');
+
+    // Facebook video/reel/post — ekstrak ID numerik
+    // Contoh: facebook.com/reel/123456 → fb:123456
+    // Contoh: facebook.com/watch/?v=123456 → fb:123456
+    // Contoh: facebook.com/user/videos/123456 → fb:123456
+    const fbMatch = u.match(/facebook\.com.*?(?:\/videos\/|\/reel\/|\/posts\/|\/watch\/?\?v=|\/permalink\.php\?story_fbid=|\/photo[s]?[\/.]|pfbid\w+|\/\d{10,})/i);
+    if (fbMatch) {
+      // Cari ID numerik panjang (10+ digit) atau pfbid
+      const idMatch = u.match(/(pfbid\w+|\d{10,})/);
+      if (idMatch) return 'fb:' + idMatch[1];
+    }
+
+    // YouTube — ekstrak video ID
+    const ytMatch = u.match(/(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/)([\w-]{11})/i);
+    if (ytMatch) return 'yt:' + ytMatch[1];
+
+    // TikTok — ekstrak video ID
+    const ttMatch = u.match(/tiktok\.com.*?\/video\/(\d+)/i);
+    if (ttMatch) return 'tt:' + ttMatch[1];
+
+    // Instagram — ekstrak shortcode
+    const igMatch = u.match(/instagram\.com\/(?:p|reel|tv)\/([\w-]+)/i);
+    if (igMatch) return 'ig:' + igMatch[1];
+
+    // Twitter/X — ekstrak status ID
+    const twMatch = u.match(/(?:twitter|x)\.com\/\w+\/status\/(\d+)/i);
+    if (twMatch) return 'tw:' + twMatch[1];
+
+    // Default: ambil domain + path tanpa query/fragment
+    const parsed = new URL(u.startsWith('http') ? u : 'https://' + u);
+    return parsed.hostname.replace('www.', '') + parsed.pathname.replace(/\/+$/, '');
+  } catch (e) {
+    // Fallback: lowercase trimmed URL
+    return url.trim().toLowerCase().replace(/[#?].*$/, '').replace(/\/+$/, '');
+  }
+}
+
+// ============================================================
 // LOGIN SCREEN
 // ============================================================
 function LoginScreen({ onLogin }) {
@@ -147,12 +195,43 @@ export default function Home() {
 
   const submitLink = async () => {
     if (!linkUrl.trim()) { setLinkMsg('Link wajib diisi!'); return; }
+    const linkTrimmed = linkUrl.trim();
+    const fingerprint = normalizeContentUrl(linkTrimmed);
+
+    // Cek fingerprint di content_registry
+    if (fingerprint) {
+      const { data: fpMatch } = await supabase
+        .from('content_registry')
+        .select('user_name, group_name')
+        .eq('fingerprint', fingerprint)
+        .limit(1);
+
+      if (fpMatch && fpMatch.length > 0) {
+        const d = fpMatch[0];
+        if (d.user_name !== user.name) {
+          setLinkMsg(`Konten ini sudah dipakai oleh "${d.user_name}" di "${d.group_name}". Gunakan konten berbeda!`);
+          return;
+        }
+      }
+    }
+
     const grp = groups.find(g => g.id === linkGroup);
     await supabase.from('link_submissions').insert({
       user_id: user.id, user_name: user.name, group_id: linkGroup,
-      group_name: grp?.name || '', link: linkUrl.trim(), note: linkNote.trim(),
+      group_name: grp?.name || '', link: linkTrimmed, note: linkNote.trim(),
       status: 'approved',
     });
+
+    // Simpan fingerprint
+    if (fingerprint) {
+      await supabase.from('content_registry').insert({
+        fingerprint, original_url: linkTrimmed,
+        user_id: user.id, user_name: user.name,
+        group_id: linkGroup, group_name: grp?.name || '',
+        content_type: 'gambar', source: 'member',
+      });
+    }
+
     setLinkUrl(''); setLinkNote(''); setLinkMsg('Link berhasil disubmit!');
     loadData();
   };
@@ -338,8 +417,10 @@ export default function Home() {
   const submitPostLink = async () => {
     if (!ptLink.trim() || !ptGroup) { setPtMsg('Link dan grup wajib diisi!'); return; }
 
-    // Cek duplikat: cek SEMUA data di database (semua tanggal, semua periode)
     const linkTrimmed = ptLink.trim();
+    const fingerprint = normalizeContentUrl(linkTrimmed);
+
+    // ── CEK 1: Exact URL match di posting_tracker (semua tanggal) ──
     const { data: allMatches } = await supabase
       .from('posting_tracker')
       .select('group_name, cycle, period, gambar1_link, gambar2_link, video_link')
@@ -352,6 +433,31 @@ export default function Home() {
       return;
     }
 
+    // ── CEK 2: Fingerprint match di content_registry ──
+    // Ini menangkap konten yang SAMA meski URL di-edit/potong/ganti parameter
+    if (fingerprint) {
+      const { data: fpMatch } = await supabase
+        .from('content_registry')
+        .select('user_name, group_name, original_url, created_at')
+        .eq('fingerprint', fingerprint)
+        .limit(1);
+
+      if (fpMatch && fpMatch.length > 0) {
+        const d = fpMatch[0];
+        const isOwnContent = d.user_name === user.name;
+        if (!isOwnContent) {
+          setPtMsg(`Konten ini sudah dipakai oleh "${d.user_name}" di "${d.group_name}". Tidak boleh menggunakan konten yang sama dengan member lain!`);
+          return;
+        }
+        // Kalau konten sendiri tapi beda grup → juga blokir (anti duplikat antar grup)
+        const grp = groups.find(g => g.id === ptGroup);
+        if (d.group_name !== (grp?.name || '')) {
+          setPtMsg(`Kamu sudah menggunakan konten ini di "${d.group_name}". Gunakan konten berbeda untuk setiap grup!`);
+          return;
+        }
+      }
+    }
+
     const grp = groups.find(g => g.id === ptGroup);
     // Cari existing entry untuk user + grup + cycle + period
     const existing = postTracker.find(p => p.user_id === user.id && p.group_id === ptGroup && p.cycle === ptCycle && p.period === ptPeriod);
@@ -359,22 +465,20 @@ export default function Home() {
     if (existing) {
       // Update field yang sesuai
       const updates = {};
-      updates[`${ptType}_link`] = ptLink.trim();
+      updates[`${ptType}_link`] = linkTrimmed;
       updates[`${ptType}_at`] = new Date().toISOString();
-      // Cek apakah complete setelah update
-      const g1 = ptType === 'gambar1' ? ptLink.trim() : existing.gambar1_link;
-      const g2 = ptType === 'gambar2' ? ptLink.trim() : existing.gambar2_link;
-      const v = ptType === 'video' ? ptLink.trim() : existing.video_link;
+      const g1 = ptType === 'gambar1' ? linkTrimmed : existing.gambar1_link;
+      const g2 = ptType === 'gambar2' ? linkTrimmed : existing.gambar2_link;
+      const v = ptType === 'video' ? linkTrimmed : existing.video_link;
       updates.is_complete = !!(g1 && g2 && v);
       await supabase.from('posting_tracker').update(updates).eq('id', existing.id);
     } else {
-      // Insert baru
       const entry = {
         user_id: user.id, user_name: user.name, group_id: ptGroup, group_name: grp?.name || '',
         cycle: ptCycle, period: ptPeriod,
-        gambar1_link: ptType === 'gambar1' ? ptLink.trim() : null,
-        gambar2_link: ptType === 'gambar2' ? ptLink.trim() : null,
-        video_link: ptType === 'video' ? ptLink.trim() : null,
+        gambar1_link: ptType === 'gambar1' ? linkTrimmed : null,
+        gambar2_link: ptType === 'gambar2' ? linkTrimmed : null,
+        video_link: ptType === 'video' ? linkTrimmed : null,
         gambar1_at: ptType === 'gambar1' ? new Date().toISOString() : null,
         gambar2_at: ptType === 'gambar2' ? new Date().toISOString() : null,
         video_at: ptType === 'video' ? new Date().toISOString() : null,
@@ -382,6 +486,21 @@ export default function Home() {
       };
       await supabase.from('posting_tracker').insert(entry);
     }
+
+    // ── Simpan fingerprint ke content_registry ──
+    if (fingerprint) {
+      await supabase.from('content_registry').insert({
+        fingerprint,
+        original_url: linkTrimmed,
+        user_id: user.id,
+        user_name: user.name,
+        group_id: ptGroup,
+        group_name: grp?.name || '',
+        content_type: ptType === 'video' ? 'video' : 'gambar',
+        source: 'member',
+      });
+    }
+
     setPtLink(''); setPtMsg('Link berhasil disimpan!');
     loadPostTracker(ptPeriod);
   };

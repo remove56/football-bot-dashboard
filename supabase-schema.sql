@@ -126,3 +126,27 @@ CREATE POLICY "Links delete" ON link_submissions FOR DELETE USING (true);
 -- Activity: readable by all authenticated
 CREATE POLICY "Activity read" ON activity_log FOR SELECT USING (true);
 CREATE POLICY "Activity insert" ON activity_log FOR INSERT WITH CHECK (true);
+
+-- 6. CONTENT REGISTRY (anti-duplikat konten antar member)
+-- Menyimpan fingerprint URL konten supaya tidak bisa dipakai ulang
+CREATE TABLE IF NOT EXISTS content_registry (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  fingerprint VARCHAR(500) NOT NULL,  -- normalized URL / content ID
+  original_url TEXT NOT NULL,          -- URL asli yang disubmit
+  user_id UUID REFERENCES users(id),
+  user_name VARCHAR(100),
+  group_id VARCHAR(20),
+  group_name VARCHAR(200),
+  content_type VARCHAR(20) CHECK (content_type IN ('gambar', 'video')),
+  source VARCHAR(20) DEFAULT 'member', -- member / bot
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+-- Index untuk pencarian cepat fingerprint
+CREATE INDEX IF NOT EXISTS idx_content_fingerprint ON content_registry(fingerprint);
+
+-- RLS
+ALTER TABLE content_registry ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Content registry read" ON content_registry FOR SELECT USING (true);
+CREATE POLICY "Content registry insert" ON content_registry FOR INSERT WITH CHECK (true);
+CREATE POLICY "Content registry delete" ON content_registry FOR DELETE USING (true);
