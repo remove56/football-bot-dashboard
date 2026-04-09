@@ -33,42 +33,52 @@ const LEAGUE_COLORS = {'La Liga':'#60a5fa','Premier League':'#c084fc','Serie A':
 function normalizeContentUrl(url) {
   if (!url) return '';
   try {
-    let u = url.trim();
-    // Hapus trailing slash dan fragment
-    u = u.replace(/[#?].*$/, '').replace(/\/+$/, '');
+    const raw = url.trim(); // Simpan URL asli (dengan query params)
 
-    // Facebook video/reel/post — ekstrak ID numerik
-    // Contoh: facebook.com/reel/123456 → fb:123456
-    // Contoh: facebook.com/watch/?v=123456 → fb:123456
-    // Contoh: facebook.com/user/videos/123456 → fb:123456
-    const fbMatch = u.match(/facebook\.com.*?(?:\/videos\/|\/reel\/|\/posts\/|\/watch\/?\?v=|\/permalink\.php\?story_fbid=|\/photo[s]?[\/.]|pfbid\w+|\/\d{10,})/i);
-    if (fbMatch) {
-      // Cari ID numerik panjang (10+ digit) atau pfbid
-      const idMatch = u.match(/(pfbid\w+|\d{10,})/);
-      if (idMatch) return 'fb:' + idMatch[1];
-    }
+    // Facebook — ekstrak ID dari URL ASLI (sebelum strip params)
+    // fbid=123 atau /posts/123 atau /reel/123 atau pfbid...
+    const fbidMatch = raw.match(/[?&]fbid=(\d{10,})/i);
+    if (fbidMatch) return 'fb:' + fbidMatch[1];
+
+    const fbPostMatch = raw.match(/facebook\.com\/.*?\/posts\/(\d{10,})/i);
+    if (fbPostMatch) return 'fb:' + fbPostMatch[1];
+
+    const fbReelMatch = raw.match(/facebook\.com\/reel\/(\d{10,})/i);
+    if (fbReelMatch) return 'fb:' + fbReelMatch[1];
+
+    const fbVideoMatch = raw.match(/facebook\.com\/.*?\/videos\/(\d{10,})/i);
+    if (fbVideoMatch) return 'fb:' + fbVideoMatch[1];
+
+    const fbWatchMatch = raw.match(/facebook\.com\/watch\/?\?v=(\d{10,})/i);
+    if (fbWatchMatch) return 'fb:' + fbWatchMatch[1];
+
+    const fbStoryMatch = raw.match(/story_fbid=(\d{10,})/i);
+    if (fbStoryMatch) return 'fb:' + fbStoryMatch[1];
+
+    const pfbidMatch = raw.match(/(pfbid\w{20,})/i);
+    if (pfbidMatch) return 'fb:' + pfbidMatch[1];
 
     // YouTube — ekstrak video ID
-    const ytMatch = u.match(/(?:youtube\.com\/(?:watch\?v=|shorts\/|embed\/)|youtu\.be\/)([\w-]{11})/i);
+    const ytMatch = raw.match(/(?:youtube\.com\/(?:watch\?.*?v=|shorts\/|embed\/)|youtu\.be\/)([\w-]{11})/i);
     if (ytMatch) return 'yt:' + ytMatch[1];
 
     // TikTok — ekstrak video ID
-    const ttMatch = u.match(/tiktok\.com.*?\/video\/(\d+)/i);
+    const ttMatch = raw.match(/tiktok\.com.*?\/video\/(\d+)/i);
     if (ttMatch) return 'tt:' + ttMatch[1];
 
     // Instagram — ekstrak shortcode
-    const igMatch = u.match(/instagram\.com\/(?:p|reel|tv)\/([\w-]+)/i);
+    const igMatch = raw.match(/instagram\.com\/(?:p|reel|tv)\/([\w-]+)/i);
     if (igMatch) return 'ig:' + igMatch[1];
 
     // Twitter/X — ekstrak status ID
-    const twMatch = u.match(/(?:twitter|x)\.com\/\w+\/status\/(\d+)/i);
+    const twMatch = raw.match(/(?:twitter|x)\.com\/\w+\/status\/(\d+)/i);
     if (twMatch) return 'tw:' + twMatch[1];
 
-    // Default: ambil domain + path tanpa query/fragment
-    const parsed = new URL(u.startsWith('http') ? u : 'https://' + u);
+    // Default: domain + path (tanpa query/fragment)
+    const cleaned = raw.replace(/[#?].*$/, '').replace(/\/+$/, '');
+    const parsed = new URL(cleaned.startsWith('http') ? cleaned : 'https://' + cleaned);
     return parsed.hostname.replace('www.', '') + parsed.pathname.replace(/\/+$/, '');
   } catch (e) {
-    // Fallback: lowercase trimmed URL
     return url.trim().toLowerCase().replace(/[#?].*$/, '').replace(/\/+$/, '');
   }
 }
