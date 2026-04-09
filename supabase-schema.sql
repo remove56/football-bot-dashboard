@@ -173,3 +173,24 @@ ALTER TABLE image_hashes ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Image hashes read" ON image_hashes FOR SELECT USING (true);
 CREATE POLICY "Image hashes insert" ON image_hashes FOR INSERT WITH CHECK (true);
 CREATE POLICY "Image hashes delete" ON image_hashes FOR DELETE USING (true);
+
+-- 8. REELS TASKS (tugas posting video ke beranda)
+CREATE TABLE IF NOT EXISTS reels_tasks (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  account_id VARCHAR(20) NOT NULL,
+  account_name VARCHAR(100) NOT NULL,
+  keyword TEXT,
+  status VARCHAR(20) DEFAULT 'pending' CHECK (status IN ('pending', 'running', 'done', 'failed')),
+  result_url TEXT,
+  video_title TEXT,
+  error_message TEXT,
+  started_at TIMESTAMPTZ,
+  completed_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+ALTER TABLE reels_tasks ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Reels tasks read" ON reels_tasks FOR SELECT USING (true);
+CREATE POLICY "Reels tasks insert" ON reels_tasks FOR INSERT WITH CHECK (true);
+CREATE POLICY "Reels tasks update" ON reels_tasks FOR UPDATE USING (true);
+CREATE POLICY "Reels tasks delete" ON reels_tasks FOR DELETE USING (true);

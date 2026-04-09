@@ -197,6 +197,9 @@ export default function Home() {
       setActivity(a || []);
       const { data: u } = await supabase.from('users').select('id,username,name,role,created_at');
       setUsers(u || []);
+      // Load reels tasks
+      const { data: rt } = await supabase.from('reels_tasks').select('*').order('created_at', { ascending: false }).limit(50);
+      setReelsTasks(rt || []);
     } else {
       const { data: l } = await supabase.from('link_submissions').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
       setLinks(l || []);
@@ -570,6 +573,39 @@ export default function Home() {
     loadPostTracker(ptPeriod);
   };
 
+  // Reels Bot state
+  const [reelsTasks, setReelsTasks] = useState([]);
+  const [reelsKeyword, setReelsKeyword] = useState('');
+  const [reelsMsg, setReelsMsg] = useState('');
+
+  const REELS_ACCOUNTS = [
+    { id: '89654516608', name: 'Bima Pratama' },
+    { id: '89654520329', name: 'Aditya Prakoso' },
+  ];
+
+  const loadReelsTasks = async () => {
+    const { data } = await supabase.from('reels_tasks').select('*').order('created_at', { ascending: false }).limit(50);
+    setReelsTasks(data || []);
+  };
+
+  const createReelsTask = async (accountId) => {
+    const account = REELS_ACCOUNTS.find(a => a.id === accountId);
+    if (!account) return;
+    const { error } = await supabase.from('reels_tasks').insert({
+      account_id: account.id,
+      account_name: account.name,
+      keyword: reelsKeyword || null,
+      status: 'pending',
+    });
+    if (error) setReelsMsg('Error: ' + error.message);
+    else { setReelsMsg(`Tugas reels dibuat untuk ${account.name}!`); loadReelsTasks(); }
+  };
+
+  const deleteReelsTask = async (id) => {
+    await supabase.from('reels_tasks').delete().eq('id', id);
+    loadReelsTasks();
+  };
+
   // Summary per member
   const getMemberPostSummary = () => {
     const map = {};
@@ -594,6 +630,7 @@ export default function Home() {
     { id: 'weekly', label: 'Data Mingguan' },
     { id: 'posttrack', label: 'Tracking Postingan' },
     { id: 'botqueue', label: 'Jalankan Bot' },
+    { id: 'reelsbot', label: 'Reels Bot' },
     { id: 'groups', label: `Grup (${groups.length})` },
     { id: 'users', label: 'Kelola User' },
     { id: 'activity', label: 'Activity Log' },
@@ -1030,6 +1067,93 @@ export default function Home() {
                 <code style={{background:'#1f2937',padding:'4px 8px',borderRadius:4,fontSize:12,marginTop:4,display:'inline-block'}}>node src/bot-worker.js</code><br/>
                 <span style={{fontSize:11}}>Bot akan otomatis ambil tugas dari antrian, posting ke Facebook, dan update status.</span>
               </p>
+            </div>
+          </>
+        )}
+
+        {/* REELS BOT — admin only */}
+        {tab === 'reelsbot' && isAdmin && (
+          <>
+            <div style={S.box}>
+              <h3 style={{color:'#FFD700',marginBottom:8,fontSize:16}}>Reels Bot — Video Highlight ke Beranda</h3>
+              <p style={{color:'#9ca3af',fontSize:12,marginBottom:16}}>
+                Generate video 2 menit highlight bola + watermark ColokNet → posting ke beranda Facebook.
+                Rotasi 2 akun setiap 3 jam otomatis.
+              </p>
+
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16,marginBottom:20}}>
+                {REELS_ACCOUNTS.map(acc => (
+                  <div key={acc.id} style={{background:'#1a1a2e',border:'1px solid #2d2d5e',borderRadius:12,padding:16}}>
+                    <div style={{fontSize:15,fontWeight:700,color:'#e5e7eb'}}>{acc.name}</div>
+                    <div style={{fontSize:12,color:'#6b7280',marginBottom:12}}>ID: {acc.id}</div>
+                    <button onClick={()=>createReelsTask(acc.id)} style={{...S.btn('#7c3aed'),background:'#2d1b69',color:'#c084fc',width:'100%',textAlign:'center'}}>
+                      Buat Tugas Reels
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              <div style={{marginBottom:16}}>
+                <label style={{display:'block',fontSize:12,color:'#9ca3af',marginBottom:4}}>Keyword pencarian (opsional, kosongkan = random)</label>
+                <input style={S.input} placeholder="Contoh: messi goals, premier league highlights" value={reelsKeyword} onChange={e=>setReelsKeyword(e.target.value)} />
+              </div>
+
+              {reelsMsg && <p style={{marginTop:8,fontSize:13,color:reelsMsg.includes('Error')?'#ef4444':'#10b981'}}>{reelsMsg}</p>}
+
+              <div style={{marginTop:20,padding:16,background:'#0d1117',borderRadius:8,border:'1px solid #1f2937'}}>
+                <h4 style={{color:'#9ca3af',fontSize:13,marginBottom:8}}>Cara Kerja:</h4>
+                <ul style={{color:'#6b7280',fontSize:12,margin:0,paddingLeft:16,lineHeight:1.8}}>
+                  <li>Bot cari video highlight bola di YouTube (2-10 menit)</li>
+                  <li>Crop portrait 9:16 (1080x1920) + watermark ColokNet</li>
+                  <li>Background music + translate judul ke Bahasa Indonesia</li>
+                  <li>Posting ke beranda Facebook akun yang dipilih</li>
+                  <li>Auto mode: setiap 3 jam bergantian 2 akun</li>
+                  <li>Jalankan manual: <code style={{color:'#60a5fa'}}>node src/reels-worker.js</code></li>
+                </ul>
+              </div>
+            </div>
+
+            {/* Daftar tugas reels */}
+            <div style={S.box}>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
+                <h3 style={{color:'#FFD700',fontSize:16,margin:0}}>Riwayat Tugas Reels</h3>
+                <button onClick={loadReelsTasks} style={S.btn('#374151')}>Refresh</button>
+              </div>
+
+              {reelsTasks.length === 0 ? (
+                <p style={{color:'#6b7280',textAlign:'center',padding:20}}>Belum ada tugas reels</p>
+              ) : (
+                <table style={{width:'100%',borderCollapse:'collapse'}}>
+                  <thead>
+                    <tr>
+                      <th style={S.th}>#</th>
+                      <th style={S.th}>Akun</th>
+                      <th style={S.th}>Keyword</th>
+                      <th style={S.th}>Status</th>
+                      <th style={S.th}>Waktu</th>
+                      <th style={S.th}>Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {reelsTasks.map((t, i) => (
+                      <tr key={t.id}>
+                        <td style={S.td}>{i+1}</td>
+                        <td style={{...S.td,fontWeight:600}}>{t.account_name}</td>
+                        <td style={{...S.td,fontSize:12,color:'#9ca3af'}}>{t.keyword || 'random'}</td>
+                        <td style={S.td}>
+                          <span style={S.badge(t.status === 'done' ? 'ok' : t.status === 'failed' ? 'fail' : 'pending')}>
+                            {t.status}
+                          </span>
+                        </td>
+                        <td style={{...S.td,fontSize:12,color:'#6b7280'}}>{new Date(t.created_at).toLocaleString('id-ID')}</td>
+                        <td style={S.td}>
+                          <button onClick={()=>deleteReelsTask(t.id)} style={{...S.btn('#7f1d1d'),fontSize:11,padding:'4px 8px'}}>Hapus</button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
             </div>
           </>
         )}
