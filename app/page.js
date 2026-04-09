@@ -130,6 +130,15 @@ export default function Home() {
   const [leagueFilter, setLeagueFilter] = useState('');
   const [search, setSearch] = useState('');
 
+  // Bot accounts
+  const [botAccounts, setBotAccounts] = useState([]);
+  const [baId, setBaId] = useState('');
+  const [baName, setBaName] = useState('');
+  const [baType, setBaType] = useState('reels');
+  const [baNotes, setBaNotes] = useState('');
+  const [baMsg, setBaMsg] = useState('');
+  const [baEditing, setBaEditing] = useState(null);
+
   // Link form
   const [linkGroup, setLinkGroup] = useState('');
   const [linkUrl, setLinkUrl] = useState('');
@@ -200,6 +209,9 @@ export default function Home() {
       // Load reels tasks
       const { data: rt } = await supabase.from('reels_tasks').select('*').order('created_at', { ascending: false }).limit(50);
       setReelsTasks(rt || []);
+      // Load bot accounts
+      const { data: ba } = await supabase.from('bot_accounts').select('*').order('created_at');
+      setBotAccounts(ba || []);
     } else {
       const { data: l } = await supabase.from('link_submissions').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
       setLinks(l || []);
@@ -573,32 +585,64 @@ export default function Home() {
     loadPostTracker(ptPeriod);
   };
 
+  // Bot accounts CRUD
+  const addBotAccount = async () => {
+    if (!baId || !baName) { setBaMsg('ID dan Nama wajib diisi!'); return; }
+    const { error } = await supabase.from('bot_accounts').insert({
+      account_id: baId.trim(), account_name: baName.trim(),
+      account_type: baType, notes: baNotes.trim() || null,
+    });
+    if (error) setBaMsg('Error: ' + error.message);
+    else { setBaMsg(`Akun "${baName}" ditambahkan!`); setBaId(''); setBaName(''); setBaNotes(''); loadData(); }
+  };
+
+  const updateBotAccount = async () => {
+    if (!baEditing) return;
+    await supabase.from('bot_accounts').update({
+      account_id: baId.trim(), account_name: baName.trim(),
+      account_type: baType, notes: baNotes.trim() || null,
+    }).eq('id', baEditing);
+    setBaEditing(null); setBaId(''); setBaName(''); setBaNotes(''); setBaMsg('Akun diupdate!'); loadData();
+  };
+
+  const toggleBotAccount = async (id, isActive) => {
+    await supabase.from('bot_accounts').update({ is_active: !isActive }).eq('id', id);
+    loadData();
+  };
+
+  const deleteBotAccount = async (id) => {
+    if (!confirm('Hapus akun bot ini?')) return;
+    await supabase.from('bot_accounts').delete().eq('id', id);
+    loadData();
+  };
+
+  const startEditAccount = (a) => {
+    setBaEditing(a.id); setBaId(a.account_id); setBaName(a.account_name); setBaType(a.account_type); setBaNotes(a.notes || '');
+  };
+
   // Reels Bot state
   const [reelsTasks, setReelsTasks] = useState([]);
   const [reelsKeyword, setReelsKeyword] = useState('');
   const [reelsMsg, setReelsMsg] = useState('');
 
-  const REELS_ACCOUNTS = [
-    { id: '89654516608', name: 'Bima Pratama' },
-    { id: '89654520329', name: 'Aditya Prakoso' },
-  ];
+  // Dynamic accounts — dari database
+  const reelsAccounts = botAccounts.filter(a => (a.account_type === 'reels' || a.account_type === 'both') && a.is_active);
+  const grupAccounts = botAccounts.filter(a => (a.account_type === 'grup' || a.account_type === 'both') && a.is_active);
 
   const loadReelsTasks = async () => {
     const { data } = await supabase.from('reels_tasks').select('*').order('created_at', { ascending: false }).limit(50);
     setReelsTasks(data || []);
   };
 
-  const createReelsTask = async (accountId) => {
-    const account = REELS_ACCOUNTS.find(a => a.id === accountId);
-    if (!account) return;
+  const createReelsTask = async (accountId, accountName) => {
     const { error } = await supabase.from('reels_tasks').insert({
-      account_id: account.id,
-      account_name: account.name,
+      account_id: accountId,
+      account_name: accountName,
       keyword: reelsKeyword || null,
       status: 'pending',
     });
     if (error) setReelsMsg('Error: ' + error.message);
-    else { setReelsMsg(`Tugas reels dibuat untuk ${account.name}!`); loadReelsTasks(); }
+    else { setReelsMsg(`Tugas reels dibuat untuk ${accountName}!`); loadReelsTasks(); }
   };
 
   const deleteReelsTask = async (id) => {
@@ -1074,24 +1118,102 @@ export default function Home() {
         {/* REELS BOT — admin only */}
         {tab === 'reelsbot' && isAdmin && (
           <>
+            {/* Kelola Akun Bot */}
             <div style={S.box}>
-              <h3 style={{color:'#FFD700',marginBottom:8,fontSize:16}}>Reels Bot — Video Highlight ke Beranda</h3>
+              <h3 style={{color:'#FFD700',marginBottom:8,fontSize:16}}>Kelola Akun Bot</h3>
+              <p style={{color:'#9ca3af',fontSize:12,marginBottom:16}}>Tambah, edit, atau hapus akun Facebook untuk bot. Berlaku untuk bot grup dan reels.</p>
+
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr auto',gap:10,marginBottom:10,alignItems:'end'}}>
+                <div><label style={{display:'block',fontSize:12,color:'#9ca3af',marginBottom:4}}>ID Akun (nomor HP/email)</label>
+                  <input style={S.input} placeholder="89654516608" value={baId} onChange={e=>setBaId(e.target.value)} /></div>
+                <div><label style={{display:'block',fontSize:12,color:'#9ca3af',marginBottom:4}}>Nama Profil</label>
+                  <input style={S.input} placeholder="Bima Pratama" value={baName} onChange={e=>setBaName(e.target.value)} /></div>
+                <div><label style={{display:'block',fontSize:12,color:'#9ca3af',marginBottom:4}}>Tipe Bot</label>
+                  <select style={S.input} value={baType} onChange={e=>setBaType(e.target.value)}>
+                    <option value="reels">Reels (Beranda)</option>
+                    <option value="grup">Grup</option>
+                    <option value="both">Keduanya</option>
+                  </select></div>
+                {baEditing ? (
+                  <div style={{display:'flex',gap:6}}>
+                    <button onClick={updateBotAccount} style={{...S.btn('#065f46'),padding:'10px 14px'}}>Simpan</button>
+                    <button onClick={()=>{setBaEditing(null);setBaId('');setBaName('');setBaNotes('');}} style={{...S.btn('#374151'),padding:'10px 14px'}}>Batal</button>
+                  </div>
+                ) : (
+                  <button onClick={addBotAccount} style={{...S.btn('#065f46'),padding:'10px 18px'}}>Tambah</button>
+                )}
+              </div>
+              <div style={{marginBottom:10}}>
+                <input style={S.input} placeholder="Catatan (opsional)" value={baNotes} onChange={e=>setBaNotes(e.target.value)} />
+              </div>
+              {baMsg && <p style={{fontSize:13,color:baMsg.includes('Error')?'#ef4444':'#10b981'}}>{baMsg}</p>}
+
+              {/* Tabel akun */}
+              <table style={{width:'100%',borderCollapse:'collapse',marginTop:16}}>
+                <thead>
+                  <tr>
+                    <th style={S.th}>#</th>
+                    <th style={S.th}>Nama</th>
+                    <th style={S.th}>ID Akun</th>
+                    <th style={S.th}>Tipe</th>
+                    <th style={S.th}>Status</th>
+                    <th style={S.th}>Total Post</th>
+                    <th style={S.th}>Catatan</th>
+                    <th style={S.th}>Aksi</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {botAccounts.map((a, i) => (
+                    <tr key={a.id}>
+                      <td style={S.td}>{i+1}</td>
+                      <td style={{...S.td,fontWeight:600}}>{a.account_name}</td>
+                      <td style={{...S.td,fontSize:12,color:'#9ca3af'}}>{a.account_id}</td>
+                      <td style={S.td}><span style={S.badge(a.account_type==='reels'?'pending':a.account_type==='grup'?'ok':'admin')}>{a.account_type}</span></td>
+                      <td style={S.td}>
+                        <span onClick={()=>toggleBotAccount(a.id,a.is_active)} style={{cursor:'pointer',padding:'2px 8px',borderRadius:4,fontSize:11,fontWeight:600,background:a.is_active?'#065f46':'#7f1d1d',color:a.is_active?'#6ee7b7':'#fca5a5'}}>
+                          {a.is_active ? 'Aktif' : 'Nonaktif'}
+                        </span>
+                      </td>
+                      <td style={{...S.td,textAlign:'center'}}>{a.total_posts || 0}</td>
+                      <td style={{...S.td,fontSize:12,color:'#6b7280'}}>{a.notes || '-'}</td>
+                      <td style={S.td}>
+                        <div style={{display:'flex',gap:4}}>
+                          <button onClick={()=>startEditAccount(a)} style={{...S.btn('#1e3a5f'),fontSize:11,padding:'4px 8px'}}>Edit</button>
+                          <button onClick={()=>deleteBotAccount(a.id)} style={{...S.btn('#7f1d1d'),fontSize:11,padding:'4px 8px'}}>Hapus</button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                  {botAccounts.length === 0 && <tr><td colSpan={8} style={{...S.td,textAlign:'center',color:'#6b7280'}}>Belum ada akun bot. Tambahkan di atas.</td></tr>}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Buat Tugas Reels */}
+            <div style={S.box}>
+              <h3 style={{color:'#FFD700',marginBottom:8,fontSize:16}}>Buat Tugas Reels — Video Highlight ke Beranda</h3>
               <p style={{color:'#9ca3af',fontSize:12,marginBottom:16}}>
-                Generate video 2 menit highlight bola + watermark ColokNet → posting ke beranda Facebook.
-                Rotasi 2 akun setiap 3 jam otomatis.
+                Pilih akun reels untuk generate video 2 menit + watermark ColokNet → posting ke beranda.
               </p>
 
-              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16,marginBottom:20}}>
-                {REELS_ACCOUNTS.map(acc => (
-                  <div key={acc.id} style={{background:'#1a1a2e',border:'1px solid #2d2d5e',borderRadius:12,padding:16}}>
-                    <div style={{fontSize:15,fontWeight:700,color:'#e5e7eb'}}>{acc.name}</div>
-                    <div style={{fontSize:12,color:'#6b7280',marginBottom:12}}>ID: {acc.id}</div>
-                    <button onClick={()=>createReelsTask(acc.id)} style={{...S.btn('#7c3aed'),background:'#2d1b69',color:'#c084fc',width:'100%',textAlign:'center'}}>
-                      Buat Tugas Reels
-                    </button>
-                  </div>
-                ))}
-              </div>
+              {reelsAccounts.length === 0 ? (
+                <p style={{color:'#fbbf24',fontSize:13,padding:16,background:'#1a1a2e',borderRadius:8,border:'1px solid #2d2d5e'}}>
+                  Belum ada akun tipe "Reels" atau "Keduanya" yang aktif. Tambahkan akun di atas.
+                </p>
+              ) : (
+                <div style={{display:'grid',gridTemplateColumns:`repeat(${Math.min(reelsAccounts.length, 3)}, 1fr)`,gap:16,marginBottom:20}}>
+                  {reelsAccounts.map(acc => (
+                    <div key={acc.id} style={{background:'#1a1a2e',border:'1px solid #2d2d5e',borderRadius:12,padding:16}}>
+                      <div style={{fontSize:15,fontWeight:700,color:'#e5e7eb'}}>{acc.account_name}</div>
+                      <div style={{fontSize:12,color:'#6b7280',marginBottom:4}}>ID: {acc.account_id}</div>
+                      <div style={{fontSize:11,color:'#6b7280',marginBottom:12}}>Total: {acc.total_posts || 0} posting</div>
+                      <button onClick={()=>createReelsTask(acc.account_id, acc.account_name)} style={{...S.btn('#7c3aed'),background:'#2d1b69',color:'#c084fc',width:'100%',textAlign:'center'}}>
+                        Buat Tugas Reels
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               <div style={{marginBottom:16}}>
                 <label style={{display:'block',fontSize:12,color:'#9ca3af',marginBottom:4}}>Keyword pencarian (opsional, kosongkan = random)</label>
@@ -1107,7 +1229,8 @@ export default function Home() {
                   <li>Crop portrait 9:16 (1080x1920) + watermark ColokNet</li>
                   <li>Background music + translate judul ke Bahasa Indonesia</li>
                   <li>Posting ke beranda Facebook akun yang dipilih</li>
-                  <li>Auto mode: setiap 3 jam bergantian 2 akun</li>
+                  <li>Auto mode: setiap 3 jam bergantian akun aktif</li>
+                  <li>Save cookies dulu: <code style={{color:'#60a5fa'}}>node src/save-cookies-reels.js [ID_AKUN]</code></li>
                   <li>Jalankan manual: <code style={{color:'#60a5fa'}}>node src/reels-worker.js</code></li>
                 </ul>
               </div>

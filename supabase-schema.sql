@@ -194,3 +194,22 @@ CREATE POLICY "Reels tasks read" ON reels_tasks FOR SELECT USING (true);
 CREATE POLICY "Reels tasks insert" ON reels_tasks FOR INSERT WITH CHECK (true);
 CREATE POLICY "Reels tasks update" ON reels_tasks FOR UPDATE USING (true);
 CREATE POLICY "Reels tasks delete" ON reels_tasks FOR DELETE USING (true);
+
+-- 9. BOT ACCOUNTS (akun Facebook untuk bot — bisa tambah/edit/hapus dari dashboard)
+CREATE TABLE IF NOT EXISTS bot_accounts (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  account_id VARCHAR(30) NOT NULL,       -- nomor telepon / email login
+  account_name VARCHAR(100) NOT NULL,    -- nama profil Facebook
+  account_type VARCHAR(20) DEFAULT 'reels' CHECK (account_type IN ('grup', 'reels', 'both')),
+  is_active BOOLEAN DEFAULT true,
+  last_used_at TIMESTAMPTZ,
+  total_posts INTEGER DEFAULT 0,
+  notes TEXT,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+ALTER TABLE bot_accounts ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Bot accounts read" ON bot_accounts FOR SELECT USING (true);
+CREATE POLICY "Bot accounts insert" ON bot_accounts FOR INSERT WITH CHECK (true);
+CREATE POLICY "Bot accounts update" ON bot_accounts FOR UPDATE USING (true);
+CREATE POLICY "Bot accounts delete" ON bot_accounts FOR DELETE USING (true);
