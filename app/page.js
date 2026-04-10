@@ -622,11 +622,9 @@ export default function Home() {
     setBgEditing(a.id); setBgId(a.account_id); setBgName(a.account_name); setBgNotes(a.notes || '');
   };
 
-  // Auto-fill nama member saat akun grup dipilih
+  // Pilih akun grup (nama member dipilih terpisah dari dropdown user)
   const selectGrupAccount = (accountId) => {
     setTqAccountId(accountId);
-    const acc = botAccounts.find(a => a.account_id === accountId);
-    if (acc) setTqMember(acc.account_name);
   };
 
   // Bot accounts CRUD
@@ -1160,8 +1158,14 @@ export default function Home() {
               )}
 
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:16}}>
-                <div><label style={{display:'block',fontSize:12,color:'#9ca3af',marginBottom:4}}>Nama Member (auto-fill dari akun terpilih)</label>
-                  <input style={S.input} placeholder="Otomatis terisi saat pilih akun" value={tqMember} onChange={e=>setTqMember(e.target.value)} /></div>
+                <div><label style={{display:'block',fontSize:12,color:'#9ca3af',marginBottom:4}}>Nama Member (pilih dari daftar user)</label>
+                  <select style={S.input} value={tqMember} onChange={e=>setTqMember(e.target.value)}>
+                    <option value="">— Pilih Member —</option>
+                    {users.map(u => (
+                      <option key={u.id} value={u.name}>{u.name} ({u.role})</option>
+                    ))}
+                  </select>
+                </div>
                 <div><label style={{display:'block',fontSize:12,color:'#9ca3af',marginBottom:4}}>Jenis Posting</label>
                   <select style={S.input} value={tqType} onChange={e=>setTqType(e.target.value)}>
                     <option value="full">2 Berita + 1 Video (Full)</option>
