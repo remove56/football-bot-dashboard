@@ -84,6 +84,20 @@ function normalizeContentUrl(url) {
 }
 
 // ============================================================
+// HELPER: Kategorisasi performa target harian
+// ============================================================
+function getTargetCategory(completed, target) {
+  if (!target || target === 0) return { label: 'Tanpa Target', color: '#6b7280', bg: '#1f2937' };
+  if (completed === 0) return { label: 'Belum Mulai', color: '#9ca3af', bg: '#1f2937' };
+  const pct = (completed / target) * 100;
+  if (pct >= 100) return { label: 'Sangat Bagus', color: '#10b981', bg: '#064e3b' };
+  if (pct >= 70) return { label: 'Bagus', color: '#3b82f6', bg: '#1e3a5f' };
+  if (pct >= 50) return { label: 'Sedang', color: '#f59e0b', bg: '#78350f' };
+  if (pct >= 40) return { label: 'Buruk', color: '#f97316', bg: '#7c2d12' };
+  return { label: 'Sangat Buruk', color: '#ef4444', bg: '#7f1d1d' };
+}
+
+// ============================================================
 // LOGIN SCREEN
 // ============================================================
 function LoginScreen({ onLogin }) {
@@ -212,7 +226,7 @@ export default function Home() {
       setLinks(l || []);
       const { data: a } = await supabase.from('activity_log').select('*').order('created_at', { ascending: false }).limit(200);
       setActivity(a || []);
-      const { data: u } = await supabase.from('users').select('id,username,name,role,created_at');
+      const { data: u } = await supabase.from('users').select('id,username,name,role,daily_target,created_at');
       setUsers(u || []);
       // Load reels tasks
       const { data: rt } = await supabase.from('reels_tasks').select('*').order('created_at', { ascending: false }).limit(50);
@@ -223,6 +237,9 @@ export default function Home() {
     } else {
       const { data: l } = await supabase.from('link_submissions').select('*').eq('user_id', user.id).order('created_at', { ascending: false });
       setLinks(l || []);
+      // Member juga load semua users (hanya field publik) supaya bisa lihat progress target
+      const { data: u } = await supabase.from('users').select('id,name,role,daily_target');
+      setUsers(u || []);
     }
   };
 
@@ -947,6 +964,67 @@ export default function Home() {
         {/* TRACKING POSTINGAN */}
         {tab === 'posttrack' && (
           <>
+            {/* PROGRESS TARGET HARI INI — visible untuk admin & member */}
+            <div style={S.box}>
+              <h3 style={{color:'#FFD700',marginBottom:8,fontSize:16}}>Progress Target Hari Ini</h3>
+              <p style={{color:'#9ca3af',fontSize:12,marginBottom:16}}>
+                Target grup harian per member. Kategori berdasarkan persentase pencapaian: Sangat Bagus (100%) / Bagus (70-99%) / Sedang (50-69%) / Buruk (40-49%) / Sangat Buruk (&lt;40%).
+              </p>
+              {(() => {
+                const today = new Date().toISOString().split('T')[0];
+                const todayTracker = postTracker.filter(p => p.period === today);
+                const members = users.filter(u => u.role === 'member');
+                return (
+                  <table style={{width:'100%',borderCollapse:'collapse'}}>
+                    <thead>
+                      <tr>
+                        <th style={S.th}>#</th>
+                        <th style={S.th}>Member</th>
+                        <th style={{...S.th,textAlign:'center'}}>Target</th>
+                        <th style={{...S.th,textAlign:'center'}}>Tercapai</th>
+                        <th style={{...S.th,textAlign:'center'}}>Progress</th>
+                        <th style={{...S.th,textAlign:'center'}}>Kategori</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {members.length === 0 && (
+                        <tr><td colSpan={6} style={{...S.td,textAlign:'center',color:'#6b7280'}}>Belum ada member terdaftar</td></tr>
+                      )}
+                      {members.map((m, i) => {
+                        const target = m.daily_target || 0;
+                        const memberPosts = todayTracker.filter(p => p.user_name === m.name);
+                        const completedGroups = new Set(memberPosts.map(p => p.group_id)).size;
+                        const cat = getTargetCategory(completedGroups, target);
+                        const pct = target > 0 ? Math.min(100, Math.round((completedGroups / target) * 100)) : 0;
+                        const isMe = !isAdmin && user && m.id === user.id;
+                        return (
+                          <tr key={m.id} style={isMe?{background:'#1a2744'}:undefined}>
+                            <td style={S.td}>{i+1}</td>
+                            <td style={{...S.td,fontWeight:600}}>{m.name}{isMe && <span style={{marginLeft:6,fontSize:10,color:'#FFD700'}}>(Kamu)</span>}</td>
+                            <td style={{...S.td,textAlign:'center'}}>{target || '-'}</td>
+                            <td style={{...S.td,textAlign:'center',fontWeight:700,color:cat.color}}>{completedGroups}</td>
+                            <td style={{...S.td,textAlign:'center'}}>
+                              <div style={{display:'flex',alignItems:'center',gap:8,justifyContent:'center'}}>
+                                <div style={{width:120,height:8,background:'#1f2937',borderRadius:4,overflow:'hidden'}}>
+                                  <div style={{width:`${pct}%`,height:'100%',background:cat.color,borderRadius:4}}/>
+                                </div>
+                                <span style={{fontSize:11,color:cat.color,fontWeight:600,minWidth:35}}>{pct}%</span>
+                              </div>
+                            </td>
+                            <td style={{...S.td,textAlign:'center'}}>
+                              <span style={{padding:'4px 12px',borderRadius:6,fontSize:11,fontWeight:700,background:cat.bg,color:cat.color,border:`1px solid ${cat.color}`}}>
+                                {cat.label}
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                );
+              })()}
+            </div>
+
             {/* Form submit */}
             <div style={S.box}>
               <h3 style={{color:'#FFD700',marginBottom:8,fontSize:16}}>Submit Postingan</h3>
@@ -1544,13 +1622,38 @@ export default function Home() {
             </div>
             <div style={S.box}>
               <h3 style={{color:'#FFD700',marginBottom:16,fontSize:16}}>Daftar User</h3>
+              <p style={{color:'#9ca3af',fontSize:12,marginBottom:12}}>Edit target grup harian per member langsung di kolom Target. Tekan Enter atau klik di luar untuk simpan.</p>
               <table style={{width:'100%',borderCollapse:'collapse'}}>
-                <thead><tr><th style={S.th}>Username</th><th style={S.th}>Nama</th><th style={S.th}>Role</th><th style={S.th}>Dibuat</th><th style={S.th}>Aksi</th></tr></thead>
+                <thead><tr><th style={S.th}>Username</th><th style={S.th}>Nama</th><th style={S.th}>Role</th><th style={S.th}>Target Grup/Hari</th><th style={S.th}>Dibuat</th><th style={S.th}>Aksi</th></tr></thead>
                 <tbody>
                   {users.map(u => (
-                    <tr key={u.id}><td style={S.td}>{u.username}</td><td style={S.td}>{u.name}</td><td style={S.td}><span style={S.badge(u.role)}>{u.role}</span></td>
-                    <td style={{...S.td,fontSize:12,color:'#6b7280'}}>{u.created_at?new Date(u.created_at).toLocaleDateString('id-ID'):''}</td>
-                    <td style={S.td}>{u.username==='admin'?<span style={{color:'#6b7280',fontSize:11}}>Owner</span>:<button onClick={()=>deleteUser(u.id)} style={{...S.btn('#7f1d1d'),padding:'3px 8px',fontSize:11}}>Hapus</button>}</td></tr>
+                    <tr key={u.id}>
+                      <td style={S.td}>{u.username}</td>
+                      <td style={S.td}>{u.name}</td>
+                      <td style={S.td}><span style={S.badge(u.role)}>{u.role}</span></td>
+                      <td style={S.td}>
+                        {u.role === 'member' ? (
+                          <input
+                            type="number"
+                            min="0"
+                            defaultValue={u.daily_target || 0}
+                            style={{...S.input,width:80,padding:'6px 10px'}}
+                            onBlur={async (e) => {
+                              const val = parseInt(e.target.value) || 0;
+                              if (val !== (u.daily_target || 0)) {
+                                await supabase.from('users').update({ daily_target: val }).eq('id', u.id);
+                                loadData();
+                              }
+                            }}
+                            onKeyDown={(e) => { if (e.key === 'Enter') e.target.blur(); }}
+                          />
+                        ) : (
+                          <span style={{color:'#6b7280',fontSize:12}}>-</span>
+                        )}
+                      </td>
+                      <td style={{...S.td,fontSize:12,color:'#6b7280'}}>{u.created_at?new Date(u.created_at).toLocaleDateString('id-ID'):''}</td>
+                      <td style={S.td}>{u.username==='admin'?<span style={{color:'#6b7280',fontSize:11}}>Owner</span>:<button onClick={()=>deleteUser(u.id)} style={{...S.btn('#7f1d1d'),padding:'3px 8px',fontSize:11}}>Hapus</button>}</td>
+                    </tr>
                   ))}
                 </tbody>
               </table>

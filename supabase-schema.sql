@@ -217,3 +217,12 @@ CREATE POLICY "Bot accounts delete" ON bot_accounts FOR DELETE USING (true);
 -- ADD account_id column to task_queue (untuk multi-akun bot grup)
 ALTER TABLE task_queue ADD COLUMN IF NOT EXISTS account_id VARCHAR(30);
 ALTER TABLE task_queue ADD COLUMN IF NOT EXISTS account_name VARCHAR(100);
+
+-- ADD daily_target column to users (target grup harian per member)
+ALTER TABLE users ADD COLUMN IF NOT EXISTS daily_target INTEGER DEFAULT 0;
+
+-- Set default targets untuk member existing
+UPDATE users SET daily_target = 11 WHERE name = 'cha2';
+UPDATE users SET daily_target = 8 WHERE name = 'RINTON';
+UPDATE users SET daily_target = 8 WHERE name = 'optimus';
+UPDATE users SET daily_target = 12 WHERE name = 'TOGOKX';
