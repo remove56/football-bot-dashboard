@@ -173,6 +173,14 @@ export default function Home() {
   const [tqType, setTqType] = useState('full');
   const [tqMsg, setTqMsg] = useState('');
   const [tqSelectAll, setTqSelectAll] = useState(false);
+  const [tqAccountId, setTqAccountId] = useState(''); // Akun bot grup yang dipilih
+
+  // Form tambah akun grup (di tab Jalankan Bot)
+  const [bgId, setBgId] = useState('');
+  const [bgName, setBgName] = useState('');
+  const [bgNotes, setBgNotes] = useState('');
+  const [bgMsg, setBgMsg] = useState('');
+  const [bgEditing, setBgEditing] = useState(null);
 
   // Posting tracker
   const [postTracker, setPostTracker] = useState([]);
@@ -390,6 +398,9 @@ export default function Home() {
   const createTasks = async () => {
     if (!tqMember.trim()) { setTqMsg('Nama member wajib diisi!'); return; }
     if (tqGroups.length === 0) { setTqMsg('Pilih minimal 1 grup!'); return; }
+    if (!tqAccountId) { setTqMsg('Pilih akun bot grup terlebih dahulu!'); return; }
+
+    const selectedAcc = botAccounts.find(a => a.account_id === tqAccountId);
 
     const tasks = tqGroups.map(gid => {
       const grp = groups.find(g => g.id === gid);
@@ -401,6 +412,8 @@ export default function Home() {
         club: grp?.club || '',
         task_type: tqType,
         status: 'pending',
+        account_id: tqAccountId,
+        account_name: selectedAcc?.account_name || '',
       };
     });
 
@@ -583,6 +596,37 @@ export default function Home() {
     if (!confirm('Hapus entry ini?')) return;
     await supabase.from('posting_tracker').delete().eq('id', id);
     loadPostTracker(ptPeriod);
+  };
+
+  // CRUD akun grup khusus (di tab Jalankan Bot)
+  const addGrupAccount = async () => {
+    if (!bgId || !bgName) { setBgMsg('ID dan Nama wajib diisi!'); return; }
+    const { error } = await supabase.from('bot_accounts').insert({
+      account_id: bgId.trim(), account_name: bgName.trim(),
+      account_type: 'grup', notes: bgNotes.trim() || null,
+    });
+    if (error) setBgMsg('Error: ' + error.message);
+    else { setBgMsg(`Akun grup "${bgName}" ditambahkan!`); setBgId(''); setBgName(''); setBgNotes(''); loadData(); }
+  };
+
+  const updateGrupAccount = async () => {
+    if (!bgEditing) return;
+    await supabase.from('bot_accounts').update({
+      account_id: bgId.trim(), account_name: bgName.trim(),
+      account_type: 'grup', notes: bgNotes.trim() || null,
+    }).eq('id', bgEditing);
+    setBgEditing(null); setBgId(''); setBgName(''); setBgNotes(''); setBgMsg('Akun diupdate!'); loadData();
+  };
+
+  const startEditGrupAccount = (a) => {
+    setBgEditing(a.id); setBgId(a.account_id); setBgName(a.account_name); setBgNotes(a.notes || '');
+  };
+
+  // Auto-fill nama member saat akun grup dipilih
+  const selectGrupAccount = (accountId) => {
+    setTqAccountId(accountId);
+    const acc = botAccounts.find(a => a.account_id === accountId);
+    if (acc) setTqMember(acc.account_name);
   };
 
   // Bot accounts CRUD
@@ -1030,13 +1074,94 @@ export default function Home() {
         {/* JALANKAN BOT — admin only */}
         {tab === 'botqueue' && isAdmin && (
           <>
+            {/* Kelola Akun Bot GRUP */}
+            <div style={S.box}>
+              <h3 style={{color:'#FFD700',marginBottom:8,fontSize:16}}>Kelola Akun Bot Grup</h3>
+              <p style={{color:'#9ca3af',fontSize:12,marginBottom:16}}>Tambah, edit, atau hapus akun Facebook untuk bot grup. Akun bot reels dikelola di tab "Reels Bot".</p>
+
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr auto',gap:10,marginBottom:10,alignItems:'end'}}>
+                <div><label style={{display:'block',fontSize:12,color:'#9ca3af',marginBottom:4}}>ID Akun (nomor HP/email)</label>
+                  <input style={S.input} placeholder="895375028123" value={bgId} onChange={e=>setBgId(e.target.value)} /></div>
+                <div><label style={{display:'block',fontSize:12,color:'#9ca3af',marginBottom:4}}>Nama Profil</label>
+                  <input style={S.input} placeholder="Nasywa Zahra" value={bgName} onChange={e=>setBgName(e.target.value)} /></div>
+                {bgEditing ? (
+                  <div style={{display:'flex',gap:6}}>
+                    <button onClick={updateGrupAccount} style={{...S.btn('#065f46'),padding:'10px 14px'}}>Simpan</button>
+                    <button onClick={()=>{setBgEditing(null);setBgId('');setBgName('');setBgNotes('');}} style={{...S.btn('#374151'),padding:'10px 14px'}}>Batal</button>
+                  </div>
+                ) : (
+                  <button onClick={addGrupAccount} style={{...S.btn('#065f46'),padding:'10px 18px'}}>Tambah</button>
+                )}
+              </div>
+              <div style={{marginBottom:10}}>
+                <input style={S.input} placeholder="Catatan (opsional)" value={bgNotes} onChange={e=>setBgNotes(e.target.value)} />
+              </div>
+              {bgMsg && <p style={{fontSize:13,color:bgMsg.includes('Error')?'#ef4444':'#10b981'}}>{bgMsg}</p>}
+
+              {/* Tabel akun grup */}
+              <table style={{width:'100%',borderCollapse:'collapse',marginTop:16}}>
+                <thead>
+                  <tr>
+                    <th style={S.th}>#</th>
+                    <th style={S.th}>Nama</th>
+                    <th style={S.th}>ID Akun</th>
+                    <th style={S.th}>Status</th>
+                    <th style={S.th}>Total Post</th>
+                    <th style={S.th}>Catatan</th>
+                    <th style={S.th}>Aksi</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {botAccounts.filter(a => a.account_type === 'grup' || a.account_type === 'both').map((a, i) => (
+                    <tr key={a.id}>
+                      <td style={S.td}>{i+1}</td>
+                      <td style={{...S.td,fontWeight:600}}>{a.account_name}</td>
+                      <td style={{...S.td,fontSize:12,color:'#9ca3af'}}>{a.account_id}</td>
+                      <td style={S.td}>
+                        <span onClick={()=>toggleBotAccount(a.id,a.is_active)} style={{cursor:'pointer',padding:'2px 8px',borderRadius:4,fontSize:11,fontWeight:600,background:a.is_active?'#065f46':'#7f1d1d',color:a.is_active?'#6ee7b7':'#fca5a5'}}>
+                          {a.is_active ? 'Aktif' : 'Nonaktif'}
+                        </span>
+                      </td>
+                      <td style={{...S.td,textAlign:'center'}}>{a.total_posts || 0}</td>
+                      <td style={{...S.td,fontSize:12,color:'#6b7280'}}>{a.notes || '-'}</td>
+                      <td style={S.td}>
+                        <div style={{display:'flex',gap:4}}>
+                          <button onClick={()=>startEditGrupAccount(a)} style={{...S.btn('#1e3a5f'),fontSize:11,padding:'4px 8px'}}>Edit</button>
+                          <button onClick={()=>deleteBotAccount(a.id)} style={{...S.btn('#7f1d1d'),fontSize:11,padding:'4px 8px'}}>Hapus</button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                  {botAccounts.filter(a => a.account_type === 'grup' || a.account_type === 'both').length === 0 && <tr><td colSpan={7} style={{...S.td,textAlign:'center',color:'#6b7280'}}>Belum ada akun grup. Tambahkan di atas.</td></tr>}
+                </tbody>
+              </table>
+            </div>
+
             <div style={S.box}>
               <h3 style={{color:'#FFD700',marginBottom:8,fontSize:16}}>Buat Tugas Posting</h3>
-              <p style={{color:'#9ca3af',fontSize:12,marginBottom:16}}>Pilih member, pilih grup, bot akan posting atas nama member tersebut. Hanya admin yang bisa mengakses halaman ini.</p>
+              <p style={{color:'#9ca3af',fontSize:12,marginBottom:16}}>Pilih akun bot grup, pilih grup tujuan, bot akan posting atas nama akun tersebut.</p>
+
+              {/* Selector akun bot grup */}
+              <label style={{display:'block',fontSize:12,color:'#9ca3af',marginBottom:8}}>Pilih Akun Bot Grup</label>
+              {grupAccounts.length === 0 ? (
+                <p style={{color:'#fbbf24',fontSize:13,padding:12,background:'#1a1a2e',borderRadius:8,border:'1px solid #2d2d5e',marginBottom:16}}>
+                  Belum ada akun grup aktif. Tambahkan di section atas.
+                </p>
+              ) : (
+                <div style={{display:'grid',gridTemplateColumns:`repeat(auto-fill, minmax(220px, 1fr))`,gap:10,marginBottom:16}}>
+                  {grupAccounts.map(acc => (
+                    <div key={acc.id} onClick={()=>selectGrupAccount(acc.account_id)} style={{cursor:'pointer',background:tqAccountId===acc.account_id?'#1e3a5f':'#1a1a2e',border:`2px solid ${tqAccountId===acc.account_id?'#60a5fa':'#2d2d5e'}`,borderRadius:10,padding:12}}>
+                      <div style={{fontSize:14,fontWeight:700,color:tqAccountId===acc.account_id?'#60a5fa':'#e5e7eb'}}>{acc.account_name}</div>
+                      <div style={{fontSize:11,color:'#6b7280'}}>ID: {acc.account_id}</div>
+                      <div style={{fontSize:10,color:'#6b7280'}}>Total: {acc.total_posts || 0} posting</div>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:16}}>
-                <div><label style={{display:'block',fontSize:12,color:'#9ca3af',marginBottom:4}}>Nama Member (bot posting atas nama ini)</label>
-                  <input style={S.input} placeholder="Contoh: Andi, Budi, Member A" value={tqMember} onChange={e=>setTqMember(e.target.value)} /></div>
+                <div><label style={{display:'block',fontSize:12,color:'#9ca3af',marginBottom:4}}>Nama Member (auto-fill dari akun terpilih)</label>
+                  <input style={S.input} placeholder="Otomatis terisi saat pilih akun" value={tqMember} onChange={e=>setTqMember(e.target.value)} /></div>
                 <div><label style={{display:'block',fontSize:12,color:'#9ca3af',marginBottom:4}}>Jenis Posting</label>
                   <select style={S.input} value={tqType} onChange={e=>setTqType(e.target.value)}>
                     <option value="full">2 Berita + 1 Video (Full)</option>
@@ -1087,10 +1212,11 @@ export default function Home() {
               </div>
 
               <table style={{width:'100%',borderCollapse:'collapse'}}>
-                <thead><tr><th style={S.th}>Member</th><th style={S.th}>Grup</th><th style={S.th}>Klub</th><th style={S.th}>Jenis</th><th style={S.th}>Status</th><th style={S.th}>Waktu</th><th style={S.th}>Aksi</th></tr></thead>
+                <thead><tr><th style={S.th}>Akun Bot</th><th style={S.th}>Member</th><th style={S.th}>Grup</th><th style={S.th}>Klub</th><th style={S.th}>Jenis</th><th style={S.th}>Status</th><th style={S.th}>Waktu</th><th style={S.th}>Aksi</th></tr></thead>
                 <tbody>
                   {taskQueue.map(t => (
                     <tr key={t.id}>
+                      <td style={{...S.td,fontSize:12,color:'#60a5fa',fontWeight:600}}>{t.account_name || '-'}</td>
                       <td style={{...S.td,fontWeight:600}}>{t.member_name}</td>
                       <td style={S.td}>{t.group_name}</td>
                       <td style={{...S.td,fontSize:12,color:'#9ca3af'}}>{t.club}</td>
@@ -1100,16 +1226,19 @@ export default function Home() {
                       <td style={S.td}>{t.status!=='running'&&<button onClick={()=>deleteTask(t.id)} style={{...S.btn('#7f1d1d'),padding:'3px 8px',fontSize:11}}>Hapus</button>}</td>
                     </tr>
                   ))}
-                  {taskQueue.length===0 && <tr><td colSpan={7} style={{...S.td,textAlign:'center',color:'#6b7280'}}>Belum ada tugas. Buat tugas di atas.</td></tr>}
+                  {taskQueue.length===0 && <tr><td colSpan={8} style={{...S.td,textAlign:'center',color:'#6b7280'}}>Belum ada tugas. Buat tugas di atas.</td></tr>}
                 </tbody>
               </table>
             </div>
 
             <div style={{...S.box,background:'#0d1117',border:'1px solid #374151'}}>
               <p style={{fontSize:13,color:'#9ca3af'}}>
-                <strong style={{color:'#FFD700'}}>Cara kerja:</strong> Setelah buat tugas, jalankan bot worker di terminal komputer kamu:<br/>
-                <code style={{background:'#1f2937',padding:'4px 8px',borderRadius:4,fontSize:12,marginTop:4,display:'inline-block'}}>node src/bot-worker.js</code><br/>
-                <span style={{fontSize:11}}>Bot akan otomatis ambil tugas dari antrian, posting ke Facebook, dan update status.</span>
+                <strong style={{color:'#FFD700'}}>Cara kerja:</strong><br/>
+                <span style={{fontSize:11}}>1. Tambahkan akun bot grup di section atas (sekali saja)</span><br/>
+                <span style={{fontSize:11}}>2. Save cookies akun: <code style={{background:'#1f2937',padding:'2px 6px',borderRadius:4,fontSize:11}}>node src/save-cookies-grup.js [ID_AKUN] "[Nama]"</code></span><br/>
+                <span style={{fontSize:11}}>3. Pilih akun → pilih grup → klik Buat Tugas</span><br/>
+                <span style={{fontSize:11}}>4. Jalankan bot worker: <code style={{background:'#1f2937',padding:'2px 6px',borderRadius:4,fontSize:11}}>node src/bot-worker.js</code></span><br/>
+                <span style={{fontSize:11,color:'#10b981'}}>Bot akan otomatis pakai akun yang dipilih saat posting.</span>
               </p>
             </div>
           </>
@@ -1118,29 +1247,23 @@ export default function Home() {
         {/* REELS BOT — admin only */}
         {tab === 'reelsbot' && isAdmin && (
           <>
-            {/* Kelola Akun Bot */}
+            {/* Kelola Akun Bot REELS */}
             <div style={S.box}>
-              <h3 style={{color:'#FFD700',marginBottom:8,fontSize:16}}>Kelola Akun Bot</h3>
-              <p style={{color:'#9ca3af',fontSize:12,marginBottom:16}}>Tambah, edit, atau hapus akun Facebook untuk bot. Berlaku untuk bot grup dan reels.</p>
+              <h3 style={{color:'#FFD700',marginBottom:8,fontSize:16}}>Kelola Akun Bot Reels</h3>
+              <p style={{color:'#9ca3af',fontSize:12,marginBottom:16}}>Tambah, edit, atau hapus akun Facebook untuk bot reels (posting ke beranda). Akun bot grup dikelola di tab "Jalankan Bot".</p>
 
-              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr auto',gap:10,marginBottom:10,alignItems:'end'}}>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr auto',gap:10,marginBottom:10,alignItems:'end'}}>
                 <div><label style={{display:'block',fontSize:12,color:'#9ca3af',marginBottom:4}}>ID Akun (nomor HP/email)</label>
                   <input style={S.input} placeholder="89654516608" value={baId} onChange={e=>setBaId(e.target.value)} /></div>
                 <div><label style={{display:'block',fontSize:12,color:'#9ca3af',marginBottom:4}}>Nama Profil</label>
                   <input style={S.input} placeholder="Bima Pratama" value={baName} onChange={e=>setBaName(e.target.value)} /></div>
-                <div><label style={{display:'block',fontSize:12,color:'#9ca3af',marginBottom:4}}>Tipe Bot</label>
-                  <select style={S.input} value={baType} onChange={e=>setBaType(e.target.value)}>
-                    <option value="reels">Reels (Beranda)</option>
-                    <option value="grup">Grup</option>
-                    <option value="both">Keduanya</option>
-                  </select></div>
                 {baEditing ? (
                   <div style={{display:'flex',gap:6}}>
-                    <button onClick={updateBotAccount} style={{...S.btn('#065f46'),padding:'10px 14px'}}>Simpan</button>
+                    <button onClick={()=>{setBaType('reels');updateBotAccount();}} style={{...S.btn('#065f46'),padding:'10px 14px'}}>Simpan</button>
                     <button onClick={()=>{setBaEditing(null);setBaId('');setBaName('');setBaNotes('');}} style={{...S.btn('#374151'),padding:'10px 14px'}}>Batal</button>
                   </div>
                 ) : (
-                  <button onClick={addBotAccount} style={{...S.btn('#065f46'),padding:'10px 18px'}}>Tambah</button>
+                  <button onClick={()=>{setBaType('reels');addBotAccount();}} style={{...S.btn('#065f46'),padding:'10px 18px'}}>Tambah</button>
                 )}
               </div>
               <div style={{marginBottom:10}}>
@@ -1148,14 +1271,13 @@ export default function Home() {
               </div>
               {baMsg && <p style={{fontSize:13,color:baMsg.includes('Error')?'#ef4444':'#10b981'}}>{baMsg}</p>}
 
-              {/* Tabel akun */}
+              {/* Tabel akun — HANYA AKUN REELS */}
               <table style={{width:'100%',borderCollapse:'collapse',marginTop:16}}>
                 <thead>
                   <tr>
                     <th style={S.th}>#</th>
                     <th style={S.th}>Nama</th>
                     <th style={S.th}>ID Akun</th>
-                    <th style={S.th}>Tipe</th>
                     <th style={S.th}>Status</th>
                     <th style={S.th}>Total Post</th>
                     <th style={S.th}>Catatan</th>
@@ -1163,12 +1285,11 @@ export default function Home() {
                   </tr>
                 </thead>
                 <tbody>
-                  {botAccounts.map((a, i) => (
+                  {botAccounts.filter(a => a.account_type === 'reels' || a.account_type === 'both').map((a, i) => (
                     <tr key={a.id}>
                       <td style={S.td}>{i+1}</td>
                       <td style={{...S.td,fontWeight:600}}>{a.account_name}</td>
                       <td style={{...S.td,fontSize:12,color:'#9ca3af'}}>{a.account_id}</td>
-                      <td style={S.td}><span style={S.badge(a.account_type==='reels'?'pending':a.account_type==='grup'?'ok':'admin')}>{a.account_type}</span></td>
                       <td style={S.td}>
                         <span onClick={()=>toggleBotAccount(a.id,a.is_active)} style={{cursor:'pointer',padding:'2px 8px',borderRadius:4,fontSize:11,fontWeight:600,background:a.is_active?'#065f46':'#7f1d1d',color:a.is_active?'#6ee7b7':'#fca5a5'}}>
                           {a.is_active ? 'Aktif' : 'Nonaktif'}
@@ -1184,7 +1305,7 @@ export default function Home() {
                       </td>
                     </tr>
                   ))}
-                  {botAccounts.length === 0 && <tr><td colSpan={8} style={{...S.td,textAlign:'center',color:'#6b7280'}}>Belum ada akun bot. Tambahkan di atas.</td></tr>}
+                  {botAccounts.filter(a => a.account_type === 'reels' || a.account_type === 'both').length === 0 && <tr><td colSpan={7} style={{...S.td,textAlign:'center',color:'#6b7280'}}>Belum ada akun reels. Tambahkan di atas.</td></tr>}
                 </tbody>
               </table>
             </div>

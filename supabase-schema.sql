@@ -213,3 +213,7 @@ CREATE POLICY "Bot accounts read" ON bot_accounts FOR SELECT USING (true);
 CREATE POLICY "Bot accounts insert" ON bot_accounts FOR INSERT WITH CHECK (true);
 CREATE POLICY "Bot accounts update" ON bot_accounts FOR UPDATE USING (true);
 CREATE POLICY "Bot accounts delete" ON bot_accounts FOR DELETE USING (true);
+
+-- ADD account_id column to task_queue (untuk multi-akun bot grup)
+ALTER TABLE task_queue ADD COLUMN IF NOT EXISTS account_id VARCHAR(30);
+ALTER TABLE task_queue ADD COLUMN IF NOT EXISTS account_name VARCHAR(100);
