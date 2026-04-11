@@ -964,15 +964,24 @@ export default function Home() {
         {/* TRACKING POSTINGAN */}
         {tab === 'posttrack' && (
           <>
-            {/* PROGRESS TARGET HARI INI — visible untuk admin & member */}
+            {/* PROGRESS TARGET — visible untuk admin & member, bisa pilih tanggal */}
             <div style={S.box}>
-              <h3 style={{color:'#FFD700',marginBottom:8,fontSize:16}}>Progress Target Hari Ini</h3>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8,flexWrap:'wrap',gap:12}}>
+                <h3 style={{color:'#FFD700',fontSize:16,margin:0}}>
+                  Progress Target {ptPeriod === new Date().toISOString().split('T')[0] ? 'Hari Ini' : new Date(ptPeriod).toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}
+                </h3>
+                <div style={{display:'flex',alignItems:'center',gap:8}}>
+                  <label style={{fontSize:12,color:'#9ca3af'}}>Tanggal:</label>
+                  <input type="date" style={{...S.input,width:180}} value={ptPeriod} onChange={e=>{setPtPeriod(e.target.value);loadPostTracker(e.target.value)}} />
+                  <button onClick={()=>{const t=new Date().toISOString().split('T')[0];setPtPeriod(t);loadPostTracker(t);}} style={{...S.btn('#374151'),padding:'8px 14px',fontSize:12}}>Hari Ini</button>
+                </div>
+              </div>
               <p style={{color:'#9ca3af',fontSize:12,marginBottom:16}}>
                 Target grup harian per member. Kategori berdasarkan persentase pencapaian: Sangat Bagus (100%) / Bagus (70-99%) / Sedang (50-69%) / Buruk (40-49%) / Sangat Buruk (&lt;40%).
               </p>
               {(() => {
-                const today = new Date().toISOString().split('T')[0];
-                const todayTracker = postTracker.filter(p => p.period === today);
+                const selectedDateTracker = postTracker.filter(p => p.period === ptPeriod);
+                const todayTracker = selectedDateTracker; // alias for inner code
                 const members = users.filter(u => u.role === 'member');
                 return (
                   <table style={{width:'100%',borderCollapse:'collapse'}}>
