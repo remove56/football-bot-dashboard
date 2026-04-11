@@ -973,6 +973,46 @@ export default function Home() {
 
       <div style={S.main}>
 
+        {/* WARNING BANNER GLOBAL — member progress < 50% setelah jam 18:00 (muncul di SEMUA tab) */}
+        {!isAdmin && user && (() => {
+          const today = new Date().toISOString().split('T')[0];
+          const hour = new Date().getHours();
+          const target = user.daily_target || 0;
+          if (target === 0) return null;
+          const count = countGroupsForDate(user.name, today, postTracker);
+          const pct = (count / target) * 100;
+          const cd = getDeadlineCountdown();
+          if (hour >= 18 && pct < 50 && cd) {
+            return (
+              <div style={{background:'#7f1d1d',border:'2px solid #ef4444',padding:16,borderRadius:12,marginBottom:16,display:'flex',alignItems:'center',gap:12}}>
+                <span style={{fontSize:28}}>⚠️</span>
+                <div style={{flex:1}}>
+                  <div style={{color:'#fca5a5',fontWeight:700,fontSize:14}}>Peringatan: Target belum tercapai!</div>
+                  <div style={{color:'#fecaca',fontSize:12,marginTop:4}}>
+                    Kamu baru mencapai <strong>{count}</strong> dari target <strong>{target}</strong> grup ({Math.round(pct)}%).
+                    Deadline dalam <strong>{cd.hours}j {cd.minutes}m</strong>. Cepat selesaikan!
+                  </div>
+                </div>
+              </div>
+            );
+          }
+          return null;
+        })()}
+
+        {/* COUNTDOWN DEADLINE GLOBAL — muncul di SEMUA tab untuk admin & member */}
+        {(() => {
+          const cd = getDeadlineCountdown();
+          if (!cd) return null;
+          return (
+            <div style={{background:'#1a1a2e',border:'1px solid #2d2d5e',padding:'10px 16px',borderRadius:8,marginBottom:16,display:'flex',alignItems:'center',gap:10,fontSize:13}}>
+              <span style={{fontSize:18}}>⏰</span>
+              <span style={{color:'#9ca3af'}}>Deadline hari ini:</span>
+              <span style={{color:'#FFD700',fontWeight:700}}>{cd.hours} jam {cd.minutes} menit lagi</span>
+              <span style={{color:'#6b7280',fontSize:11,marginLeft:'auto'}}>(berakhir jam 23:59)</span>
+            </div>
+          );
+        })()}
+
         {/* OVERVIEW (admin) */}
         {tab === 'overview' && isAdmin && (
           <>
@@ -1148,46 +1188,6 @@ export default function Home() {
         {/* TRACKING POSTINGAN */}
         {tab === 'posttrack' && (
           <>
-            {/* WARNING BANNER — member progress < 50% setelah jam 18:00 */}
-            {!isAdmin && user && (() => {
-              const today = new Date().toISOString().split('T')[0];
-              const hour = new Date().getHours();
-              const target = user.daily_target || 0;
-              if (target === 0) return null;
-              const count = countGroupsForDate(user.name, today, postTracker);
-              const pct = (count / target) * 100;
-              const cd = getDeadlineCountdown();
-              if (hour >= 18 && pct < 50 && cd) {
-                return (
-                  <div style={{background:'#7f1d1d',border:'2px solid #ef4444',padding:16,borderRadius:12,marginBottom:16,display:'flex',alignItems:'center',gap:12}}>
-                    <span style={{fontSize:28}}>⚠️</span>
-                    <div style={{flex:1}}>
-                      <div style={{color:'#fca5a5',fontWeight:700,fontSize:14}}>Peringatan: Target belum tercapai!</div>
-                      <div style={{color:'#fecaca',fontSize:12,marginTop:4}}>
-                        Kamu baru mencapai <strong>{count}</strong> dari target <strong>{target}</strong> grup ({Math.round(pct)}%).
-                        Deadline dalam <strong>{cd.hours}j {cd.minutes}m</strong>. Cepat selesaikan!
-                      </div>
-                    </div>
-                  </div>
-                );
-              }
-              return null;
-            })()}
-
-            {/* COUNTDOWN DEADLINE — tampil untuk semua */}
-            {ptPeriod === new Date().toISOString().split('T')[0] && (() => {
-              const cd = getDeadlineCountdown();
-              if (!cd) return null;
-              return (
-                <div style={{background:'#1a1a2e',border:'1px solid #2d2d5e',padding:'10px 16px',borderRadius:8,marginBottom:16,display:'flex',alignItems:'center',gap:10,fontSize:13}}>
-                  <span style={{fontSize:18}}>⏰</span>
-                  <span style={{color:'#9ca3af'}}>Deadline hari ini:</span>
-                  <span style={{color:'#FFD700',fontWeight:700}}>{cd.hours} jam {cd.minutes} menit lagi</span>
-                  <span style={{color:'#6b7280',fontSize:11,marginLeft:'auto'}}>(berakhir jam 23:59)</span>
-                </div>
-              );
-            })()}
-
             {/* PROGRESS TARGET — visible untuk admin & member, bisa pilih tanggal */}
             <div style={S.box}>
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8,flexWrap:'wrap',gap:12}}>
