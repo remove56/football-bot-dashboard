@@ -98,6 +98,71 @@ function getTargetCategory(completed, target) {
 }
 
 // ============================================================
+// HELPER: Hitung jumlah grup unik yang dicapai member pada tanggal tertentu
+// ============================================================
+function countGroupsForDate(memberName, period, tracker) {
+  const posts = tracker.filter(p => p.period === period && p.user_name === memberName);
+  return new Set(posts.map(p => p.group_id)).size;
+}
+
+// ============================================================
+// HELPER: Hitung streak (hari berturut-turut on-target)
+// ============================================================
+function computeStreak(memberName, target, history) {
+  if (!target || target === 0) return 0;
+  let streak = 0;
+  const today = new Date();
+  for (let i = 0; i < 365; i++) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const dateKey = d.toISOString().split('T')[0];
+    const count = countGroupsForDate(memberName, dateKey, history);
+    if (count >= target) {
+      streak++;
+    } else {
+      // Hari ini belum tercapai — jangan putuskan streak
+      if (i === 0 && count < target) continue;
+      break;
+    }
+  }
+  return streak;
+}
+
+// ============================================================
+// HELPER: Hitung rata-rata performa N hari terakhir (0-100%)
+// ============================================================
+function computeAvgPerformance(memberName, target, history, days) {
+  if (!target || target === 0) return 0;
+  const today = new Date();
+  let totalPct = 0;
+  let validDays = 0;
+  for (let i = 0; i < days; i++) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const dateKey = d.toISOString().split('T')[0];
+    const count = countGroupsForDate(memberName, dateKey, history);
+    const pct = Math.min(100, (count / target) * 100);
+    totalPct += pct;
+    validDays++;
+  }
+  return validDays > 0 ? Math.round(totalPct / validDays) : 0;
+}
+
+// ============================================================
+// HELPER: Countdown ke jam 23:59 hari ini
+// ============================================================
+function getDeadlineCountdown() {
+  const now = new Date();
+  const deadline = new Date();
+  deadline.setHours(23, 59, 0, 0);
+  const diff = deadline - now;
+  if (diff <= 0) return null;
+  const hours = Math.floor(diff / 3600000);
+  const minutes = Math.floor((diff % 3600000) / 60000);
+  return { hours, minutes, total: diff };
+}
+
+// ============================================================
 // LOGIN SCREEN
 // ============================================================
 function LoginScreen({ onLogin }) {
@@ -198,6 +263,11 @@ export default function Home() {
 
   // Posting tracker
   const [postTracker, setPostTracker] = useState([]);
+  const [postTrackerHistory, setPostTrackerHistory] = useState([]); // last 30 days
+  const [targetNotes, setTargetNotes] = useState([]);
+  const [historyModal, setHistoryModal] = useState(null); // member being viewed
+  const [noteReason, setNoteReason] = useState('');
+  const [noteMsg, setNoteMsg] = useState('');
   const [ptGroup, setPtGroup] = useState('');
   const [ptCycle, setPtCycle] = useState(1);
   const [ptType, setPtType] = useState('gambar1'); // gambar1, gambar2, video
@@ -241,6 +311,9 @@ export default function Home() {
       const { data: u } = await supabase.from('users').select('id,name,role,daily_target');
       setUsers(u || []);
     }
+    // Load history (semua role)
+    loadPostTrackerHistory();
+    loadTargetNotes();
   };
 
   const submitLink = async () => {
@@ -467,6 +540,54 @@ export default function Home() {
   const loadPostTracker = async (period) => {
     const { data } = await supabase.from('posting_tracker').select('*').eq('period', period).order('created_at');
     setPostTracker(data || []);
+  };
+
+  // Load 30 hari terakhir posting_tracker untuk streak, leaderboard, history
+  const loadPostTrackerHistory = async () => {
+    const start = new Date();
+    start.setDate(start.getDate() - 30);
+    const startDate = start.toISOString().split('T')[0];
+    const { data } = await supabase.from('posting_tracker').select('*').gte('period', startDate).order('period', { ascending: false });
+    setPostTrackerHistory(data || []);
+  };
+
+  const loadTargetNotes = async () => {
+    const { data } = await supabase.from('target_notes').select('*').order('created_at', { ascending: false }).limit(100);
+    setTargetNotes(data || []);
+  };
+
+  const saveTargetNote = async (period) => {
+    if (!noteReason.trim()) { setNoteMsg('Alasan wajib diisi'); return; }
+    const { error } = await supabase.from('target_notes').upsert({
+      user_id: user.id,
+      user_name: user.name,
+      period,
+      reason: noteReason.trim(),
+    }, { onConflict: 'user_id,period' });
+    if (error) setNoteMsg('Error: ' + error.message);
+    else { setNoteMsg('Catatan tersimpan!'); setNoteReason(''); loadTargetNotes(); }
+  };
+
+  const exportProgressCSV = () => {
+    const members = users.filter(u => u.role === 'member');
+    const periods = [...new Set(postTrackerHistory.map(p => p.period))].sort().reverse();
+    const headers = ['Tanggal', 'Member', 'Target', 'Tercapai', 'Persentase', 'Kategori'];
+    const rows = [headers];
+    for (const period of periods) {
+      for (const m of members) {
+        const target = m.daily_target || 0;
+        const count = countGroupsForDate(m.name, period, postTrackerHistory);
+        const pct = target > 0 ? Math.round((count / target) * 100) : 0;
+        const cat = getTargetCategory(count, target);
+        rows.push([period, m.name, target, count, pct + '%', cat.label]);
+      }
+    }
+    const csv = rows.map(r => r.map(v => `"${v}"`).join(',')).join('\n');
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `progress_target_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
   };
 
   const submitPostLink = async () => {
@@ -964,6 +1085,46 @@ export default function Home() {
         {/* TRACKING POSTINGAN */}
         {tab === 'posttrack' && (
           <>
+            {/* WARNING BANNER — member progress < 50% setelah jam 18:00 */}
+            {!isAdmin && user && (() => {
+              const today = new Date().toISOString().split('T')[0];
+              const hour = new Date().getHours();
+              const target = user.daily_target || 0;
+              if (target === 0) return null;
+              const count = countGroupsForDate(user.name, today, postTracker);
+              const pct = (count / target) * 100;
+              const cd = getDeadlineCountdown();
+              if (hour >= 18 && pct < 50 && cd) {
+                return (
+                  <div style={{background:'#7f1d1d',border:'2px solid #ef4444',padding:16,borderRadius:12,marginBottom:16,display:'flex',alignItems:'center',gap:12}}>
+                    <span style={{fontSize:28}}>⚠️</span>
+                    <div style={{flex:1}}>
+                      <div style={{color:'#fca5a5',fontWeight:700,fontSize:14}}>Peringatan: Target belum tercapai!</div>
+                      <div style={{color:'#fecaca',fontSize:12,marginTop:4}}>
+                        Kamu baru mencapai <strong>{count}</strong> dari target <strong>{target}</strong> grup ({Math.round(pct)}%).
+                        Deadline dalam <strong>{cd.hours}j {cd.minutes}m</strong>. Cepat selesaikan!
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
+              return null;
+            })()}
+
+            {/* COUNTDOWN DEADLINE — tampil untuk semua */}
+            {ptPeriod === new Date().toISOString().split('T')[0] && (() => {
+              const cd = getDeadlineCountdown();
+              if (!cd) return null;
+              return (
+                <div style={{background:'#1a1a2e',border:'1px solid #2d2d5e',padding:'10px 16px',borderRadius:8,marginBottom:16,display:'flex',alignItems:'center',gap:10,fontSize:13}}>
+                  <span style={{fontSize:18}}>⏰</span>
+                  <span style={{color:'#9ca3af'}}>Deadline hari ini:</span>
+                  <span style={{color:'#FFD700',fontWeight:700}}>{cd.hours} jam {cd.minutes} menit lagi</span>
+                  <span style={{color:'#6b7280',fontSize:11,marginLeft:'auto'}}>(berakhir jam 23:59)</span>
+                </div>
+              );
+            })()}
+
             {/* PROGRESS TARGET — visible untuk admin & member, bisa pilih tanggal */}
             <div style={S.box}>
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8,flexWrap:'wrap',gap:12}}>
@@ -974,14 +1135,15 @@ export default function Home() {
                   <label style={{fontSize:12,color:'#9ca3af'}}>Tanggal:</label>
                   <input type="date" style={{...S.input,width:180}} value={ptPeriod} onChange={e=>{setPtPeriod(e.target.value);loadPostTracker(e.target.value)}} />
                   <button onClick={()=>{const t=new Date().toISOString().split('T')[0];setPtPeriod(t);loadPostTracker(t);}} style={{...S.btn('#374151'),padding:'8px 14px',fontSize:12}}>Hari Ini</button>
+                  {isAdmin && <button onClick={exportProgressCSV} style={{...S.btn('#065f46'),padding:'8px 14px',fontSize:12}}>Export CSV</button>}
                 </div>
               </div>
               <p style={{color:'#9ca3af',fontSize:12,marginBottom:16}}>
-                Target grup harian per member. Kategori berdasarkan persentase pencapaian: Sangat Bagus (100%) / Bagus (70-99%) / Sedang (50-69%) / Buruk (40-49%) / Sangat Buruk (&lt;40%).
+                Target grup harian per member. Klik nama member untuk lihat riwayat 30 hari. Streak = jumlah hari berturut-turut mencapai target.
               </p>
               {(() => {
                 const selectedDateTracker = postTracker.filter(p => p.period === ptPeriod);
-                const todayTracker = selectedDateTracker; // alias for inner code
+                const todayTracker = selectedDateTracker;
                 const members = users.filter(u => u.role === 'member');
                 return (
                   <table style={{width:'100%',borderCollapse:'collapse'}}>
@@ -993,11 +1155,13 @@ export default function Home() {
                         <th style={{...S.th,textAlign:'center'}}>Tercapai</th>
                         <th style={{...S.th,textAlign:'center'}}>Progress</th>
                         <th style={{...S.th,textAlign:'center'}}>Kategori</th>
+                        <th style={{...S.th,textAlign:'center'}}>Streak</th>
+                        <th style={{...S.th,textAlign:'center'}}>Catatan</th>
                       </tr>
                     </thead>
                     <tbody>
                       {members.length === 0 && (
-                        <tr><td colSpan={6} style={{...S.td,textAlign:'center',color:'#6b7280'}}>Belum ada member terdaftar</td></tr>
+                        <tr><td colSpan={8} style={{...S.td,textAlign:'center',color:'#6b7280'}}>Belum ada member terdaftar</td></tr>
                       )}
                       {members.map((m, i) => {
                         const target = m.daily_target || 0;
@@ -1006,10 +1170,14 @@ export default function Home() {
                         const cat = getTargetCategory(completedGroups, target);
                         const pct = target > 0 ? Math.min(100, Math.round((completedGroups / target) * 100)) : 0;
                         const isMe = !isAdmin && user && m.id === user.id;
+                        const streak = computeStreak(m.name, target, postTrackerHistory);
+                        const note = targetNotes.find(n => n.user_id === m.id && n.period === ptPeriod);
                         return (
                           <tr key={m.id} style={isMe?{background:'#1a2744'}:undefined}>
                             <td style={S.td}>{i+1}</td>
-                            <td style={{...S.td,fontWeight:600}}>{m.name}{isMe && <span style={{marginLeft:6,fontSize:10,color:'#FFD700'}}>(Kamu)</span>}</td>
+                            <td style={{...S.td,fontWeight:600,cursor:'pointer',color:'#60a5fa'}} onClick={()=>setHistoryModal(m)}>
+                              {m.name}{isMe && <span style={{marginLeft:6,fontSize:10,color:'#FFD700'}}>(Kamu)</span>}
+                            </td>
                             <td style={{...S.td,textAlign:'center'}}>{target || '-'}</td>
                             <td style={{...S.td,textAlign:'center',fontWeight:700,color:cat.color}}>{completedGroups}</td>
                             <td style={{...S.td,textAlign:'center'}}>
@@ -1025,6 +1193,16 @@ export default function Home() {
                                 {cat.label}
                               </span>
                             </td>
+                            <td style={{...S.td,textAlign:'center'}}>
+                              {streak > 0 ? (
+                                <span style={{padding:'3px 10px',borderRadius:12,fontSize:11,fontWeight:700,background:'#7c2d12',color:'#fb923c'}}>
+                                  🔥 {streak} hari
+                                </span>
+                              ) : <span style={{color:'#6b7280',fontSize:11}}>-</span>}
+                            </td>
+                            <td style={{...S.td,textAlign:'center',fontSize:11,color:'#9ca3af',maxWidth:150}}>
+                              {note ? <span title={note.reason}>{note.reason.substring(0, 25)}{note.reason.length > 25 ? '...' : ''}</span> : '-'}
+                            </td>
                           </tr>
                         );
                       })}
@@ -1032,7 +1210,197 @@ export default function Home() {
                   </table>
                 );
               })()}
+
+              {/* Form catatan untuk member sendiri */}
+              {!isAdmin && user && (() => {
+                const existingNote = targetNotes.find(n => n.user_id === user.id && n.period === ptPeriod);
+                const target = user.daily_target || 0;
+                if (target === 0) return null;
+                const count = countGroupsForDate(user.name, ptPeriod, postTracker);
+                if (count >= target) return null; // target tercapai, tidak perlu catatan
+                return (
+                  <div style={{marginTop:16,padding:16,background:'#0d1117',borderRadius:8,border:'1px solid #1f2937'}}>
+                    <h4 style={{color:'#9ca3af',fontSize:13,marginBottom:8,marginTop:0}}>
+                      {existingNote ? 'Edit Catatan/Alasan kamu' : 'Tulis Alasan (kalau target tidak tercapai)'}
+                    </h4>
+                    <textarea
+                      style={{...S.input,minHeight:60,resize:'vertical'}}
+                      placeholder="Contoh: Sakit, listrik mati, dll..."
+                      value={noteReason || existingNote?.reason || ''}
+                      onChange={e=>setNoteReason(e.target.value)}
+                    />
+                    <div style={{display:'flex',gap:10,marginTop:8,alignItems:'center'}}>
+                      <button onClick={()=>saveTargetNote(ptPeriod)} style={{...S.btn('#065f46'),padding:'8px 16px',fontSize:12}}>Simpan Catatan</button>
+                      {noteMsg && <span style={{fontSize:12,color:noteMsg.includes('Error')?'#ef4444':'#10b981'}}>{noteMsg}</span>}
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
+
+            {/* LEADERBOARD MINGGUAN & BULANAN */}
+            <div style={S.box}>
+              <h3 style={{color:'#FFD700',marginBottom:8,fontSize:16}}>🏆 Leaderboard Performa Member</h3>
+              <p style={{color:'#9ca3af',fontSize:12,marginBottom:16}}>
+                Ranking berdasarkan rata-rata persentase pencapaian dalam periode tertentu.
+              </p>
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16}}>
+                {/* Mingguan */}
+                <div style={{background:'#0d1117',borderRadius:8,padding:16,border:'1px solid #1f2937'}}>
+                  <h4 style={{color:'#60a5fa',fontSize:14,marginTop:0,marginBottom:12}}>📅 Mingguan (7 hari)</h4>
+                  {(() => {
+                    const members = users.filter(u => u.role === 'member');
+                    const ranked = members
+                      .map(m => ({ ...m, avg: computeAvgPerformance(m.name, m.daily_target, postTrackerHistory, 7) }))
+                      .sort((a, b) => b.avg - a.avg);
+                    return ranked.map((m, i) => {
+                      const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i+1}`;
+                      const cat = getTargetCategory(m.avg, 100);
+                      return (
+                        <div key={m.id} style={{display:'flex',alignItems:'center',gap:10,padding:'8px 0',borderBottom:i < ranked.length-1 ? '1px solid #1f2937' : 'none'}}>
+                          <span style={{fontSize:18,minWidth:30}}>{medal}</span>
+                          <span style={{flex:1,fontSize:13,fontWeight:600}}>{m.name}</span>
+                          <div style={{width:100,height:6,background:'#1f2937',borderRadius:3,overflow:'hidden'}}>
+                            <div style={{width:`${m.avg}%`,height:'100%',background:cat.color,borderRadius:3}}/>
+                          </div>
+                          <span style={{fontSize:12,color:cat.color,fontWeight:700,minWidth:40,textAlign:'right'}}>{m.avg}%</span>
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
+                {/* Bulanan */}
+                <div style={{background:'#0d1117',borderRadius:8,padding:16,border:'1px solid #1f2937'}}>
+                  <h4 style={{color:'#c084fc',fontSize:14,marginTop:0,marginBottom:12}}>🗓️ Bulanan (30 hari)</h4>
+                  {(() => {
+                    const members = users.filter(u => u.role === 'member');
+                    const ranked = members
+                      .map(m => ({ ...m, avg: computeAvgPerformance(m.name, m.daily_target, postTrackerHistory, 30) }))
+                      .sort((a, b) => b.avg - a.avg);
+                    return ranked.map((m, i) => {
+                      const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `#${i+1}`;
+                      const cat = getTargetCategory(m.avg, 100);
+                      return (
+                        <div key={m.id} style={{display:'flex',alignItems:'center',gap:10,padding:'8px 0',borderBottom:i < ranked.length-1 ? '1px solid #1f2937' : 'none'}}>
+                          <span style={{fontSize:18,minWidth:30}}>{medal}</span>
+                          <span style={{flex:1,fontSize:13,fontWeight:600}}>{m.name}</span>
+                          <div style={{width:100,height:6,background:'#1f2937',borderRadius:3,overflow:'hidden'}}>
+                            <div style={{width:`${m.avg}%`,height:'100%',background:cat.color,borderRadius:3}}/>
+                          </div>
+                          <span style={{fontSize:12,color:cat.color,fontWeight:700,minWidth:40,textAlign:'right'}}>{m.avg}%</span>
+                        </div>
+                      );
+                    });
+                  })()}
+                </div>
+              </div>
+            </div>
+
+            {/* HISTORY MODAL — popup klik nama member */}
+            {historyModal && (
+              <div onClick={()=>setHistoryModal(null)} style={{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(0,0,0,0.8)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
+                <div onClick={e=>e.stopPropagation()} style={{background:'#111827',border:'1px solid #1f2937',borderRadius:12,padding:24,maxWidth:900,width:'100%',maxHeight:'90vh',overflow:'auto'}}>
+                  <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
+                    <h3 style={{color:'#FFD700',fontSize:18,margin:0}}>📊 Riwayat 30 Hari — {historyModal.name}</h3>
+                    <button onClick={()=>setHistoryModal(null)} style={{...S.btn('#7f1d1d'),padding:'6px 12px'}}>Tutup</button>
+                  </div>
+                  {(() => {
+                    const target = historyModal.daily_target || 0;
+                    const days = [];
+                    const now = new Date();
+                    for (let i = 0; i < 30; i++) {
+                      const d = new Date(now);
+                      d.setDate(d.getDate() - i);
+                      const dateKey = d.toISOString().split('T')[0];
+                      const count = countGroupsForDate(historyModal.name, dateKey, postTrackerHistory);
+                      const pct = target > 0 ? Math.min(100, Math.round((count / target) * 100)) : 0;
+                      days.push({ date: dateKey, count, pct, cat: getTargetCategory(count, target) });
+                    }
+
+                    // Statistik
+                    const totalGroups = days.reduce((s, d) => s + d.count, 0);
+                    const avgPct = Math.round(days.reduce((s, d) => s + d.pct, 0) / days.length);
+                    const bestDay = days.reduce((b, d) => d.count > b.count ? d : b, days[0]);
+                    const worstDay = days.reduce((w, d) => d.count < w.count ? d : w, days[0]);
+                    const onTargetDays = days.filter(d => target > 0 && d.count >= target).length;
+                    const streak = computeStreak(historyModal.name, target, postTrackerHistory);
+
+                    return (
+                      <>
+                        {/* Summary cards */}
+                        <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(140px,1fr))',gap:10,marginBottom:20}}>
+                          <div style={{background:'#0d1117',padding:12,borderRadius:8,border:'1px solid #1f2937'}}>
+                            <div style={{fontSize:11,color:'#6b7280'}}>Target Harian</div>
+                            <div style={{fontSize:20,fontWeight:700,color:'#FFD700'}}>{target || '-'}</div>
+                          </div>
+                          <div style={{background:'#0d1117',padding:12,borderRadius:8,border:'1px solid #1f2937'}}>
+                            <div style={{fontSize:11,color:'#6b7280'}}>Total Grup</div>
+                            <div style={{fontSize:20,fontWeight:700,color:'#60a5fa'}}>{totalGroups}</div>
+                          </div>
+                          <div style={{background:'#0d1117',padding:12,borderRadius:8,border:'1px solid #1f2937'}}>
+                            <div style={{fontSize:11,color:'#6b7280'}}>Rata-rata</div>
+                            <div style={{fontSize:20,fontWeight:700,color:'#10b981'}}>{avgPct}%</div>
+                          </div>
+                          <div style={{background:'#0d1117',padding:12,borderRadius:8,border:'1px solid #1f2937'}}>
+                            <div style={{fontSize:11,color:'#6b7280'}}>Hari On-Target</div>
+                            <div style={{fontSize:20,fontWeight:700,color:'#c084fc'}}>{onTargetDays}/30</div>
+                          </div>
+                          <div style={{background:'#0d1117',padding:12,borderRadius:8,border:'1px solid #1f2937'}}>
+                            <div style={{fontSize:11,color:'#6b7280'}}>Streak Saat Ini</div>
+                            <div style={{fontSize:20,fontWeight:700,color:'#fb923c'}}>🔥 {streak}</div>
+                          </div>
+                          <div style={{background:'#0d1117',padding:12,borderRadius:8,border:'1px solid #1f2937'}}>
+                            <div style={{fontSize:11,color:'#6b7280'}}>Hari Terbaik</div>
+                            <div style={{fontSize:16,fontWeight:700,color:'#10b981'}}>{bestDay.count} grup</div>
+                            <div style={{fontSize:10,color:'#6b7280'}}>{new Date(bestDay.date).toLocaleDateString('id-ID')}</div>
+                          </div>
+                        </div>
+
+                        {/* Daily bar chart */}
+                        <div>
+                          <h4 style={{color:'#9ca3af',fontSize:13,marginBottom:10}}>Grafik Harian (30 hari terakhir)</h4>
+                          <div style={{display:'flex',gap:3,alignItems:'flex-end',height:120,padding:'0 4px'}}>
+                            {days.slice().reverse().map((d, i) => (
+                              <div key={i} title={`${d.date}: ${d.count} grup (${d.pct}%)`} style={{flex:1,minWidth:14,height:`${Math.max(4, d.pct)}%`,background:d.cat.color,borderRadius:'3px 3px 0 0',cursor:'pointer',opacity:d.count === 0 ? 0.3 : 1}}/>
+                            ))}
+                          </div>
+                          <div style={{display:'flex',justifyContent:'space-between',fontSize:10,color:'#6b7280',marginTop:6}}>
+                            <span>30 hari lalu</span>
+                            <span>Hari ini</span>
+                          </div>
+                        </div>
+
+                        {/* Tabel detail 30 hari */}
+                        <div style={{marginTop:20,maxHeight:300,overflow:'auto'}}>
+                          <table style={{width:'100%',borderCollapse:'collapse'}}>
+                            <thead>
+                              <tr>
+                                <th style={S.th}>Tanggal</th>
+                                <th style={{...S.th,textAlign:'center'}}>Tercapai</th>
+                                <th style={{...S.th,textAlign:'center'}}>%</th>
+                                <th style={{...S.th,textAlign:'center'}}>Kategori</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {days.map(d => (
+                                <tr key={d.date}>
+                                  <td style={{...S.td,fontSize:12}}>{new Date(d.date).toLocaleDateString('id-ID',{weekday:'short',day:'numeric',month:'short'})}</td>
+                                  <td style={{...S.td,textAlign:'center',fontWeight:700,color:d.cat.color}}>{d.count}</td>
+                                  <td style={{...S.td,textAlign:'center'}}>{d.pct}%</td>
+                                  <td style={{...S.td,textAlign:'center'}}>
+                                    <span style={{padding:'2px 8px',borderRadius:4,fontSize:10,fontWeight:600,background:d.cat.bg,color:d.cat.color}}>{d.cat.label}</span>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </>
+                    );
+                  })()}
+                </div>
+              </div>
+            )}
 
             {/* Form submit */}
             <div style={S.box}>

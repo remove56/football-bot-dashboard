@@ -226,3 +226,23 @@ UPDATE users SET daily_target = 11 WHERE name = 'cha2';
 UPDATE users SET daily_target = 8 WHERE name = 'RINTON';
 UPDATE users SET daily_target = 8 WHERE name = 'optimus';
 UPDATE users SET daily_target = 12 WHERE name = 'TOGOKX';
+
+-- 10. TARGET NOTES (catatan/alasan member saat tidak mencapai target)
+CREATE TABLE IF NOT EXISTS target_notes (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES users(id),
+  user_name VARCHAR(100),
+  period DATE NOT NULL,
+  reason TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  UNIQUE(user_id, period)
+);
+
+CREATE INDEX IF NOT EXISTS idx_target_notes_period ON target_notes(period);
+CREATE INDEX IF NOT EXISTS idx_target_notes_user ON target_notes(user_id);
+
+ALTER TABLE target_notes ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Target notes read" ON target_notes FOR SELECT USING (true);
+CREATE POLICY "Target notes insert" ON target_notes FOR INSERT WITH CHECK (true);
+CREATE POLICY "Target notes update" ON target_notes FOR UPDATE USING (true);
+CREATE POLICY "Target notes delete" ON target_notes FOR DELETE USING (true);
