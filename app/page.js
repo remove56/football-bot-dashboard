@@ -261,6 +261,12 @@ export default function Home() {
   const [bgMsg, setBgMsg] = useState('');
   const [bgEditing, setBgEditing] = useState(null);
 
+  // Backup & Restore
+  const [backupMsg, setBackupMsg] = useState('');
+  const [backupStats, setBackupStats] = useState(null);
+  const [restoring, setRestoring] = useState(false);
+  const [backingUp, setBackingUp] = useState(false);
+
   // Posting tracker
   const [postTracker, setPostTracker] = useState([]);
   const [postTrackerHistory, setPostTrackerHistory] = useState([]); // last 30 days
@@ -734,6 +740,63 @@ export default function Home() {
     if (!confirm('Hapus entry ini?')) return;
     await supabase.from('posting_tracker').delete().eq('id', id);
     loadPostTracker(ptPeriod);
+  };
+
+  // Backup & Restore
+  const downloadBackup = async () => {
+    setBackingUp(true);
+    setBackupMsg('Membuat backup...');
+    try {
+      const res = await fetch('/api/backup');
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const blob = await res.blob();
+      const text = await blob.text();
+      const data = JSON.parse(text);
+      setBackupStats(data.stats || null);
+
+      // Download file
+      const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `backup_fbgroup_${new Date().toISOString().split('T')[0]}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+
+      setBackupMsg(`Backup berhasil! Total ${data.stats?.total || 0} baris data dari ${Object.keys(data.tables).length} tabel.`);
+    } catch (err) {
+      setBackupMsg('Error: ' + err.message);
+    } finally {
+      setBackingUp(false);
+    }
+  };
+
+  const uploadRestore = async (file) => {
+    if (!file) return;
+    if (!confirm('PERINGATAN: Restore akan meng-overwrite data existing berdasarkan ID. Lanjutkan?')) return;
+    setRestoring(true);
+    setBackupMsg('Memproses file backup...');
+    try {
+      const text = await file.text();
+      const backup = JSON.parse(text);
+      if (!backup.tables) throw new Error('Format backup tidak valid (tidak ada field "tables")');
+
+      setBackupMsg('Restore dalam progress...');
+      const res = await fetch('/api/backup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ backup }),
+      });
+      const result = await res.json();
+      if (result.error) throw new Error(result.error);
+
+      setBackupMsg(`Restore berhasil! Total ${result.total} baris di-restore.`);
+      setBackupStats(result.results);
+      loadData();
+    } catch (err) {
+      setBackupMsg('Error: ' + err.message);
+    } finally {
+      setRestoring(false);
+    }
   };
 
   // CRUD akun grup khusus (di tab Jalankan Bot)
@@ -2034,6 +2097,69 @@ export default function Home() {
                   ))}
                 </tbody>
               </table>
+            </div>
+
+            {/* BACKUP & RESTORE */}
+            <div style={S.box}>
+              <h3 style={{color:'#FFD700',marginBottom:8,fontSize:16}}>💾 Backup & Restore</h3>
+              <p style={{color:'#9ca3af',fontSize:12,marginBottom:16}}>
+                Backup semua data (users, groups, bot_accounts, posting_tracker, target_notes, dll) ke file JSON.
+                Simpan file ini ke Google Drive / komputer untuk jaga-jaga.
+              </p>
+
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:16,marginBottom:16}}>
+                {/* Backup */}
+                <div style={{background:'#0d1117',border:'1px solid #1f2937',borderRadius:8,padding:16}}>
+                  <h4 style={{color:'#60a5fa',fontSize:14,marginTop:0,marginBottom:8}}>📥 Download Backup</h4>
+                  <p style={{color:'#6b7280',fontSize:12,marginBottom:12}}>
+                    Export semua data dashboard ke 1 file JSON. Bisa di-upload ke Google Drive manual.
+                  </p>
+                  <button onClick={downloadBackup} disabled={backingUp} style={{...S.btn('#1e3a5f'),background:'#1e40af',color:'#fff',width:'100%',padding:'12px',fontSize:14,opacity:backingUp?0.5:1,cursor:backingUp?'wait':'pointer'}}>
+                    {backingUp ? '⏳ Membuat backup...' : '📥 Download Backup Sekarang'}
+                  </button>
+                </div>
+
+                {/* Restore */}
+                <div style={{background:'#0d1117',border:'1px solid #1f2937',borderRadius:8,padding:16}}>
+                  <h4 style={{color:'#fb923c',fontSize:14,marginTop:0,marginBottom:8}}>📤 Upload & Restore</h4>
+                  <p style={{color:'#6b7280',fontSize:12,marginBottom:12}}>
+                    Pilih file backup JSON untuk restore. Data existing akan di-overwrite berdasarkan ID.
+                  </p>
+                  <label style={{...S.btn('#7c2d12'),background:'#9a3412',color:'#fff',width:'100%',padding:'12px',fontSize:14,display:'block',textAlign:'center',cursor:restoring?'wait':'pointer',opacity:restoring?0.5:1}}>
+                    {restoring ? '⏳ Restoring...' : '📤 Pilih File Backup'}
+                    <input
+                      type="file"
+                      accept=".json,application/json"
+                      style={{display:'none'}}
+                      disabled={restoring}
+                      onChange={e => e.target.files?.[0] && uploadRestore(e.target.files[0])}
+                    />
+                  </label>
+                </div>
+              </div>
+
+              {backupMsg && <p style={{fontSize:13,color:backupMsg.includes('Error')?'#ef4444':'#10b981',marginBottom:12}}>{backupMsg}</p>}
+
+              {/* Stats terakhir backup/restore */}
+              {backupStats && typeof backupStats === 'object' && (
+                <div style={{background:'#0d1117',border:'1px solid #1f2937',borderRadius:8,padding:12,fontSize:12}}>
+                  <div style={{color:'#9ca3af',marginBottom:8,fontWeight:600}}>Detail per tabel:</div>
+                  <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(200px,1fr))',gap:8}}>
+                    {Object.entries(backupStats).filter(([k]) => k !== 'total').map(([name, stat]) => (
+                      <div key={name} style={{background:'#1a1a2e',padding:'6px 10px',borderRadius:4,display:'flex',justifyContent:'space-between'}}>
+                        <span style={{color:'#9ca3af'}}>{name}</span>
+                        <span style={{color:stat.error ? '#ef4444' : '#10b981',fontWeight:600}}>{stat.count ?? stat.restored ?? 0}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div style={{marginTop:16,padding:12,background:'#0d1117',border:'1px solid #1f2937',borderRadius:8,fontSize:11,color:'#6b7280'}}>
+                <strong style={{color:'#FFD700'}}>Auto Backup ke Google Drive:</strong> Untuk backup otomatis harian,
+                pakai script lokal di komputer kamu (<code style={{background:'#1f2937',padding:'1px 4px',borderRadius:3}}>scripts/auto-backup.js</code>) via Windows Task Scheduler.
+                Script akan download backup dari dashboard dan upload ke Google Drive otomatis.
+              </div>
             </div>
           </>
         )}
