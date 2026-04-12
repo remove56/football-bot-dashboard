@@ -218,6 +218,13 @@ CREATE POLICY "Bot accounts delete" ON bot_accounts FOR DELETE USING (true);
 ALTER TABLE task_queue ADD COLUMN IF NOT EXISTS account_id VARCHAR(30);
 ALTER TABLE task_queue ADD COLUMN IF NOT EXISTS account_name VARCHAR(100);
 
+-- ADD platforms column to reels_tasks (multi-platform: facebook, tiktok, instagram)
+ALTER TABLE reels_tasks ADD COLUMN IF NOT EXISTS platforms JSONB DEFAULT '["facebook"]';
+
+-- ADD tiktok_id column to bot_accounts (untuk matching TikTok username)
+ALTER TABLE bot_accounts ADD COLUMN IF NOT EXISTS tiktok_id VARCHAR(100);
+ALTER TABLE bot_accounts ADD COLUMN IF NOT EXISTS instagram_id VARCHAR(100);
+
 -- ADD daily_target column to users (target grup harian per member)
 ALTER TABLE users ADD COLUMN IF NOT EXISTS daily_target INTEGER DEFAULT 0;
 

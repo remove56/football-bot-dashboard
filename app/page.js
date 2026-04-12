@@ -867,6 +867,7 @@ export default function Home() {
   const [reelsTasks, setReelsTasks] = useState([]);
   const [reelsKeyword, setReelsKeyword] = useState('');
   const [reelsMsg, setReelsMsg] = useState('');
+  const [reelsPlatforms, setReelsPlatforms] = useState({ facebook: true, tiktok: false, instagram: false });
 
   // Dynamic accounts — dari database
   const reelsAccounts = botAccounts.filter(a => (a.account_type === 'reels' || a.account_type === 'both') && a.is_active);
@@ -878,14 +879,17 @@ export default function Home() {
   };
 
   const createReelsTask = async (accountId, accountName) => {
+    const selectedPlatforms = Object.keys(reelsPlatforms).filter(k => reelsPlatforms[k]);
+    if (selectedPlatforms.length === 0) { setReelsMsg('Pilih minimal 1 platform!'); return; }
     const { error } = await supabase.from('reels_tasks').insert({
       account_id: accountId,
       account_name: accountName,
       keyword: reelsKeyword || null,
       status: 'pending',
+      platforms: selectedPlatforms,
     });
     if (error) setReelsMsg('Error: ' + error.message);
-    else { setReelsMsg(`Tugas reels dibuat untuk ${accountName}!`); loadReelsTasks(); }
+    else { setReelsMsg(`Tugas reels dibuat untuk ${accountName} → ${selectedPlatforms.join(' + ')}!`); loadReelsTasks(); }
   };
 
   const deleteReelsTask = async (id) => {
@@ -1858,12 +1862,33 @@ export default function Home() {
                 </div>
               )}
 
+              {/* Platform checkboxes */}
+              <div style={{marginBottom:16}}>
+                <label style={{display:'block',fontSize:12,color:'#9ca3af',marginBottom:8}}>Platform posting:</label>
+                <div style={{display:'flex',gap:16}}>
+                  {[
+                    { key: 'facebook', label: 'Facebook', color: '#1877F2', icon: '📘' },
+                    { key: 'tiktok', label: 'TikTok', color: '#00f2ea', icon: '🎵' },
+                    { key: 'instagram', label: 'Instagram', color: '#E4405F', icon: '📷' },
+                  ].map(p => (
+                    <label key={p.key} onClick={()=>setReelsPlatforms(prev=>({...prev,[p.key]:!prev[p.key]}))}
+                      style={{display:'flex',alignItems:'center',gap:8,cursor:'pointer',padding:'8px 16px',borderRadius:8,
+                        background:reelsPlatforms[p.key]?'#1a1a2e':'#0d1117',
+                        border:`2px solid ${reelsPlatforms[p.key]?p.color:'#374151'}`,opacity:p.key==='instagram'?0.5:1}}>
+                      <span style={{fontSize:16}}>{p.icon}</span>
+                      <span style={{fontSize:13,fontWeight:600,color:reelsPlatforms[p.key]?p.color:'#6b7280'}}>{p.label}</span>
+                      {p.key==='instagram' && <span style={{fontSize:9,color:'#6b7280'}}>(segera)</span>}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
               <div style={{marginBottom:16}}>
                 <label style={{display:'block',fontSize:12,color:'#9ca3af',marginBottom:4}}>Keyword pencarian (opsional, kosongkan = random)</label>
                 <input style={S.input} placeholder="Contoh: messi goals, premier league highlights" value={reelsKeyword} onChange={e=>setReelsKeyword(e.target.value)} />
               </div>
 
-              {reelsMsg && <p style={{marginTop:8,fontSize:13,color:reelsMsg.includes('Error')?'#ef4444':'#10b981'}}>{reelsMsg}</p>}
+              {reelsMsg && <p style={{marginTop:8,fontSize:13,color:reelsMsg.includes('Error')||reelsMsg.includes('Pilih')?'#ef4444':'#10b981'}}>{reelsMsg}</p>}
 
               <div style={{marginTop:20,padding:16,background:'#0d1117',borderRadius:8,border:'1px solid #1f2937'}}>
                 <h4 style={{color:'#9ca3af',fontSize:13,marginBottom:8}}>Cara Kerja:</h4>
@@ -1894,29 +1919,44 @@ export default function Home() {
                     <tr>
                       <th style={S.th}>#</th>
                       <th style={S.th}>Akun</th>
+                      <th style={S.th}>Platform</th>
                       <th style={S.th}>Keyword</th>
                       <th style={S.th}>Status</th>
+                      <th style={S.th}>Hasil</th>
                       <th style={S.th}>Waktu</th>
                       <th style={S.th}>Aksi</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {reelsTasks.map((t, i) => (
+                    {reelsTasks.map((t, i) => {
+                      const platforms = t.platforms || ['facebook'];
+                      let resultInfo = '';
+                      try { resultInfo = t.result_url ? JSON.stringify(JSON.parse(t.result_url)) : ''; } catch(e) { resultInfo = t.result_url || ''; }
+                      return (
                       <tr key={t.id}>
                         <td style={S.td}>{i+1}</td>
                         <td style={{...S.td,fontWeight:600}}>{t.account_name}</td>
+                        <td style={S.td}>
+                          <div style={{display:'flex',gap:4}}>
+                            {platforms.includes('facebook') && <span title="Facebook" style={{fontSize:12}}>📘</span>}
+                            {platforms.includes('tiktok') && <span title="TikTok" style={{fontSize:12}}>🎵</span>}
+                            {platforms.includes('instagram') && <span title="Instagram" style={{fontSize:12}}>📷</span>}
+                          </div>
+                        </td>
                         <td style={{...S.td,fontSize:12,color:'#9ca3af'}}>{t.keyword || 'random'}</td>
                         <td style={S.td}>
-                          <span style={S.badge(t.status === 'done' ? 'ok' : t.status === 'failed' ? 'fail' : 'pending')}>
+                          <span style={S.badge(t.status === 'done' ? 'ok' : t.status === 'failed' ? 'fail' : t.status === 'running' ? 'approved' : 'pending')}>
                             {t.status}
                           </span>
                         </td>
+                        <td style={{...S.td,fontSize:10,color:'#6b7280',maxWidth:150}}>{resultInfo.substring(0, 50)}</td>
                         <td style={{...S.td,fontSize:12,color:'#6b7280'}}>{new Date(t.created_at).toLocaleString('id-ID')}</td>
                         <td style={S.td}>
                           <button onClick={()=>deleteReelsTask(t.id)} style={{...S.btn('#7f1d1d'),fontSize:11,padding:'4px 8px'}}>Hapus</button>
                         </td>
                       </tr>
-                    ))}
+                      );
+                    })}
                   </tbody>
                 </table>
               )}
