@@ -48,6 +48,57 @@ async function getImageBuffer(url) {
 }
 
 /**
+ * Deteksi apakah URL adalah Facebook post URL (bukan URL gambar langsung).
+ * Kalau iya, kita perlu extract og:image dulu sebelum download.
+ */
+function isFacebookPostUrl(url) {
+  const u = url.toLowerCase();
+  if (!u.includes('facebook.com') && !u.includes('fb.com')) return false;
+  // URL gambar langsung: /photo/?fbid=... atau /photo.php?
+  // URL post: /groups/xxx/posts/yyy, /watch/?v=, /reel/, /permalink.php
+  if (u.includes('/photo?') || u.includes('/photo/?') || u.includes('/photo.php?')) return false;
+  return u.includes('/posts/') || u.includes('/reel/') || u.includes('/watch') ||
+         u.includes('/permalink') || u.includes('/videos/') || u.includes('/story');
+}
+
+/**
+ * Fetch halaman Facebook post dan extract og:image / twitter:image.
+ * Ini cara yang sama dengan yang dilakukan WhatsApp/Telegram untuk preview link.
+ * Tidak butuh login, tidak berisiko ban.
+ */
+async function extractOgImageFromFbPost(url) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 10000);
+
+  try {
+    const res = await fetch(url, {
+      signal: controller.signal,
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (compatible; FacebookExternalHit/1.1; +http://www.facebook.com/externalhit_uatext.php)',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+      },
+      redirect: 'follow',
+    });
+
+    if (!res.ok) return null;
+    const html = await res.text();
+
+    // Extract og:image atau twitter:image meta tag
+    const ogImageMatch = html.match(/<meta\s+property=["']og:image["']\s+content=["']([^"']+)["']/i) ||
+                        html.match(/<meta\s+content=["']([^"']+)["']\s+property=["']og:image["']/i);
+    const twImageMatch = html.match(/<meta\s+name=["']twitter:image["']\s+content=["']([^"']+)["']/i) ||
+                        html.match(/<meta\s+content=["']([^"']+)["']\s+name=["']twitter:image["']/i);
+
+    const imgUrl = ogImageMatch?.[1] || twImageMatch?.[1];
+    return imgUrl ? imgUrl.replace(/&amp;/g, '&') : null;
+  } catch (e) {
+    return null;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+/**
  * Hitung average hash dari raw image bytes.
  * Ini lebih sederhana dari DCT-based pHash tapi tetap efektif
  * untuk mendeteksi gambar yang sama setelah kompresi/resize.
@@ -120,14 +171,36 @@ export async function POST(request) {
       return Response.json({ error: 'imageUrl wajib diisi' }, { status: 400 });
     }
 
-    // 1. Download gambar
+    // 1. Tentukan URL gambar yang akan di-download
+    // Kalau URL adalah Facebook post URL, extract og:image dulu
+    let actualImageUrl = imageUrl;
+    let ogExtracted = false;
+
+    if (isFacebookPostUrl(imageUrl)) {
+      const ogImage = await extractOgImageFromFbPost(imageUrl);
+      if (ogImage) {
+        actualImageUrl = ogImage;
+        ogExtracted = true;
+      } else {
+        // Tidak bisa extract og:image — skip visual check (grup privat mungkin)
+        return Response.json({
+          isDuplicate: false,
+          hash: null,
+          skipped: true,
+          message: 'Grup privat atau og:image tidak tersedia — cek visual di-skip',
+        });
+      }
+    }
+
+    // 2. Download gambar
     let buffer;
     try {
-      buffer = await getImageBuffer(imageUrl);
+      buffer = await getImageBuffer(actualImageUrl);
     } catch (err) {
       return Response.json({
         error: `Gagal download gambar: ${err.message}`,
         isDuplicate: false,
+        ogExtracted,
       }, { status: 200 });
     }
 
@@ -138,7 +211,7 @@ export async function POST(request) {
       }, { status: 200 });
     }
 
-    // 2. Hitung hash
+    // 3. Hitung hash
     const newHash = computeAverageHash(buffer);
 
     // 3. Ambil semua hash dari database

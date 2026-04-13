@@ -641,28 +641,25 @@ export default function Home() {
     }
 
     // ── CEK 3: pHash — deteksi gambar SAMA meski di-save & upload ulang ──
-    // Hanya untuk gambar (bukan video), cek visual similarity via API
-    if (ptType === 'gambar1' || ptType === 'gambar2') {
-      setPtMsg('Memeriksa keaslian gambar...');
-      try {
-        const res = await fetch('/api/check-image', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ imageUrl: linkTrimmed, userName: user.name }),
-        });
-        const result = await res.json();
-        if (result.isDuplicate && result.isOtherMember) {
-          setPtMsg(`DITOLAK: ${result.message}`);
-          return;
-        }
-        if (result.isDuplicate && result.match) {
-          setPtMsg(`Peringatan: Gambar mirip ${result.similarity}% dengan posting di "${result.match.group}". Gunakan gambar berbeda!`);
-          return;
-        }
-      } catch (e) {
-        // Kalau API error, lanjut tanpa pHash check (jangan block posting)
-        console.warn('pHash check failed:', e.message);
+    // Sekarang juga dukung Facebook post URL (extract og:image otomatis)
+    setPtMsg('Memeriksa keaslian konten...');
+    try {
+      const res = await fetch('/api/check-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageUrl: linkTrimmed, userName: user.name }),
+      });
+      const result = await res.json();
+      if (result.isDuplicate && result.isOtherMember) {
+        setPtMsg(`DITOLAK: ${result.message}`);
+        return;
       }
+      if (result.isDuplicate && result.match) {
+        setPtMsg(`Peringatan: Konten mirip ${result.similarity}% dengan posting di "${result.match.group}". Gunakan konten berbeda!`);
+        return;
+      }
+    } catch (e) {
+      console.warn('pHash check failed:', e.message);
     }
 
     const grp = groups.find(g => g.id === ptGroup);
@@ -708,29 +705,28 @@ export default function Home() {
       });
     }
 
-    // ── Simpan pHash gambar ke image_hashes (untuk deteksi visual duplikat) ──
-    if (ptType === 'gambar1' || ptType === 'gambar2') {
-      try {
-        const res = await fetch('/api/check-image', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ imageUrl: linkTrimmed, userName: user.name }),
+    // ── Simpan pHash ke image_hashes (untuk deteksi visual duplikat) ──
+    // Sekarang juga untuk video (extract og:image dari FB post URL)
+    try {
+      const res = await fetch('/api/check-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageUrl: linkTrimmed, userName: user.name }),
+      });
+      const result = await res.json();
+      if (result.hash) {
+        await supabase.from('image_hashes').insert({
+          phash: result.hash,
+          source_url: linkTrimmed,
+          user_name: user.name,
+          group_id: ptGroup,
+          group_name: grp?.name || '',
+          club: grp?.club || '',
+          content_type: ptType === 'video' ? 'video' : 'gambar',
+          source: 'member',
         });
-        const result = await res.json();
-        if (result.hash) {
-          await supabase.from('image_hashes').insert({
-            phash: result.hash,
-            source_url: linkTrimmed,
-            user_name: user.name,
-            group_id: ptGroup,
-            group_name: grp?.name || '',
-            club: grp?.club || '',
-            content_type: 'gambar',
-            source: 'member',
-          });
-        }
-      } catch (e) { /* silent — hash sudah di-check sebelumnya */ }
-    }
+      }
+    } catch (e) { /* silent — hash sudah di-check sebelumnya */ }
 
     setPtLink(''); setPtMsg('Link berhasil disimpan!');
     loadPostTracker(ptPeriod);
