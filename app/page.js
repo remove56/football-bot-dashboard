@@ -5,25 +5,34 @@ import { supabase } from '../lib/supabase';
 // ============================================================
 // STYLES
 // ============================================================
+// FIERY DARK THEME — black background with orange/red flame accents
 const S = {
-  nav: { background:'#111827',borderBottom:'1px solid #1f2937',padding:'12px 24px',display:'flex',justifyContent:'space-between',alignItems:'center',position:'sticky',top:0,zIndex:100 },
-  h1: { fontSize:20,background:'linear-gradient(135deg,#FFD700,#FF6B00)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',fontWeight:700 },
-  tabs: { display:'flex',gap:8,padding:'14px 24px',background:'#0d1117',borderBottom:'1px solid #1f2937',flexWrap:'wrap' },
-  tab: (a) => ({ padding:'8px 16px',borderRadius:8,cursor:'pointer',fontSize:13,fontWeight:600,color:a?'#FFD700':'#6b7280',background:a?'#1a1a2e':'#1f2937',border:`1px solid ${a?'#FFD700':'transparent'}` }),
+  nav: { background:'linear-gradient(180deg,#1a0a00 0%,#0d0500 100%)',borderBottom:'2px solid #dc2626',padding:'12px 24px',display:'flex',justifyContent:'space-between',alignItems:'center',position:'sticky',top:0,zIndex:100,boxShadow:'0 2px 20px rgba(220,38,38,0.3)' },
+  h1: { fontSize:20,background:'linear-gradient(135deg,#fbbf24 0%,#f97316 30%,#dc2626 70%,#991b1b 100%)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',fontWeight:800,textShadow:'0 0 30px rgba(251,146,60,0.5)' },
+  tabs: { display:'flex',gap:8,padding:'14px 24px',background:'linear-gradient(180deg,#0d0500 0%,#0a0300 100%)',borderBottom:'1px solid #451a03',flexWrap:'wrap' },
+  tab: (a) => ({ padding:'8px 16px',borderRadius:8,cursor:'pointer',fontSize:13,fontWeight:700,color:a?'#fbbf24':'#78716c',background:a?'linear-gradient(135deg,#451a03 0%,#7c2d12 100%)':'#1c1917',border:`1px solid ${a?'#f97316':'transparent'}`,boxShadow:a?'0 0 15px rgba(249,115,22,0.4)':'none',transition:'all 0.2s' }),
   main: { padding:24,maxWidth:1400,margin:'0 auto' },
-  box: { background:'#111827',border:'1px solid #1f2937',borderRadius:12,padding:24,marginBottom:24 },
-  stat: { background:'#111827',border:'1px solid #1f2937',borderRadius:12,padding:18 },
-  num: { fontSize:28,fontWeight:700,color:'#FFD700' },
-  label: { fontSize:12,color:'#6b7280',marginTop:4 },
-  input: { width:'100%',padding:'10px 14px',background:'#1f2937',border:'1px solid #374151',borderRadius:8,color:'#fff',fontSize:14 },
-  btn: (c) => ({ padding:'10px 16px',border:`1px solid ${c||'#374151'}`,borderRadius:8,background:'#1f2937',color:'#e5e7eb',fontSize:13,fontWeight:600,cursor:'pointer' }),
-  badge: (c) => ({ padding:'2px 8px',borderRadius:4,fontSize:11,fontWeight:600,...({ok:{background:'#065f46',color:'#6ee7b7'},fail:{background:'#7f1d1d',color:'#fca5a5'},pending:{background:'#78350f',color:'#fbbf24'},approved:{background:'#065f46',color:'#6ee7b7'},rejected:{background:'#7f1d1d',color:'#fca5a5'},admin:{background:'#7f1d1d',color:'#fca5a5'},member:{background:'#1e3a5f',color:'#60a5fa'}}[c]||{background:'#1e3a5f',color:'#60a5fa'}) }),
-  th: { background:'#1f2937',padding:'10px 14px',textAlign:'left',fontSize:12,color:'#9ca3af',fontWeight:600 },
-  td: { padding:'10px 14px',borderTop:'1px solid #1f2937',fontSize:13 },
-  link: { color:'#60a5fa',textDecoration:'none' },
+  box: { background:'linear-gradient(135deg,#1c1917 0%,#0c0a09 100%)',border:'1px solid #451a03',borderRadius:12,padding:24,marginBottom:24,boxShadow:'0 4px 20px rgba(0,0,0,0.5), inset 0 1px 0 rgba(251,146,60,0.1)' },
+  stat: { background:'linear-gradient(135deg,#1c1917 0%,#0c0a09 100%)',border:'1px solid #451a03',borderRadius:12,padding:18,boxShadow:'0 0 15px rgba(249,115,22,0.15)' },
+  num: { fontSize:28,fontWeight:800,background:'linear-gradient(135deg,#fbbf24 0%,#f97316 100%)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent' },
+  label: { fontSize:12,color:'#78716c',marginTop:4 },
+  input: { width:'100%',padding:'10px 14px',background:'#1c1917',border:'1px solid #451a03',borderRadius:8,color:'#fef3c7',fontSize:14,outline:'none' },
+  btn: (c) => ({ padding:'10px 16px',border:`1px solid ${c||'#7c2d12'}`,borderRadius:8,background:c?`linear-gradient(135deg,${c} 0%,${c}dd 100%)`:'linear-gradient(135deg,#7c2d12 0%,#451a03 100%)',color:'#fef3c7',fontSize:13,fontWeight:700,cursor:'pointer',boxShadow:'0 2px 8px rgba(220,38,38,0.3)',transition:'all 0.2s' }),
+  badge: (c) => ({ padding:'2px 8px',borderRadius:4,fontSize:11,fontWeight:700,...({
+    ok:{background:'linear-gradient(135deg,#065f46 0%,#047857 100%)',color:'#a7f3d0',border:'1px solid #10b981'},
+    fail:{background:'linear-gradient(135deg,#7f1d1d 0%,#991b1b 100%)',color:'#fecaca',border:'1px solid #ef4444'},
+    pending:{background:'linear-gradient(135deg,#78350f 0%,#92400e 100%)',color:'#fde68a',border:'1px solid #f59e0b'},
+    approved:{background:'linear-gradient(135deg,#065f46 0%,#047857 100%)',color:'#a7f3d0',border:'1px solid #10b981'},
+    rejected:{background:'linear-gradient(135deg,#7f1d1d 0%,#991b1b 100%)',color:'#fecaca',border:'1px solid #ef4444'},
+    admin:{background:'linear-gradient(135deg,#991b1b 0%,#dc2626 100%)',color:'#fecaca',border:'1px solid #f87171'},
+    member:{background:'linear-gradient(135deg,#78350f 0%,#b45309 100%)',color:'#fed7aa',border:'1px solid #fb923c'}
+  }[c]||{background:'#1c1917',color:'#a8a29e',border:'1px solid #451a03'}) }),
+  th: { background:'linear-gradient(135deg,#1c1917 0%,#0c0a09 100%)',padding:'10px 14px',textAlign:'left',fontSize:12,color:'#fbbf24',fontWeight:700,borderBottom:'1px solid #451a03' },
+  td: { padding:'10px 14px',borderTop:'1px solid #1c1917',fontSize:13,color:'#e7e5e4' },
+  link: { color:'#fb923c',textDecoration:'none',fontWeight:600 },
 };
 
-const LEAGUE_COLORS = {'La Liga':'#60a5fa','Premier League':'#c084fc','Serie A':'#86efac','Bundesliga':'#fbbf24','Ligue 1':'#a5b4fc','Liga 1':'#fca5a5','Timnas':'#fca5a5','Pemain':'#6ee7b7'};
+const LEAGUE_COLORS = {'La Liga':'#fb923c','Premier League':'#dc2626','Serie A':'#fbbf24','Bundesliga':'#f59e0b','Ligue 1':'#ef4444','Liga 1':'#f87171','Timnas':'#dc2626','Pemain':'#fde68a'};
 
 // ============================================================
 // CONTENT DEDUP — Normalisasi URL untuk deteksi duplikat
@@ -177,20 +186,31 @@ function LoginScreen({ onLogin }) {
   };
 
   return (
-    <div style={{display:'flex',justifyContent:'center',alignItems:'center',minHeight:'100vh'}}>
-      <div style={{background:'#111827',border:'1px solid #1f2937',borderRadius:16,padding:48,width:400}}>
-        <h1 style={{...S.h1,fontSize:28,textAlign:'center',marginBottom:8}}>Football Bot Dashboard</h1>
-        <p style={{color:'#6b7280',fontSize:14,textAlign:'center',marginBottom:32}}>Masukkan kredensial</p>
-        {err && <div style={{background:'#7f1d1d',color:'#fca5a5',padding:10,borderRadius:8,textAlign:'center',marginBottom:16,fontSize:14}}>{err}</div>}
+    <div style={{display:'flex',justifyContent:'center',alignItems:'center',minHeight:'100vh',position:'relative'}}>
+      <div style={{
+        background:'linear-gradient(135deg,#1c1917 0%,#0c0a09 100%)',
+        border:'2px solid #451a03',
+        borderRadius:16,padding:48,width:400,
+        boxShadow:'0 0 40px rgba(220,38,38,0.4), 0 0 80px rgba(249,115,22,0.2), inset 0 1px 0 rgba(251,146,60,0.1)',
+      }}>
+        <div style={{textAlign:'center',fontSize:40,marginBottom:8}}>🔥⚽🔥</div>
+        <h1 style={{...S.h1,fontSize:30,textAlign:'center',marginBottom:8}}>Football Bot Dashboard</h1>
+        <p style={{color:'#a8a29e',fontSize:14,textAlign:'center',marginBottom:32}}>Masukkan kredensial</p>
+        {err && <div style={{background:'linear-gradient(135deg,#7f1d1d 0%,#991b1b 100%)',color:'#fecaca',padding:10,borderRadius:8,textAlign:'center',marginBottom:16,fontSize:14,border:'1px solid #ef4444'}}>{err}</div>}
         <div style={{marginBottom:20}}>
-          <label style={{display:'block',fontSize:13,color:'#9ca3af',marginBottom:6}}>Username</label>
+          <label style={{display:'block',fontSize:13,color:'#fbbf24',marginBottom:6,fontWeight:600}}>Username</label>
           <input style={S.input} value={u} onChange={e=>setU(e.target.value)} onKeyDown={e=>e.key==='Enter'&&login()} />
         </div>
         <div style={{marginBottom:20}}>
-          <label style={{display:'block',fontSize:13,color:'#9ca3af',marginBottom:6}}>Password</label>
+          <label style={{display:'block',fontSize:13,color:'#fbbf24',marginBottom:6,fontWeight:600}}>Password</label>
           <input style={S.input} type="password" value={p} onChange={e=>setP(e.target.value)} onKeyDown={e=>e.key==='Enter'&&login()} />
         </div>
-        <button onClick={login} style={{width:'100%',padding:14,background:'linear-gradient(135deg,#FFD700,#FF8C00)',border:'none',borderRadius:8,color:'#000',fontSize:16,fontWeight:700,cursor:'pointer'}}>Login</button>
+        <button onClick={login} style={{
+          width:'100%',padding:14,
+          background:'linear-gradient(135deg,#fbbf24 0%,#f97316 30%,#dc2626 100%)',
+          border:'none',borderRadius:8,color:'#1c1917',fontSize:16,fontWeight:800,cursor:'pointer',
+          boxShadow:'0 4px 20px rgba(249,115,22,0.5)',textTransform:'uppercase',letterSpacing:1,
+        }}>🔥 Login 🔥</button>
       </div>
     </div>
   );
