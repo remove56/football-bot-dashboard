@@ -5,34 +5,34 @@ import { supabase } from '../lib/supabase';
 // ============================================================
 // STYLES
 // ============================================================
-// FIERY DARK THEME — black background with orange/red flame accents
+// DARK CRYSTAL ICE STRONG THEME — obsidian black dengan aksen kristal es biru
 const S = {
-  nav: { background:'linear-gradient(180deg,#1a0a00 0%,#0d0500 100%)',borderBottom:'2px solid #dc2626',padding:'12px 24px',display:'flex',justifyContent:'space-between',alignItems:'center',position:'sticky',top:0,zIndex:100,boxShadow:'0 2px 20px rgba(220,38,38,0.3)' },
-  h1: { fontSize:20,background:'linear-gradient(135deg,#fbbf24 0%,#f97316 30%,#dc2626 70%,#991b1b 100%)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',fontWeight:800,textShadow:'0 0 30px rgba(251,146,60,0.5)' },
-  tabs: { display:'flex',gap:8,padding:'14px 24px',background:'linear-gradient(180deg,#0d0500 0%,#0a0300 100%)',borderBottom:'1px solid #451a03',flexWrap:'wrap' },
-  tab: (a) => ({ padding:'8px 16px',borderRadius:8,cursor:'pointer',fontSize:13,fontWeight:700,color:a?'#fbbf24':'#78716c',background:a?'linear-gradient(135deg,#451a03 0%,#7c2d12 100%)':'#1c1917',border:`1px solid ${a?'#f97316':'transparent'}`,boxShadow:a?'0 0 15px rgba(249,115,22,0.4)':'none',transition:'all 0.2s' }),
+  nav: { background:'linear-gradient(180deg,#020617 0%,#0f172a 100%)',borderBottom:'2px solid #0891b2',padding:'12px 24px',display:'flex',justifyContent:'space-between',alignItems:'center',position:'sticky',top:0,zIndex:100,boxShadow:'0 2px 20px rgba(6,182,212,0.3)' },
+  h1: { fontSize:20,background:'linear-gradient(135deg,#67e8f9 0%,#22d3ee 30%,#06b6d4 70%,#0891b2 100%)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',fontWeight:900,textShadow:'0 0 30px rgba(34,211,238,0.4)',letterSpacing:0.5 },
+  tabs: { display:'flex',gap:8,padding:'14px 24px',background:'linear-gradient(180deg,#0f172a 0%,#020617 100%)',borderBottom:'1px solid #164e63',flexWrap:'wrap' },
+  tab: (a) => ({ padding:'8px 16px',borderRadius:6,cursor:'pointer',fontSize:13,fontWeight:700,color:a?'#22d3ee':'#64748b',background:a?'linear-gradient(135deg,#164e63 0%,#0e7490 100%)':'#0f172a',border:`2px solid ${a?'#06b6d4':'#1e293b'}`,boxShadow:a?'0 0 20px rgba(6,182,212,0.5), inset 0 1px 0 rgba(103,232,249,0.3)':'none',transition:'all 0.2s',textTransform:'uppercase',letterSpacing:0.5 }),
   main: { padding:24,maxWidth:1400,margin:'0 auto' },
-  box: { background:'linear-gradient(135deg,#1c1917 0%,#0c0a09 100%)',border:'1px solid #451a03',borderRadius:12,padding:24,marginBottom:24,boxShadow:'0 4px 20px rgba(0,0,0,0.5), inset 0 1px 0 rgba(251,146,60,0.1)' },
-  stat: { background:'linear-gradient(135deg,#1c1917 0%,#0c0a09 100%)',border:'1px solid #451a03',borderRadius:12,padding:18,boxShadow:'0 0 15px rgba(249,115,22,0.15)' },
-  num: { fontSize:28,fontWeight:800,background:'linear-gradient(135deg,#fbbf24 0%,#f97316 100%)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent' },
-  label: { fontSize:12,color:'#78716c',marginTop:4 },
-  input: { width:'100%',padding:'10px 14px',background:'#1c1917',border:'1px solid #451a03',borderRadius:8,color:'#fef3c7',fontSize:14,outline:'none' },
-  btn: (c) => ({ padding:'10px 16px',border:`1px solid ${c||'#7c2d12'}`,borderRadius:8,background:c?`linear-gradient(135deg,${c} 0%,${c}dd 100%)`:'linear-gradient(135deg,#7c2d12 0%,#451a03 100%)',color:'#fef3c7',fontSize:13,fontWeight:700,cursor:'pointer',boxShadow:'0 2px 8px rgba(220,38,38,0.3)',transition:'all 0.2s' }),
-  badge: (c) => ({ padding:'2px 8px',borderRadius:4,fontSize:11,fontWeight:700,...({
-    ok:{background:'linear-gradient(135deg,#065f46 0%,#047857 100%)',color:'#a7f3d0',border:'1px solid #10b981'},
-    fail:{background:'linear-gradient(135deg,#7f1d1d 0%,#991b1b 100%)',color:'#fecaca',border:'1px solid #ef4444'},
-    pending:{background:'linear-gradient(135deg,#78350f 0%,#92400e 100%)',color:'#fde68a',border:'1px solid #f59e0b'},
-    approved:{background:'linear-gradient(135deg,#065f46 0%,#047857 100%)',color:'#a7f3d0',border:'1px solid #10b981'},
-    rejected:{background:'linear-gradient(135deg,#7f1d1d 0%,#991b1b 100%)',color:'#fecaca',border:'1px solid #ef4444'},
-    admin:{background:'linear-gradient(135deg,#991b1b 0%,#dc2626 100%)',color:'#fecaca',border:'1px solid #f87171'},
-    member:{background:'linear-gradient(135deg,#78350f 0%,#b45309 100%)',color:'#fed7aa',border:'1px solid #fb923c'}
-  }[c]||{background:'#1c1917',color:'#a8a29e',border:'1px solid #451a03'}) }),
-  th: { background:'linear-gradient(135deg,#1c1917 0%,#0c0a09 100%)',padding:'10px 14px',textAlign:'left',fontSize:12,color:'#fbbf24',fontWeight:700,borderBottom:'1px solid #451a03' },
-  td: { padding:'10px 14px',borderTop:'1px solid #1c1917',fontSize:13,color:'#e7e5e4' },
-  link: { color:'#fb923c',textDecoration:'none',fontWeight:600 },
+  box: { background:'linear-gradient(135deg,#0f172a 0%,#020617 100%)',border:'1px solid #164e63',borderRadius:8,padding:24,marginBottom:24,boxShadow:'0 4px 24px rgba(0,0,0,0.6), 0 0 0 1px rgba(6,182,212,0.1), inset 0 1px 0 rgba(103,232,249,0.05)' },
+  stat: { background:'linear-gradient(135deg,#0f172a 0%,#020617 100%)',border:'1px solid #164e63',borderRadius:6,padding:18,boxShadow:'0 0 15px rgba(6,182,212,0.2), inset 0 1px 0 rgba(103,232,249,0.08)' },
+  num: { fontSize:28,fontWeight:900,background:'linear-gradient(135deg,#e0f2fe 0%,#67e8f9 50%,#06b6d4 100%)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',textShadow:'0 0 20px rgba(103,232,249,0.3)' },
+  label: { fontSize:12,color:'#64748b',marginTop:4,fontWeight:600,textTransform:'uppercase',letterSpacing:0.5 },
+  input: { width:'100%',padding:'10px 14px',background:'#020617',border:'1px solid #1e293b',borderRadius:6,color:'#e0f2fe',fontSize:14,outline:'none',fontWeight:500 },
+  btn: (c) => ({ padding:'10px 16px',border:`1px solid ${c||'#0e7490'}`,borderRadius:6,background:c?`linear-gradient(135deg,${c} 0%,${c}dd 100%)`:'linear-gradient(135deg,#0e7490 0%,#164e63 100%)',color:'#e0f2fe',fontSize:13,fontWeight:800,cursor:'pointer',boxShadow:'0 2px 12px rgba(6,182,212,0.3)',transition:'all 0.2s',textTransform:'uppercase',letterSpacing:0.5 }),
+  badge: (c) => ({ padding:'2px 8px',borderRadius:3,fontSize:11,fontWeight:800,textTransform:'uppercase',letterSpacing:0.5,...({
+    ok:{background:'linear-gradient(135deg,#064e3b 0%,#047857 100%)',color:'#6ee7b7',border:'1px solid #10b981'},
+    fail:{background:'linear-gradient(135deg,#7f1d1d 0%,#991b1b 100%)',color:'#fca5a5',border:'1px solid #ef4444'},
+    pending:{background:'linear-gradient(135deg,#1e3a8a 0%,#1e40af 100%)',color:'#93c5fd',border:'1px solid #3b82f6'},
+    approved:{background:'linear-gradient(135deg,#064e3b 0%,#047857 100%)',color:'#6ee7b7',border:'1px solid #10b981'},
+    rejected:{background:'linear-gradient(135deg,#7f1d1d 0%,#991b1b 100%)',color:'#fca5a5',border:'1px solid #ef4444'},
+    admin:{background:'linear-gradient(135deg,#581c87 0%,#6b21a8 100%)',color:'#d8b4fe',border:'1px solid #a855f7'},
+    member:{background:'linear-gradient(135deg,#164e63 0%,#0e7490 100%)',color:'#67e8f9',border:'1px solid #06b6d4'}
+  }[c]||{background:'#0f172a',color:'#94a3b8',border:'1px solid #1e293b'}) }),
+  th: { background:'linear-gradient(135deg,#0f172a 0%,#020617 100%)',padding:'10px 14px',textAlign:'left',fontSize:12,color:'#22d3ee',fontWeight:800,borderBottom:'2px solid #164e63',textTransform:'uppercase',letterSpacing:0.5 },
+  td: { padding:'10px 14px',borderTop:'1px solid #0f172a',fontSize:13,color:'#cbd5e1' },
+  link: { color:'#67e8f9',textDecoration:'none',fontWeight:700 },
 };
 
-const LEAGUE_COLORS = {'La Liga':'#fb923c','Premier League':'#dc2626','Serie A':'#fbbf24','Bundesliga':'#f59e0b','Ligue 1':'#ef4444','Liga 1':'#f87171','Timnas':'#dc2626','Pemain':'#fde68a'};
+const LEAGUE_COLORS = {'La Liga':'#22d3ee','Premier League':'#60a5fa','Serie A':'#67e8f9','Bundesliga':'#06b6d4','Ligue 1':'#38bdf8','Liga 1':'#7dd3fc','Timnas':'#0ea5e9','Pemain':'#a5f3fc'};
 
 // ============================================================
 // CONTENT DEDUP — Normalisasi URL untuk deteksi duplikat
@@ -188,29 +188,32 @@ function LoginScreen({ onLogin }) {
   return (
     <div style={{display:'flex',justifyContent:'center',alignItems:'center',minHeight:'100vh',position:'relative'}}>
       <div style={{
-        background:'linear-gradient(135deg,#1c1917 0%,#0c0a09 100%)',
-        border:'2px solid #451a03',
-        borderRadius:16,padding:48,width:400,
-        boxShadow:'0 0 40px rgba(220,38,38,0.4), 0 0 80px rgba(249,115,22,0.2), inset 0 1px 0 rgba(251,146,60,0.1)',
+        background:'linear-gradient(135deg,#0f172a 0%,#020617 100%)',
+        border:'2px solid #164e63',
+        borderRadius:8,padding:48,width:400,
+        boxShadow:'0 0 40px rgba(6,182,212,0.3), 0 0 80px rgba(8,145,178,0.15), inset 0 1px 0 rgba(103,232,249,0.1), 0 20px 50px rgba(0,0,0,0.5)',
+        position:'relative',
       }}>
-        <div style={{textAlign:'center',fontSize:40,marginBottom:8}}>🔥⚽🔥</div>
-        <h1 style={{...S.h1,fontSize:30,textAlign:'center',marginBottom:8}}>Football Bot Dashboard</h1>
-        <p style={{color:'#a8a29e',fontSize:14,textAlign:'center',marginBottom:32}}>Masukkan kredensial</p>
-        {err && <div style={{background:'linear-gradient(135deg,#7f1d1d 0%,#991b1b 100%)',color:'#fecaca',padding:10,borderRadius:8,textAlign:'center',marginBottom:16,fontSize:14,border:'1px solid #ef4444'}}>{err}</div>}
+        {/* Crystal edge decoration */}
+        <div style={{position:'absolute',top:-2,left:-2,right:-2,height:3,background:'linear-gradient(90deg,transparent,#22d3ee,transparent)',borderRadius:'8px 8px 0 0',boxShadow:'0 0 20px rgba(34,211,238,0.6)'}} />
+        <div style={{textAlign:'center',fontSize:40,marginBottom:12,filter:'drop-shadow(0 0 10px rgba(103,232,249,0.5))'}}>❄⚽❄</div>
+        <h1 style={{...S.h1,fontSize:28,textAlign:'center',marginBottom:8,letterSpacing:1}}>Football Bot Dashboard</h1>
+        <p style={{color:'#64748b',fontSize:12,textAlign:'center',marginBottom:32,textTransform:'uppercase',letterSpacing:2,fontWeight:700}}>ACCESS TERMINAL</p>
+        {err && <div style={{background:'linear-gradient(135deg,#7f1d1d 0%,#991b1b 100%)',color:'#fca5a5',padding:10,borderRadius:4,textAlign:'center',marginBottom:16,fontSize:13,border:'1px solid #ef4444',textTransform:'uppercase',letterSpacing:0.5,fontWeight:700}}>{err}</div>}
         <div style={{marginBottom:20}}>
-          <label style={{display:'block',fontSize:13,color:'#fbbf24',marginBottom:6,fontWeight:600}}>Username</label>
+          <label style={{display:'block',fontSize:11,color:'#22d3ee',marginBottom:6,fontWeight:800,textTransform:'uppercase',letterSpacing:1.5}}>Username</label>
           <input style={S.input} value={u} onChange={e=>setU(e.target.value)} onKeyDown={e=>e.key==='Enter'&&login()} />
         </div>
-        <div style={{marginBottom:20}}>
-          <label style={{display:'block',fontSize:13,color:'#fbbf24',marginBottom:6,fontWeight:600}}>Password</label>
+        <div style={{marginBottom:28}}>
+          <label style={{display:'block',fontSize:11,color:'#22d3ee',marginBottom:6,fontWeight:800,textTransform:'uppercase',letterSpacing:1.5}}>Password</label>
           <input style={S.input} type="password" value={p} onChange={e=>setP(e.target.value)} onKeyDown={e=>e.key==='Enter'&&login()} />
         </div>
         <button onClick={login} style={{
           width:'100%',padding:14,
-          background:'linear-gradient(135deg,#fbbf24 0%,#f97316 30%,#dc2626 100%)',
-          border:'none',borderRadius:8,color:'#1c1917',fontSize:16,fontWeight:800,cursor:'pointer',
-          boxShadow:'0 4px 20px rgba(249,115,22,0.5)',textTransform:'uppercase',letterSpacing:1,
-        }}>🔥 Login 🔥</button>
+          background:'linear-gradient(135deg,#22d3ee 0%,#06b6d4 30%,#0891b2 70%,#164e63 100%)',
+          border:'1px solid #67e8f9',borderRadius:4,color:'#020617',fontSize:15,fontWeight:900,cursor:'pointer',
+          boxShadow:'0 4px 24px rgba(6,182,212,0.5), inset 0 1px 0 rgba(207,250,254,0.4)',textTransform:'uppercase',letterSpacing:3,
+        }}>❄ ENTER ❄</button>
       </div>
     </div>
   );

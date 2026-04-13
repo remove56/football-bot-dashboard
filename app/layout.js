@@ -5,33 +5,8 @@ export default function RootLayout({ children }) {
     <html lang="id">
       <head>
         <style dangerouslySetInnerHTML={{ __html: `
-          @keyframes fireGlow {
-            0%, 100% { opacity: 0.6; transform: translateY(0) scale(1); }
-            50% { opacity: 1; transform: translateY(-5px) scale(1.02); }
-          }
-          @keyframes emberFloat {
-            0% { transform: translateY(100vh) translateX(0); opacity: 0; }
-            10% { opacity: 1; }
-            90% { opacity: 0.5; }
-            100% { transform: translateY(-20vh) translateX(50px); opacity: 0; }
-          }
+          /* Background obsidian dengan subtle crystal pattern */
           body::before {
-            content: '';
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 30vh;
-            background: radial-gradient(ellipse at bottom,
-              rgba(220, 38, 38, 0.15) 0%,
-              rgba(249, 115, 22, 0.08) 20%,
-              rgba(251, 146, 60, 0.03) 40%,
-              transparent 70%);
-            pointer-events: none;
-            z-index: 1;
-            animation: fireGlow 3s ease-in-out infinite;
-          }
-          body::after {
             content: '';
             position: fixed;
             top: 0;
@@ -39,38 +14,75 @@ export default function RootLayout({ children }) {
             right: 0;
             bottom: 0;
             background-image:
-              radial-gradient(circle at 20% 80%, rgba(220, 38, 38, 0.05) 0%, transparent 30%),
-              radial-gradient(circle at 80% 90%, rgba(249, 115, 22, 0.04) 0%, transparent 25%),
-              radial-gradient(circle at 50% 100%, rgba(251, 146, 60, 0.03) 0%, transparent 35%);
+              /* Crystal facets — ice blue glows */
+              radial-gradient(circle at 15% 20%, rgba(6, 182, 212, 0.08) 0%, transparent 25%),
+              radial-gradient(circle at 85% 15%, rgba(14, 165, 233, 0.06) 0%, transparent 30%),
+              radial-gradient(circle at 25% 80%, rgba(34, 211, 238, 0.05) 0%, transparent 28%),
+              radial-gradient(circle at 80% 85%, rgba(8, 145, 178, 0.07) 0%, transparent 30%),
+              /* Sharp crystal lines */
+              linear-gradient(135deg, transparent 48%, rgba(103, 232, 249, 0.02) 49%, rgba(103, 232, 249, 0.02) 51%, transparent 52%),
+              linear-gradient(45deg, transparent 48%, rgba(103, 232, 249, 0.015) 49%, rgba(103, 232, 249, 0.015) 51%, transparent 52%);
+            background-size: 100% 100%, 100% 100%, 100% 100%, 100% 100%, 120px 120px, 120px 120px;
             pointer-events: none;
             z-index: 0;
           }
-          /* Scrollbar fiery theme */
+          /* Icy top border glow */
+          body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg,
+              transparent 0%,
+              rgba(6, 182, 212, 0.4) 20%,
+              rgba(103, 232, 249, 0.6) 50%,
+              rgba(6, 182, 212, 0.4) 80%,
+              transparent 100%);
+            pointer-events: none;
+            z-index: 99;
+            box-shadow: 0 0 20px rgba(6, 182, 212, 0.5);
+          }
+          /* Scrollbar — kristal es */
           ::-webkit-scrollbar { width: 10px; height: 10px; }
-          ::-webkit-scrollbar-track { background: #0c0a09; }
+          ::-webkit-scrollbar-track { background: #020617; border-left: 1px solid #0f172a; }
           ::-webkit-scrollbar-thumb {
-            background: linear-gradient(180deg, #7c2d12, #451a03);
-            border-radius: 5px;
-            border: 1px solid #1c1917;
+            background: linear-gradient(180deg, #0e7490, #164e63);
+            border-radius: 2px;
+            border: 1px solid #0f172a;
           }
           ::-webkit-scrollbar-thumb:hover {
-            background: linear-gradient(180deg, #dc2626, #7c2d12);
+            background: linear-gradient(180deg, #06b6d4, #0891b2);
+            box-shadow: 0 0 10px rgba(6, 182, 212, 0.5);
           }
+          ::-webkit-scrollbar-corner { background: #020617; }
+
+          /* Input focus — icy glow */
           input:focus, select:focus, textarea:focus {
-            border-color: #f97316 !important;
-            box-shadow: 0 0 0 3px rgba(249, 115, 22, 0.2) !important;
+            border-color: #06b6d4 !important;
+            box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.2), 0 0 15px rgba(103, 232, 249, 0.2) !important;
           }
+
+          /* Button hover — sharp response */
           button:hover, [role="button"]:hover {
-            filter: brightness(1.15);
+            filter: brightness(1.2);
             transform: translateY(-1px);
+            box-shadow: 0 4px 20px rgba(6, 182, 212, 0.4) !important;
+          }
+
+          /* Selection — ice highlight */
+          ::selection {
+            background: rgba(6, 182, 212, 0.4);
+            color: #e0f2fe;
           }
         `}} />
       </head>
       <body style={{
         margin: 0,
-        fontFamily: "'Segoe UI', sans-serif",
-        background: 'linear-gradient(180deg, #0a0400 0%, #0c0a09 50%, #1a0a00 100%)',
-        color: '#fef3c7',
+        fontFamily: "'Segoe UI', 'Inter', sans-serif",
+        background: 'linear-gradient(180deg, #020617 0%, #0f172a 40%, #0c1220 70%, #020617 100%)',
+        color: '#e0f2fe',
         minHeight: '100vh',
         position: 'relative',
       }}>
