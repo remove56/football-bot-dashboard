@@ -616,7 +616,8 @@ export default function Home() {
     }
 
     // ── CEK 2: Fingerprint match di content_registry ──
-    // Ini menangkap konten yang SAMA meski URL di-edit/potong/ganti parameter
+    // Konten yang sama TIDAK BOLEH dipakai lagi — di grup mana pun, siklus mana pun.
+    // Setiap submit harus konten BARU yang unik.
     if (fingerprint) {
       const { data: fpMatch } = await supabase
         .from('content_registry')
@@ -626,22 +627,17 @@ export default function Home() {
 
       if (fpMatch && fpMatch.length > 0) {
         const d = fpMatch[0];
-        const isOwnContent = d.user_name === user.name;
-        if (!isOwnContent) {
-          setPtMsg(`Konten ini sudah dipakai oleh "${d.user_name}" di "${d.group_name}". Tidak boleh menggunakan konten yang sama dengan member lain!`);
-          return;
+        if (d.user_name !== user.name) {
+          setPtMsg(`DITOLAK: Konten ini sudah dipakai oleh "${d.user_name}" di "${d.group_name}". Tidak boleh menggunakan konten yang sama dengan member lain!`);
+        } else {
+          setPtMsg(`DITOLAK: Kamu sudah menggunakan konten ini di "${d.group_name}". Konten TIDAK BOLEH di-submit ulang (baik grup sama maupun grup berbeda, siklus mana pun).`);
         }
-        // Kalau konten sendiri tapi beda grup → juga blokir (anti duplikat antar grup)
-        const grp = groups.find(g => g.id === ptGroup);
-        if (d.group_name !== (grp?.name || '')) {
-          setPtMsg(`Kamu sudah menggunakan konten ini di "${d.group_name}". Gunakan konten berbeda untuk setiap grup!`);
-          return;
-        }
+        return;
       }
     }
 
     // ── CEK 3: pHash — deteksi gambar SAMA meski di-save & upload ulang ──
-    // Sekarang juga dukung Facebook post URL (extract og:image otomatis)
+    // BLOKIR semua duplikat, tidak peduli milik siapa (konten harus 100% unik)
     setPtMsg('Memeriksa keaslian konten...');
     try {
       const res = await fetch('/api/check-image', {
@@ -650,12 +646,9 @@ export default function Home() {
         body: JSON.stringify({ imageUrl: linkTrimmed, userName: user.name }),
       });
       const result = await res.json();
-      if (result.isDuplicate && result.isOtherMember) {
-        setPtMsg(`DITOLAK: ${result.message}`);
-        return;
-      }
       if (result.isDuplicate && result.match) {
-        setPtMsg(`Peringatan: Konten mirip ${result.similarity}% dengan posting di "${result.match.group}". Gunakan konten berbeda!`);
+        const who = result.isOtherMember ? `member "${result.match.owner}"` : 'kamu sendiri';
+        setPtMsg(`DITOLAK: Konten mirip ${result.similarity}% dengan posting ${who} di "${result.match.group}". Setiap posting harus konten unik!`);
         return;
       }
     } catch (e) {
