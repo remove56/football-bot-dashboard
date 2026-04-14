@@ -723,21 +723,16 @@ export default function Home() {
     // Cari existing entry untuk user + grup + cycle + period
     const existing = postTracker.find(p => p.user_id === user.id && p.group_id === ptGroup && p.cycle === ptCycle && p.period === ptPeriod);
 
-    let rowId = null;
     if (existing) {
       // Update field yang sesuai
       const updates = {};
       updates[`${ptType}_link`] = linkTrimmed;
       updates[`${ptType}_at`] = new Date().toISOString();
-      updates[`${ptType}_status`] = 'pending'; // reset status → trigger analisa ulang
-      updates[`${ptType}_checked_at`] = null;
-      updates[`${ptType}_detected_title`] = null;
       const g1 = ptType === 'gambar1' ? linkTrimmed : existing.gambar1_link;
       const g2 = ptType === 'gambar2' ? linkTrimmed : existing.gambar2_link;
       const v = ptType === 'video' ? linkTrimmed : existing.video_link;
       updates.is_complete = !!(g1 && g2 && v);
       await supabase.from('posting_tracker').update(updates).eq('id', existing.id);
-      rowId = existing.id;
     } else {
       const entry = {
         user_id: user.id, user_name: user.name, group_id: ptGroup, group_name: grp?.name || '',
@@ -748,24 +743,9 @@ export default function Home() {
         gambar1_at: ptType === 'gambar1' ? new Date().toISOString() : null,
         gambar2_at: ptType === 'gambar2' ? new Date().toISOString() : null,
         video_at: ptType === 'video' ? new Date().toISOString() : null,
-        gambar1_status: ptType === 'gambar1' ? 'pending' : null,
-        gambar2_status: ptType === 'gambar2' ? 'pending' : null,
-        video_status: ptType === 'video' ? 'pending' : null,
         is_complete: false,
       };
-      const { data: inserted } = await supabase.from('posting_tracker').insert(entry).select().single();
-      rowId = inserted?.id;
-    }
-
-    // ── Trigger analisa konten async (fire-and-forget) ──
-    // Tidak di-await supaya UX submit tetap instan. Hasil analisa muncul di row
-    // dalam beberapa detik, ter-refresh saat loadPostTracker() next call.
-    if (rowId) {
-      fetch('/api/analyze-content', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: rowId, field: ptType, url: linkTrimmed }),
-      }).then(() => loadPostTracker(ptPeriod)).catch(() => { /* silent */ });
+      await supabase.from('posting_tracker').insert(entry);
     }
 
     // ── Simpan fingerprint ke content_registry ──
@@ -1784,79 +1764,6 @@ export default function Home() {
               {ptMsg && <p style={{marginTop:8,fontSize:13,color:ptMsg.includes('Error')?'#ef4444':'#10b981'}}>{ptMsg}</p>}
             </div>
 
-            {/* PANEL AUDIT KONTEN (admin only) */}
-            {isAdmin && (
-              <div style={{...S.box,marginBottom:12,padding:'14px 18px',border:'1px solid #0891b2'}}>
-                <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:12,flexWrap:'wrap'}}>
-                  <div>
-                    <div style={{fontSize:13,color:'#67e8f9',fontWeight:800,textTransform:'uppercase',letterSpacing:1}}>Audit Konten Historis</div>
-                    <div style={{fontSize:11,color:'#9ca3af',marginTop:4}}>Scan semua slot pending → cek apakah konten sepakbola. Aman untuk akun bot.</div>
-                  </div>
-                  <div style={{display:'flex',gap:8}}>
-                    {!auditRunning ? (
-                      <>
-                        <button onClick={()=>runContentAudit(false)} style={{...S.btn('#065f46'),padding:'10px 20px',fontSize:12,fontWeight:800}} title="Audit hanya slot pending">
-                          🔍 Audit Pending
-                        </button>
-                        <button onClick={()=>runContentAudit(true)} style={{...S.btn('#0e7490'),padding:'10px 20px',fontSize:12,fontWeight:800}} title="Reset semua status ke pending lalu audit ulang (pakai algoritma baru)">
-                          🔄 Re-Audit Semua
-                        </button>
-                      </>
-                    ) : (
-                      <button onClick={()=>setAuditStopRequested(true)} style={{...S.btn('#991b1b'),padding:'10px 20px',fontSize:12,fontWeight:800}}>
-                        ⏹ Stop
-                      </button>
-                    )}
-                  </div>
-                </div>
-
-                {/* Progress bar */}
-                {(auditRunning || auditProgress.done > 0) && (
-                  <div style={{marginTop:12}}>
-                    <div style={{display:'flex',justifyContent:'space-between',fontSize:11,color:'#9ca3af',marginBottom:4}}>
-                      <span>{auditMsg}</span>
-                      <span>{auditProgress.done} / {auditProgress.total}</span>
-                    </div>
-                    <div style={{width:'100%',height:8,background:'#1f2937',borderRadius:4,overflow:'hidden'}}>
-                      <div style={{
-                        width: auditProgress.total > 0 ? `${(auditProgress.done / auditProgress.total) * 100}%` : '0%',
-                        height: '100%',
-                        background: 'linear-gradient(90deg,#06b6d4,#67e8f9)',
-                        transition: 'width 0.3s',
-                      }}/>
-                    </div>
-                    <div style={{display:'flex',gap:14,fontSize:11,marginTop:8,flexWrap:'wrap'}}>
-                      <span style={{color:'#6ee7b7'}}>🟢 OK: {auditProgress.ok}</span>
-                      <span style={{color:'#fcd34d'}}>🟡 Suspect: {auditProgress.suspect}</span>
-                      <span style={{color:'#fca5a5'}}>🔴 Bukan bola: {auditProgress.notFootball}</span>
-                      <span style={{color:'#9ca3af'}}>⚫ Error: {auditProgress.error}</span>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* Legend status konten */}
-            <div style={{...S.box,marginBottom:0,padding:'12px 16px'}}>
-              <div style={{fontSize:11,color:'#67e8f9',fontWeight:700,textTransform:'uppercase',letterSpacing:1,marginBottom:8}}>Keterangan Warna Icon G1 / G2 / V</div>
-              <div style={{display:'flex',flexWrap:'wrap',gap:14,fontSize:11}}>
-                {[
-                  { bg:'#1f2937', fg:'#374151', label:'Kosong — belum diisi' },
-                  { bg:'#3b0764', fg:'#c4b5fd', label:'Ungu — sedang dianalisa' },
-                  { bg:'#065f46', fg:'#6ee7b7', label:'Hijau — OK, konten sepakbola' },
-                  { bg:'#78350f', fg:'#fcd34d', label:'Kuning — meragukan, cek manual' },
-                  { bg:'#7f1d1d', fg:'#fca5a5', label:'Merah — BUKAN sepakbola' },
-                  { bg:'#374151', fg:'#9ca3af', label:'Abu-abu — link rusak / error' },
-                ].map((s,i)=>(
-                  <div key={i} style={{display:'flex',alignItems:'center',gap:6}}>
-                    <span style={{width:20,height:20,borderRadius:4,background:s.bg,color:s.fg,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:9,fontWeight:700,border:'1px solid '+s.fg}}>G1</span>
-                    <span style={{color:'#9ca3af'}}>{s.label}</span>
-                  </div>
-                ))}
-              </div>
-              <p style={{fontSize:10,color:'#6b7280',margin:'8px 0 0 0'}}>Setelah submit link, dashboard otomatis cek apakah konten sepakbola. Hover icon untuk lihat detail. Konten merah akan diminta diganti.</p>
-            </div>
-
             {/* Tabel tracking per grup */}
             <div style={{...S.box,padding:0,overflow:'auto'}}>
               <div style={{padding:'16px 20px',borderBottom:'1px solid #1f2937'}}>
@@ -1890,22 +1797,12 @@ export default function Home() {
                           const g1 = entry?.gambar1_link;
                           const g2 = entry?.gambar2_link;
                           const v = entry?.video_link;
-                          const g1Style = getStatusStyle(g1, entry?.gambar1_status);
-                          const g2Style = getStatusStyle(g2, entry?.gambar2_status);
-                          const vStyle = getStatusStyle(v, entry?.video_status);
-                          const iconSpan = (label, link, s, detectedTitle) => (
-                            <span
-                              title={link ? `${s.label}${detectedTitle ? ' — ' + detectedTitle : ''}\n${link}` : 'Belum'}
-                              style={{width:22,height:22,borderRadius:4,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:700,background:s.bg,color:s.fg,cursor:link?'pointer':'default',border:'1px solid '+s.fg}}
-                              onClick={()=>link&&window.open(link,'_blank')}
-                            >{label}</span>
-                          );
                           return (
                             <td key={cycle} style={{...S.td,textAlign:'center',padding:6}}>
                               <div style={{display:'flex',gap:4,justifyContent:'center'}}>
-                                {iconSpan('G1', g1, g1Style, entry?.gambar1_detected_title)}
-                                {iconSpan('G2', g2, g2Style, entry?.gambar2_detected_title)}
-                                {iconSpan('V', v, vStyle, entry?.video_detected_title)}
+                                <span title={g1||'Belum'} style={{width:22,height:22,borderRadius:4,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:700,background:g1?'#065f46':'#1f2937',color:g1?'#6ee7b7':'#374151',cursor:g1?'pointer':'default'}} onClick={()=>g1&&window.open(g1,'_blank')}>G1</span>
+                                <span title={g2||'Belum'} style={{width:22,height:22,borderRadius:4,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:700,background:g2?'#065f46':'#1f2937',color:g2?'#6ee7b7':'#374151',cursor:g2?'pointer':'default'}} onClick={()=>g2&&window.open(g2,'_blank')}>G2</span>
+                                <span title={v||'Belum'} style={{width:22,height:22,borderRadius:4,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:700,background:v?'#3b0764':'#1f2937',color:v?'#c084fc':'#374151',cursor:v?'pointer':'default'}} onClick={()=>v&&window.open(v,'_blank')}>V</span>
                               </div>
                             </td>
                           );
