@@ -93,6 +93,18 @@ function normalizeContentUrl(url) {
 }
 
 // ============================================================
+// HELPER: Format tanggal lokal (YYYY-MM-DD) — pakai timezone browser, BUKAN UTC.
+// Kritis untuk konsistensi data antar user di WIB (UTC+7), supaya semua user
+// di tanggal lokal yang sama menulis & membaca period yang sama.
+// ============================================================
+function localDateString(d = new Date()) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+// ============================================================
 // HELPER: Kategorisasi performa target harian
 // ============================================================
 function getTargetCategory(completed, target) {
@@ -124,7 +136,7 @@ function computeStreak(memberName, target, history) {
   for (let i = 0; i < 365; i++) {
     const d = new Date(today);
     d.setDate(d.getDate() - i);
-    const dateKey = d.toISOString().split('T')[0];
+    const dateKey = localDateString(d);
     const count = countGroupsForDate(memberName, dateKey, history);
     if (count >= target) {
       streak++;
@@ -148,7 +160,7 @@ function computeAvgPerformance(memberName, target, history, days) {
   for (let i = 0; i < days; i++) {
     const d = new Date(today);
     d.setDate(d.getDate() - i);
-    const dateKey = d.toISOString().split('T')[0];
+    const dateKey = localDateString(d);
     const count = countGroupsForDate(memberName, dateKey, history);
     const pct = Math.min(100, (count / target) * 100);
     totalPct += pct;
@@ -290,6 +302,13 @@ export default function Home() {
   const [restoring, setRestoring] = useState(false);
   const [backingUp, setBackingUp] = useState(false);
 
+  // Change password
+  const [pwModal, setPwModal] = useState(false);
+  const [pwOld, setPwOld] = useState('');
+  const [pwNew, setPwNew] = useState('');
+  const [pwConfirm, setPwConfirm] = useState('');
+  const [pwMsg, setPwMsg] = useState('');
+
   // Posting tracker
   const [postTracker, setPostTracker] = useState([]);
   const [postTrackerHistory, setPostTrackerHistory] = useState([]); // last 30 days
@@ -302,7 +321,7 @@ export default function Home() {
   const [ptType, setPtType] = useState('gambar1'); // gambar1, gambar2, video
   const [ptLink, setPtLink] = useState('');
   const [ptMsg, setPtMsg] = useState('');
-  const [ptPeriod, setPtPeriod] = useState(() => new Date().toISOString().split('T')[0]);
+  const [ptPeriod, setPtPeriod] = useState(() => localDateString());
 
   useEffect(() => {
     // Check saved session
@@ -575,7 +594,7 @@ export default function Home() {
   const loadPostTrackerHistory = async () => {
     const start = new Date();
     start.setDate(start.getDate() - 30);
-    const startDate = start.toISOString().split('T')[0];
+    const startDate = localDateString(start);
     const { data } = await supabase.from('posting_tracker').select('*').gte('period', startDate).order('period', { ascending: false });
     setPostTrackerHistory(data || []);
   };
@@ -615,7 +634,7 @@ export default function Home() {
     const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `progress_target_${new Date().toISOString().split('T')[0]}.csv`;
+    a.download = `progress_target_${localDateString()}.csv`;
     a.click();
   };
 
@@ -754,6 +773,76 @@ export default function Home() {
     loadPostTracker(ptPeriod);
   };
 
+  // Hapus 1 slot spesifik (gambar1, gambar2, atau video) dari entry yang dipilih
+  // Pakai pilihan ptGroup + ptCycle + ptType + ptPeriod saat ini.
+  const deletePostField = async () => {
+    if (!ptGroup) { setPtMsg('Pilih grup dulu!'); return; }
+    const entry = postTracker.find(p =>
+      p.user_id === user.id &&
+      p.group_id === ptGroup &&
+      p.cycle === ptCycle &&
+      p.period === ptPeriod
+    );
+    if (!entry) { setPtMsg('Tidak ada entry untuk dihapus'); return; }
+
+    const fieldMap = { gambar1: 'gambar1_link', gambar2: 'gambar2_link', video: 'video_link' };
+    const field = fieldMap[ptType];
+    if (!entry[field]) { setPtMsg(`${ptType.toUpperCase()} sudah kosong`); return; }
+
+    if (!confirm(`Hapus ${ptType.toUpperCase()} untuk grup "${entry.group_name}" siklus ${ptCycle}?`)) return;
+
+    // Kalau semua 3 field jadi kosong setelah hapus → hapus seluruh row
+    const willBeEmpty =
+      (field === 'gambar1_link' ? !entry.gambar2_link && !entry.video_link :
+       field === 'gambar2_link' ? !entry.gambar1_link && !entry.video_link :
+                                  !entry.gambar1_link && !entry.gambar2_link);
+
+    if (willBeEmpty) {
+      await supabase.from('posting_tracker').delete().eq('id', entry.id);
+    } else {
+      // Update: set field jadi null + recompute is_complete
+      const updates = { [field]: null };
+      const g1 = field === 'gambar1_link' ? null : entry.gambar1_link;
+      const g2 = field === 'gambar2_link' ? null : entry.gambar2_link;
+      const v = field === 'video_link' ? null : entry.video_link;
+      updates.is_complete = !!(g1 && g2 && v);
+      await supabase.from('posting_tracker').update(updates).eq('id', entry.id);
+    }
+
+    setPtLink('');
+    setPtMsg(`${ptType.toUpperCase()} berhasil dihapus`);
+    loadPostTracker(ptPeriod);
+  };
+
+  // Ganti password — verifikasi password lama, lalu update ke Supabase
+  const changePassword = async () => {
+    setPwMsg('');
+    if (!pwOld || !pwNew || !pwConfirm) { setPwMsg('Semua field wajib diisi'); return; }
+    if (pwNew.length < 4) { setPwMsg('Password baru minimal 4 karakter'); return; }
+    if (pwNew !== pwConfirm) { setPwMsg('Konfirmasi password tidak cocok'); return; }
+    if (pwOld === pwNew) { setPwMsg('Password baru harus beda dari yang lama'); return; }
+
+    const { data: check } = await supabase
+      .from('users')
+      .select('id')
+      .eq('id', user.id)
+      .eq('password', pwOld)
+      .single();
+    if (!check) { setPwMsg('Password lama salah'); return; }
+
+    const { error } = await supabase
+      .from('users')
+      .update({ password: pwNew })
+      .eq('id', user.id);
+    if (error) { setPwMsg('Gagal update: ' + error.message); return; }
+
+    setPwMsg('Password berhasil diubah!');
+    setTimeout(() => {
+      setPwModal(false);
+      setPwOld(''); setPwNew(''); setPwConfirm(''); setPwMsg('');
+    }, 1500);
+  };
+
   // Backup & Restore
   const downloadBackup = async () => {
     setBackingUp(true);
@@ -770,7 +859,7 @@ export default function Home() {
       const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
       const a = document.createElement('a');
       a.href = url;
-      a.download = `backup_fbgroup_${new Date().toISOString().split('T')[0]}.json`;
+      a.download = `backup_fbgroup_${localDateString()}.json`;
       a.click();
       URL.revokeObjectURL(url);
 
@@ -950,7 +1039,7 @@ export default function Home() {
     (!search || g.name.toLowerCase().includes(search.toLowerCase()) || g.club.toLowerCase().includes(search.toLowerCase()))
   );
 
-  const today = new Date().toISOString().split('T')[0];
+  const today = localDateString();
   const todayLinks = links.filter(l => l.created_at?.startsWith(today) && l.status === 'approved').length;
   const todayBot = activity.filter(a => a.created_at?.startsWith(today) && a.success).length;
   const todayPosts = todayLinks + todayBot;
@@ -978,9 +1067,33 @@ export default function Home() {
         <div style={{display:'flex',gap:12,alignItems:'center',fontSize:13}}>
           <span style={{color:'#9ca3af'}}>{user.name}</span>
           <span style={S.badge(user.role)}>{user.role}</span>
+          <a onClick={()=>setPwModal(true)} style={{color:'#67e8f9',cursor:'pointer',fontSize:12}} title="Ganti Password">🔑 Password</a>
           <a onClick={logout} style={{color:'#ef4444',cursor:'pointer'}}>Logout</a>
         </div>
       </div>
+
+      {/* MODAL GANTI PASSWORD */}
+      {pwModal && (
+        <div onClick={()=>setPwModal(false)} style={{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(2,6,23,0.85)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center'}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:'linear-gradient(180deg,#0f172a 0%,#020617 100%)',border:'2px solid #0891b2',borderRadius:8,padding:24,maxWidth:400,width:'90%',boxShadow:'0 8px 40px rgba(6,182,212,0.3)'}}>
+            <h3 style={{color:'#67e8f9',margin:'0 0 16px 0',fontSize:16,fontWeight:900,textTransform:'uppercase',letterSpacing:1}}>Ganti Password</h3>
+            <p style={{color:'#9ca3af',fontSize:12,margin:'0 0 16px 0'}}>Akun: <strong style={{color:'#e0f2fe'}}>{user.name}</strong> ({user.role})</p>
+            <div style={{display:'flex',flexDirection:'column',gap:12}}>
+              <div><label style={{display:'block',fontSize:11,color:'#67e8f9',marginBottom:4,fontWeight:700,textTransform:'uppercase',letterSpacing:1}}>Password Lama</label>
+                <input type="password" style={S.input} value={pwOld} onChange={e=>setPwOld(e.target.value)} /></div>
+              <div><label style={{display:'block',fontSize:11,color:'#67e8f9',marginBottom:4,fontWeight:700,textTransform:'uppercase',letterSpacing:1}}>Password Baru</label>
+                <input type="password" style={S.input} value={pwNew} onChange={e=>setPwNew(e.target.value)} /></div>
+              <div><label style={{display:'block',fontSize:11,color:'#67e8f9',marginBottom:4,fontWeight:700,textTransform:'uppercase',letterSpacing:1}}>Konfirmasi Password Baru</label>
+                <input type="password" style={S.input} value={pwConfirm} onChange={e=>setPwConfirm(e.target.value)} onKeyDown={e=>e.key==='Enter'&&changePassword()} /></div>
+              {pwMsg && <p style={{fontSize:12,color:pwMsg.includes('berhasil')?'#10b981':'#ef4444',margin:'4px 0'}}>{pwMsg}</p>}
+              <div style={{display:'flex',gap:8,marginTop:8}}>
+                <button onClick={changePassword} style={{...S.btn('#065f46'),flex:1,padding:'10px'}}>Simpan</button>
+                <button onClick={()=>{setPwModal(false);setPwOld('');setPwNew('');setPwConfirm('');setPwMsg('');}} style={{...S.btn('#374151'),flex:1,padding:'10px'}}>Batal</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* TABS */}
       <div style={S.tabs}>
@@ -991,7 +1104,7 @@ export default function Home() {
 
         {/* WARNING BANNER GLOBAL — member progress < 50% setelah jam 18:00 (muncul di SEMUA tab) */}
         {!isAdmin && user && (() => {
-          const today = new Date().toISOString().split('T')[0];
+          const today = localDateString();
           const hour = new Date().getHours();
           const target = user.daily_target || 0;
           if (target === 0) return null;
@@ -1208,12 +1321,12 @@ export default function Home() {
             <div style={S.box}>
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8,flexWrap:'wrap',gap:12}}>
                 <h3 style={{color:'#FFD700',fontSize:16,margin:0}}>
-                  Progress Target {ptPeriod === new Date().toISOString().split('T')[0] ? 'Hari Ini' : new Date(ptPeriod).toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}
+                  Progress Target {ptPeriod === localDateString() ? 'Hari Ini' : new Date(ptPeriod).toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}
                 </h3>
                 <div style={{display:'flex',alignItems:'center',gap:8}}>
                   <label style={{fontSize:12,color:'#9ca3af'}}>Tanggal:</label>
                   <input type="date" style={{...S.input,width:180}} value={ptPeriod} onChange={e=>{setPtPeriod(e.target.value);loadPostTracker(e.target.value)}} />
-                  <button onClick={()=>{const t=new Date().toISOString().split('T')[0];setPtPeriod(t);loadPostTracker(t);}} style={{...S.btn('#374151'),padding:'8px 14px',fontSize:12}}>Hari Ini</button>
+                  <button onClick={()=>{const t=localDateString();setPtPeriod(t);loadPostTracker(t);}} style={{...S.btn('#374151'),padding:'8px 14px',fontSize:12}}>Hari Ini</button>
                   {isAdmin && <button onClick={exportProgressCSV} style={{...S.btn('#065f46'),padding:'8px 14px',fontSize:12}}>Export CSV</button>}
                 </div>
               </div>
@@ -1390,7 +1503,7 @@ export default function Home() {
                     for (let i = 0; i < 30; i++) {
                       const d = new Date(now);
                       d.setDate(d.getDate() - i);
-                      const dateKey = d.toISOString().split('T')[0];
+                      const dateKey = localDateString(d);
                       const count = countGroupsForDate(historyModal.name, dateKey, postTrackerHistory);
                       const pct = target > 0 ? Math.min(100, Math.round((count / target) * 100)) : 0;
                       days.push({ date: dateKey, count, pct, cat: getTargetCategory(count, target) });
@@ -1505,10 +1618,11 @@ export default function Home() {
                   </select>
                 </div>
               </div>
-              <div style={{display:'grid',gridTemplateColumns:'1fr auto',gap:10,alignItems:'end'}}>
+              <div style={{display:'grid',gridTemplateColumns:'1fr auto auto',gap:10,alignItems:'end'}}>
                 <div><label style={{display:'block',fontSize:12,color:'#9ca3af',marginBottom:4}}>Link Postingan</label>
                   <input style={S.input} placeholder="https://www.facebook.com/groups/.../posts/..." value={ptLink} onChange={e=>setPtLink(e.target.value)} /></div>
                 <button onClick={submitPostLink} style={{...S.btn('#065f46'),padding:'10px 24px'}}>Submit</button>
+                <button onClick={deletePostField} style={{...S.btn('#991b1b'),padding:'10px 18px'}} title="Hapus slot yang dipilih di atas (Grup + Siklus + Jenis)">Hapus</button>
               </div>
               <div style={{display:'flex',gap:10,alignItems:'center',marginTop:10}}>
                 <label style={{fontSize:12,color:'#9ca3af'}}>Tanggal:</label>
