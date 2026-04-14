@@ -93,6 +93,22 @@ function normalizeContentUrl(url) {
 }
 
 // ============================================================
+// HELPER: Warna icon berdasarkan status analisa konten.
+// Dipakai di tabel Progress Postingan untuk tandain G1/G2/V.
+// ============================================================
+function getStatusStyle(link, status) {
+  if (!link) return { bg: '#1f2937', fg: '#374151', label: 'Belum diisi' };
+  switch (status) {
+    case 'ok':            return { bg: '#065f46', fg: '#6ee7b7', label: 'OK — konten sepakbola' };
+    case 'suspect':       return { bg: '#78350f', fg: '#fcd34d', label: 'Meragukan — cek manual' };
+    case 'not_football':  return { bg: '#7f1d1d', fg: '#fca5a5', label: 'BUKAN sepakbola — akan dihapus' };
+    case 'error':         return { bg: '#374151', fg: '#9ca3af', label: 'Error — link rusak / FB block' };
+    case 'pending':
+    default:              return { bg: '#3b0764', fg: '#c4b5fd', label: 'Sedang dianalisa...' };
+  }
+}
+
+// ============================================================
 // HELPER: Format tanggal lokal (YYYY-MM-DD) — pakai timezone browser, BUKAN UTC.
 // Kritis untuk konsistensi data antar user di WIB (UTC+7), supaya semua user
 // di tanggal lokal yang sama menulis & membaca period yang sama.
@@ -701,16 +717,21 @@ export default function Home() {
     // Cari existing entry untuk user + grup + cycle + period
     const existing = postTracker.find(p => p.user_id === user.id && p.group_id === ptGroup && p.cycle === ptCycle && p.period === ptPeriod);
 
+    let rowId = null;
     if (existing) {
       // Update field yang sesuai
       const updates = {};
       updates[`${ptType}_link`] = linkTrimmed;
       updates[`${ptType}_at`] = new Date().toISOString();
+      updates[`${ptType}_status`] = 'pending'; // reset status → trigger analisa ulang
+      updates[`${ptType}_checked_at`] = null;
+      updates[`${ptType}_detected_title`] = null;
       const g1 = ptType === 'gambar1' ? linkTrimmed : existing.gambar1_link;
       const g2 = ptType === 'gambar2' ? linkTrimmed : existing.gambar2_link;
       const v = ptType === 'video' ? linkTrimmed : existing.video_link;
       updates.is_complete = !!(g1 && g2 && v);
       await supabase.from('posting_tracker').update(updates).eq('id', existing.id);
+      rowId = existing.id;
     } else {
       const entry = {
         user_id: user.id, user_name: user.name, group_id: ptGroup, group_name: grp?.name || '',
@@ -721,9 +742,24 @@ export default function Home() {
         gambar1_at: ptType === 'gambar1' ? new Date().toISOString() : null,
         gambar2_at: ptType === 'gambar2' ? new Date().toISOString() : null,
         video_at: ptType === 'video' ? new Date().toISOString() : null,
+        gambar1_status: ptType === 'gambar1' ? 'pending' : null,
+        gambar2_status: ptType === 'gambar2' ? 'pending' : null,
+        video_status: ptType === 'video' ? 'pending' : null,
         is_complete: false,
       };
-      await supabase.from('posting_tracker').insert(entry);
+      const { data: inserted } = await supabase.from('posting_tracker').insert(entry).select().single();
+      rowId = inserted?.id;
+    }
+
+    // ── Trigger analisa konten async (fire-and-forget) ──
+    // Tidak di-await supaya UX submit tetap instan. Hasil analisa muncul di row
+    // dalam beberapa detik, ter-refresh saat loadPostTracker() next call.
+    if (rowId) {
+      fetch('/api/analyze-content', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: rowId, field: ptType, url: linkTrimmed }),
+      }).then(() => loadPostTracker(ptPeriod)).catch(() => { /* silent */ });
     }
 
     // ── Simpan fingerprint ke content_registry ──
@@ -1645,6 +1681,27 @@ export default function Home() {
               {ptMsg && <p style={{marginTop:8,fontSize:13,color:ptMsg.includes('Error')?'#ef4444':'#10b981'}}>{ptMsg}</p>}
             </div>
 
+            {/* Legend status konten */}
+            <div style={{...S.box,marginBottom:0,padding:'12px 16px'}}>
+              <div style={{fontSize:11,color:'#67e8f9',fontWeight:700,textTransform:'uppercase',letterSpacing:1,marginBottom:8}}>Keterangan Warna Icon G1 / G2 / V</div>
+              <div style={{display:'flex',flexWrap:'wrap',gap:14,fontSize:11}}>
+                {[
+                  { bg:'#1f2937', fg:'#374151', label:'Kosong — belum diisi' },
+                  { bg:'#3b0764', fg:'#c4b5fd', label:'Ungu — sedang dianalisa' },
+                  { bg:'#065f46', fg:'#6ee7b7', label:'Hijau — OK, konten sepakbola' },
+                  { bg:'#78350f', fg:'#fcd34d', label:'Kuning — meragukan, cek manual' },
+                  { bg:'#7f1d1d', fg:'#fca5a5', label:'Merah — BUKAN sepakbola' },
+                  { bg:'#374151', fg:'#9ca3af', label:'Abu-abu — link rusak / error' },
+                ].map((s,i)=>(
+                  <div key={i} style={{display:'flex',alignItems:'center',gap:6}}>
+                    <span style={{width:20,height:20,borderRadius:4,background:s.bg,color:s.fg,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:9,fontWeight:700,border:'1px solid '+s.fg}}>G1</span>
+                    <span style={{color:'#9ca3af'}}>{s.label}</span>
+                  </div>
+                ))}
+              </div>
+              <p style={{fontSize:10,color:'#6b7280',margin:'8px 0 0 0'}}>Setelah submit link, dashboard otomatis cek apakah konten sepakbola. Hover icon untuk lihat detail. Konten merah akan diminta diganti.</p>
+            </div>
+
             {/* Tabel tracking per grup */}
             <div style={{...S.box,padding:0,overflow:'auto'}}>
               <div style={{padding:'16px 20px',borderBottom:'1px solid #1f2937'}}>
@@ -1678,12 +1735,22 @@ export default function Home() {
                           const g1 = entry?.gambar1_link;
                           const g2 = entry?.gambar2_link;
                           const v = entry?.video_link;
+                          const g1Style = getStatusStyle(g1, entry?.gambar1_status);
+                          const g2Style = getStatusStyle(g2, entry?.gambar2_status);
+                          const vStyle = getStatusStyle(v, entry?.video_status);
+                          const iconSpan = (label, link, s, detectedTitle) => (
+                            <span
+                              title={link ? `${s.label}${detectedTitle ? ' — ' + detectedTitle : ''}\n${link}` : 'Belum'}
+                              style={{width:22,height:22,borderRadius:4,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:700,background:s.bg,color:s.fg,cursor:link?'pointer':'default',border:'1px solid '+s.fg}}
+                              onClick={()=>link&&window.open(link,'_blank')}
+                            >{label}</span>
+                          );
                           return (
                             <td key={cycle} style={{...S.td,textAlign:'center',padding:6}}>
                               <div style={{display:'flex',gap:4,justifyContent:'center'}}>
-                                <span title={g1||'Belum'} style={{width:22,height:22,borderRadius:4,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:700,background:g1?'#065f46':'#1f2937',color:g1?'#6ee7b7':'#374151',cursor:g1?'pointer':'default'}} onClick={()=>g1&&window.open(g1,'_blank')}>G1</span>
-                                <span title={g2||'Belum'} style={{width:22,height:22,borderRadius:4,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:700,background:g2?'#065f46':'#1f2937',color:g2?'#6ee7b7':'#374151',cursor:g2?'pointer':'default'}} onClick={()=>g2&&window.open(g2,'_blank')}>G2</span>
-                                <span title={v||'Belum'} style={{width:22,height:22,borderRadius:4,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:700,background:v?'#3b0764':'#1f2937',color:v?'#c084fc':'#374151',cursor:v?'pointer':'default'}} onClick={()=>v&&window.open(v,'_blank')}>V</span>
+                                {iconSpan('G1', g1, g1Style, entry?.gambar1_detected_title)}
+                                {iconSpan('G2', g2, g2Style, entry?.gambar2_detected_title)}
+                                {iconSpan('V', v, vStyle, entry?.video_detected_title)}
                               </div>
                             </td>
                           );
