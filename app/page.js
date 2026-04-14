@@ -325,6 +325,12 @@ export default function Home() {
   const [pwConfirm, setPwConfirm] = useState('');
   const [pwMsg, setPwMsg] = useState('');
 
+  // Audit konten historis
+  const [auditRunning, setAuditRunning] = useState(false);
+  const [auditStopRequested, setAuditStopRequested] = useState(false);
+  const [auditProgress, setAuditProgress] = useState({ done: 0, total: 0, ok: 0, suspect: 0, notFootball: 0, error: 0 });
+  const [auditMsg, setAuditMsg] = useState('');
+
   // Posting tracker
   const [postTracker, setPostTracker] = useState([]);
   const [postTrackerHistory, setPostTrackerHistory] = useState([]); // last 30 days
@@ -891,6 +897,89 @@ export default function Home() {
       setPwModal(false);
       setPwOld(''); setPwNew(''); setPwConfirm(''); setPwMsg('');
     }, 1500);
+  };
+
+  // Audit historis — loop semua slot dengan status 'pending' → panggil analyzer → update.
+  // Aman: sequential dengan delay 4 detik biar nggak bikin Facebook rate-limit IP Vercel.
+  // Bisa di-stop kapan aja lewat tombol Stop. Tidak ngaruh ke akun bot (beda flow).
+  const runContentAudit = async () => {
+    if (auditRunning) return;
+    if (!confirm('Mulai audit konten? Proses ini akan mengecek semua slot yang masih "pending" dan memerlukan waktu ~30-45 menit. Kamu bisa stop kapan saja.')) return;
+
+    setAuditRunning(true);
+    setAuditStopRequested(false);
+    setAuditMsg('Memuat daftar row pending dari database...');
+
+    // Ambil semua row yang punya slot berstatus pending
+    const { data: rows, error } = await supabase
+      .from('posting_tracker')
+      .select('id, group_name, cycle, gambar1_link, gambar2_link, video_link, gambar1_status, gambar2_status, video_status')
+      .or('gambar1_status.eq.pending,gambar2_status.eq.pending,video_status.eq.pending');
+
+    if (error) {
+      setAuditMsg(`Gagal load: ${error.message}`);
+      setAuditRunning(false);
+      return;
+    }
+
+    // Kumpulin daftar task: 1 task = 1 slot (1 row bisa punya 1-3 task)
+    const tasks = [];
+    for (const r of rows || []) {
+      if (r.gambar1_link && r.gambar1_status === 'pending') tasks.push({ id: r.id, field: 'gambar1', url: r.gambar1_link, label: `${r.group_name} S${r.cycle} G1` });
+      if (r.gambar2_link && r.gambar2_status === 'pending') tasks.push({ id: r.id, field: 'gambar2', url: r.gambar2_link, label: `${r.group_name} S${r.cycle} G2` });
+      if (r.video_link && r.video_status === 'pending') tasks.push({ id: r.id, field: 'video', url: r.video_link, label: `${r.group_name} S${r.cycle} V` });
+    }
+
+    if (tasks.length === 0) {
+      setAuditMsg('Tidak ada slot pending — semua sudah diaudit!');
+      setAuditRunning(false);
+      return;
+    }
+
+    const counters = { done: 0, total: tasks.length, ok: 0, suspect: 0, notFootball: 0, error: 0 };
+    setAuditProgress({ ...counters });
+    setAuditMsg(`Mulai audit ${tasks.length} slot...`);
+
+    const DELAY_MS = 4000; // 4 detik antar request biar nggak rate limit
+
+    for (let i = 0; i < tasks.length; i++) {
+      if (auditStopRequested) {
+        setAuditMsg(`Dihentikan oleh user di posisi ${i}/${tasks.length}`);
+        break;
+      }
+      const t = tasks[i];
+      setAuditMsg(`[${i + 1}/${tasks.length}] ${t.label}`);
+
+      try {
+        const res = await fetch('/api/analyze-content', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: t.id, field: t.field, url: t.url }),
+        });
+        const result = await res.json();
+        if (result.status === 'ok') counters.ok++;
+        else if (result.status === 'suspect') counters.suspect++;
+        else if (result.status === 'not_football') counters.notFootball++;
+        else counters.error++;
+      } catch (e) {
+        counters.error++;
+      }
+
+      counters.done = i + 1;
+      setAuditProgress({ ...counters });
+
+      // Refresh tampilan tabel tiap 10 task biar user lihat progress visual di icon
+      if ((i + 1) % 10 === 0) loadPostTracker(ptPeriod);
+
+      // Delay sebelum request berikutnya
+      if (i < tasks.length - 1 && !auditStopRequested) {
+        await new Promise(resolve => setTimeout(resolve, DELAY_MS));
+      }
+    }
+
+    setAuditMsg(`Selesai! ${counters.done}/${counters.total} di-audit`);
+    setAuditRunning(false);
+    loadPostTracker(ptPeriod); // refresh final
   };
 
   // Backup & Restore
@@ -1680,6 +1769,53 @@ export default function Home() {
               </div>
               {ptMsg && <p style={{marginTop:8,fontSize:13,color:ptMsg.includes('Error')?'#ef4444':'#10b981'}}>{ptMsg}</p>}
             </div>
+
+            {/* PANEL AUDIT KONTEN (admin only) */}
+            {isAdmin && (
+              <div style={{...S.box,marginBottom:12,padding:'14px 18px',border:'1px solid #0891b2'}}>
+                <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:12,flexWrap:'wrap'}}>
+                  <div>
+                    <div style={{fontSize:13,color:'#67e8f9',fontWeight:800,textTransform:'uppercase',letterSpacing:1}}>Audit Konten Historis</div>
+                    <div style={{fontSize:11,color:'#9ca3af',marginTop:4}}>Scan semua slot pending → cek apakah konten sepakbola. Aman untuk akun bot.</div>
+                  </div>
+                  <div style={{display:'flex',gap:8}}>
+                    {!auditRunning ? (
+                      <button onClick={runContentAudit} style={{...S.btn('#065f46'),padding:'10px 20px',fontSize:12,fontWeight:800}}>
+                        🔍 Mulai Audit
+                      </button>
+                    ) : (
+                      <button onClick={()=>setAuditStopRequested(true)} style={{...S.btn('#991b1b'),padding:'10px 20px',fontSize:12,fontWeight:800}}>
+                        ⏹ Stop
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Progress bar */}
+                {(auditRunning || auditProgress.done > 0) && (
+                  <div style={{marginTop:12}}>
+                    <div style={{display:'flex',justifyContent:'space-between',fontSize:11,color:'#9ca3af',marginBottom:4}}>
+                      <span>{auditMsg}</span>
+                      <span>{auditProgress.done} / {auditProgress.total}</span>
+                    </div>
+                    <div style={{width:'100%',height:8,background:'#1f2937',borderRadius:4,overflow:'hidden'}}>
+                      <div style={{
+                        width: auditProgress.total > 0 ? `${(auditProgress.done / auditProgress.total) * 100}%` : '0%',
+                        height: '100%',
+                        background: 'linear-gradient(90deg,#06b6d4,#67e8f9)',
+                        transition: 'width 0.3s',
+                      }}/>
+                    </div>
+                    <div style={{display:'flex',gap:14,fontSize:11,marginTop:8,flexWrap:'wrap'}}>
+                      <span style={{color:'#6ee7b7'}}>🟢 OK: {auditProgress.ok}</span>
+                      <span style={{color:'#fcd34d'}}>🟡 Suspect: {auditProgress.suspect}</span>
+                      <span style={{color:'#fca5a5'}}>🔴 Bukan bola: {auditProgress.notFootball}</span>
+                      <span style={{color:'#9ca3af'}}>⚫ Error: {auditProgress.error}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Legend status konten */}
             <div style={{...S.box,marginBottom:0,padding:'12px 16px'}}>
