@@ -103,6 +103,50 @@ const FOOTBALL_KEYWORDS = [
 
   // Generik tapi relevan di konteks sepakbola
   'fifa', 'uefa', 'afc', 'pssi', 'concacaf', 'conmebol', 'afcon',
+
+  // ========== ELEMEN FISIK SEPAKBOLA (visual terms) ==========
+  // Lapangan
+  'lapangan bola', 'lapangan hijau', 'lapangan rumput', 'lapangan sintetis',
+  'pitch', 'soccer field', 'football field', 'rumput sintetis', 'turf',
+  // Stadion
+  'stadion', 'stadium', 'gelora', 'gbk', 'bung karno', 'manahan', 'pakansari',
+  'bukit jalil', 'wembley', 'old trafford', 'anfield', 'santiago bernabeu',
+  'camp nou', 'allianz arena', 'san siro', 'emirates stadium', 'etihad',
+  // Bola
+  'sepak bola', 'soccer ball', 'bola sepak', 'bola resmi', 'match ball',
+  // Gawang
+  'gawang', 'tiang gawang', 'mistar', 'crossbar', 'jaring gawang', 'goal post',
+  // Pemain & posisi (tambahan)
+  'sentre-back', 'full-back', 'winger', 'playmaker', 'forward', 'sweeper',
+  'libero', 'false nine', 'holding midfielder', 'box to box',
+  // Jersey & perlengkapan
+  'jersey', 'kostum bola', 'seragam bola', 'kaos bola', 'home kit', 'away kit',
+  'third kit', 'replika jersey', 'authentic jersey', 'fan version',
+  'sepatu bola', 'sepatu pul', 'boot', 'shin guard', 'pelindung tulang kering',
+  'kaos kaki panjang', 'glove kiper', 'sarung tangan kiper',
+  // Penonton & supporter
+  'penonton', 'supporter', 'suporter', 'ultras', 'curva', 'terrace',
+  'chant', 'yel-yel', 'tifo', 'banner supporter', 'spanduk', 'tribun',
+  'the jakmania', 'bobotoh', 'aremania', 'bonek', 'la mania', 'pasoepati',
+  'milanisti', 'interista', 'juventini', 'madridista', 'cule', 'gooner',
+  'red devil', 'kopite', 'blues', 'citizens',
+  // Wasit & official
+  'wasit', 'referee', 'asisten wasit', 'hakim garis', 'var', 'linesman',
+  'fourth official', 'technical area',
+  // Pelatih
+  'head coach', 'kepala pelatih', 'asisten pelatih', 'assistant coach',
+  // Istilah permainan
+  'corner kick', 'free kick', 'tendangan bebas', 'tendangan sudut',
+  'throw in', 'lemparan ke dalam', 'goal kick', 'kick off', 'kickoff',
+  'half time', 'babak pertama', 'babak kedua', 'injury time', 'added time',
+  'stoppage time', 'extra time', 'adu penalti', 'penalty shootout',
+  'derby', 'derbi', 'klasik', 'el clasico', 'classic match',
+  // Skor & statistik
+  'papan skor', 'scoreboard', 'score final', 'full time score',
+  'possession', 'penguasaan bola', 'shots on target', 'tembakan ke gawang',
+  'clean sheet', 'nir bobol', 'hat-trick', 'hattrick', 'brace',
+  // Peluit
+  'peluit', 'whistle', 'peluit panjang', 'final whistle',
 ];
 
 const FB_UA = 'Mozilla/5.0 (compatible; FacebookExternalHit/1.1; +http://www.facebook.com/externalhit_uatext.php)';
@@ -164,6 +208,47 @@ const ANTI_KEYWORDS = [
   'ikan cupang', 'ayam aduan', 'burung kicau',
   // Spam judi/pinjol
   'pinjaman online', 'pinjol', 'judi online', 'slot online',
+  'investasi bodong', 'mlm ', 'dropship',
+
+  // ========== OLAHRAGA LAIN (bukan sepakbola) ==========
+  'bulu tangkis', 'badminton', 'bwf ', 'shuttlecock', 'kok badminton',
+  'bola basket', 'basketball', 'nba ', 'ibl ',
+  'bola voli', 'volley', 'voli pantai', 'pbvsi',
+  'tenis meja', 'pingpong', 'ping pong', 'tenis lapangan',
+  'catur', 'chess', 'gm catur', 'grandmaster catur',
+  'balap motor', 'motogp', 'moto2', 'moto3', 'wsbk',
+  'formula 1', 'f1 racing', 'grand prix f1',
+  'renang', 'swimming', 'polo air', 'water polo',
+  'karate', 'silat', 'pencak silat', 'taekwondo', 'judo ', 'kungfu',
+  'mma ', 'ufc ', 'one championship', 'tinju', 'boxing', 'muay thai',
+  'atletik', 'lari marathon', 'maraton', 'lompat jauh', 'lompat tinggi',
+  'panahan', 'archery', 'menembak ', 'billiard', 'biliar', 'snooker',
+  'golf ', 'sepeda gunung', 'mtb ', 'road bike', 'bmx ', 'cycling',
+  'skateboard', 'skating', 'surfing', 'selancar',
+
+  // ========== BENDA NON-BOLA (visual terms) ==========
+  // Alat pertanian
+  'cangkul', 'pacul', 'sabit', 'garpu tanah', 'arit',
+  // Peralatan makan/dapur
+  'sendok makan', 'garpu makan', 'pisau masak', 'sumpit', 'panci ',
+  'wajan ', 'kompor ', 'kulkas ', 'rice cooker', 'blender ', 'mixer',
+  // Senjata
+  'pistol', 'senjata api', 'senapan', 'bedil', 'airsoft gun', 'revolver',
+  'pedang', 'katana', 'golok', 'keris', 'samurai', 'belati',
+  // Kendaraan non-olahraga
+  'motor matic', 'motor bebek', 'motor vespa', 'mobil sedan', 'mobil suv',
+  'truk ', 'bus kota', 'kapal laut', 'pesawat terbang',
+  // Alat kerja
+  'gergaji', 'palu ', 'obeng', 'bor listrik', 'mesin las', 'tang ',
+  // Hewan peliharaan spesifik
+  'kucing persia', 'kucing anggora', 'anjing kampung', 'hamster ',
+  'ikan koi', 'ikan arwana', 'burung lovebird', 'burung perkutut',
+  // Skincare & beauty
+  'serum wajah', 'toner wajah', 'moisturizer', 'lipstik', 'eyeshadow',
+  'blush on', 'foundation', 'primer wajah', 'mascara',
+  // Makanan spesifik
+  'nasi goreng', 'rendang padang', 'bakso', 'mie ayam', 'soto ',
+  'kue ulang tahun', 'pastry', 'donat ', 'roti tawar',
 ];
 
 function countKeywordMatches(text, keywords) {
