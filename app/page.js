@@ -775,21 +775,35 @@ export default function Home() {
 
   // Hapus 1 slot spesifik (gambar1, gambar2, atau video) dari entry yang dipilih
   // Pakai pilihan ptGroup + ptCycle + ptType + ptPeriod saat ini.
+  // Admin: boleh hapus entry siapapun. Member: hanya entry sendiri.
   const deletePostField = async () => {
     if (!ptGroup) { setPtMsg('Pilih grup dulu!'); return; }
-    const entry = postTracker.find(p =>
-      p.user_id === user.id &&
-      p.group_id === ptGroup &&
-      p.cycle === ptCycle &&
-      p.period === ptPeriod
-    );
+    const isAdminUser = user.role === 'admin';
+    const fieldMapLookup = { gambar1: 'gambar1_link', gambar2: 'gambar2_link', video: 'video_link' };
+    const lookupField = fieldMapLookup[ptType];
+
+    // Cari entry: admin = cari slot yang sudah terisi (siapapun); member = cari entry sendiri
+    const entry = isAdminUser
+      ? postTracker.find(p =>
+          p.group_id === ptGroup &&
+          p.cycle === ptCycle &&
+          p.period === ptPeriod &&
+          p[lookupField]
+        )
+      : postTracker.find(p =>
+          p.user_id === user.id &&
+          p.group_id === ptGroup &&
+          p.cycle === ptCycle &&
+          p.period === ptPeriod
+        );
     if (!entry) { setPtMsg('Tidak ada entry untuk dihapus'); return; }
 
     const fieldMap = { gambar1: 'gambar1_link', gambar2: 'gambar2_link', video: 'video_link' };
     const field = fieldMap[ptType];
     if (!entry[field]) { setPtMsg(`${ptType.toUpperCase()} sudah kosong`); return; }
 
-    if (!confirm(`Hapus ${ptType.toUpperCase()} untuk grup "${entry.group_name}" siklus ${ptCycle}?`)) return;
+    const ownerInfo = isAdminUser && entry.user_name !== user.name ? ` milik ${entry.user_name}` : '';
+    if (!confirm(`Hapus ${ptType.toUpperCase()}${ownerInfo} di grup "${entry.group_name}" siklus ${ptCycle}?`)) return;
 
     // Kalau semua 3 field jadi kosong setelah hapus → hapus seluruh row
     const willBeEmpty =
@@ -810,7 +824,7 @@ export default function Home() {
     }
 
     setPtLink('');
-    setPtMsg(`${ptType.toUpperCase()} berhasil dihapus`);
+    setPtMsg(`${ptType.toUpperCase()}${ownerInfo} berhasil dihapus`);
     loadPostTracker(ptPeriod);
   };
 
