@@ -140,19 +140,58 @@ async function extractTextFromUrl(url) {
   }
 }
 
-function countKeywordMatches(text) {
+// Anti-keyword: indikator kuat bahwa konten BUKAN sepakbola.
+// Kalau salah satu match, langsung tandai not_football.
+// CATATAN: musik/lagu TIDAK di-block — user bilang boleh bebas.
+const ANTI_KEYWORDS = [
+  // Makanan & resep
+  'resep', 'masakan', 'recipe', 'kuliner', 'masak ',
+  'chef', 'dapur',
+  // Game (non-football)
+  'mobile legends', 'free fire', 'pubg', 'valorant', 'genshin', 'minecraft',
+  'roblox', 'mlbb',
+  // Film & TV
+  'drama korea', 'drakor', 'sinetron', 'anime ', 'manga', 'cartoon',
+  // Beauty & fashion
+  'tutorial makeup', 'skincare', 'tutorial hijab',
+  // Politik
+  'pemilu', 'capres', 'dpr ', 'mpr ',
+  // Agama (konten ceramah)
+  'pengajian', 'ceramah', 'khutbah',
+  // Tutorial non-bola
+  'tutorial coding',
+  // Hewan peliharaan
+  'ikan cupang', 'ayam aduan', 'burung kicau',
+  // Spam judi/pinjol
+  'pinjaman online', 'pinjol', 'judi online', 'slot online',
+];
+
+function countKeywordMatches(text, keywords) {
   if (!text) return 0;
   let count = 0;
-  for (const kw of FOOTBALL_KEYWORDS) {
+  for (const kw of keywords) {
     if (text.includes(kw)) count++;
   }
   return count;
 }
 
-function determineStatus(matchCount) {
-  if (matchCount >= 2) return 'ok';
-  if (matchCount === 1) return 'suspect';
-  return 'not_football';
+// Algoritma context-aware:
+// 1. Ada anti-keyword kuat → not_football (red)
+// 2. Ada keyword bola minimal 1 → ok (green) — karena konteks grup udah bola
+// 3. Kosong total, tapi grup = grup bola (dari context) → ok (green) — trust context
+// 4. Fetch gagal total → caller sudah handle sebagai 'error'
+function determineStatus({ fetchedText, groupContext }) {
+  const combinedForFootball = `${fetchedText} ${groupContext}`.toLowerCase();
+  const antiMatches = countKeywordMatches(fetchedText, ANTI_KEYWORDS);
+  if (antiMatches >= 1) return { status: 'not_football', reason: `anti-keyword match (${antiMatches})` };
+
+  const footballMatches = countKeywordMatches(combinedForFootball, FOOTBALL_KEYWORDS);
+  if (footballMatches >= 1) return { status: 'ok', reason: `${footballMatches} football keyword match` };
+
+  // Fallback: kalau groupContext ada dan nggak kosong, trust context
+  if (groupContext && groupContext.trim().length > 0) return { status: 'ok', reason: 'trust group context' };
+
+  return { status: 'suspect', reason: 'no keyword match, no context' };
 }
 
 export async function POST(req) {
@@ -170,11 +209,47 @@ export async function POST(req) {
     const fieldCheckedAt = `${field}_checked_at`;
     const fieldDetectedTitle = `${field}_detected_title`;
 
+    // Ambil group context dari row posting_tracker + join ke groups untuk dapat club
+    const { data: row } = await supabase
+      .from('posting_tracker')
+      .select('group_id, group_name')
+      .eq('id', id)
+      .single();
+
+    let groupContext = '';
+    if (row) {
+      groupContext = (row.group_name || '').toLowerCase();
+      // Coba tambahkan club dari tabel groups
+      if (row.group_id) {
+        const { data: grp } = await supabase
+          .from('groups')
+          .select('club, name, league')
+          .eq('id', row.group_id)
+          .single();
+        if (grp) {
+          groupContext += ' ' + (grp.club || '').toLowerCase() + ' ' + (grp.name || '').toLowerCase() + ' ' + (grp.league || '').toLowerCase();
+        }
+      }
+    }
+
     // Extract og tags
     const result = await extractTextFromUrl(url);
     const now = new Date().toISOString();
 
     if (result.error) {
+      // Kalau fetch gagal tapi group context ada dan jelas grup bola → trust context → ok
+      const contextCheck = determineStatus({ fetchedText: '', groupContext });
+      if (contextCheck.status === 'ok') {
+        await supabase
+          .from('posting_tracker')
+          .update({
+            [fieldStatus]: 'ok',
+            [fieldCheckedAt]: now,
+            [fieldDetectedTitle]: `[CONTEXT] ${row?.group_name || 'group'} — fetch failed, trusted`,
+          })
+          .eq('id', id);
+        return NextResponse.json({ status: 'ok', reason: 'fetch_failed_trust_context' });
+      }
       await supabase
         .from('posting_tracker')
         .update({
@@ -186,20 +261,19 @@ export async function POST(req) {
       return NextResponse.json({ status: 'error', reason: result.error });
     }
 
-    // Count matches + determine status
-    const matches = countKeywordMatches(result.combined);
-    const status = determineStatus(matches);
+    // Klasifikasi dengan context
+    const { status, reason } = determineStatus({ fetchedText: result.combined, groupContext });
 
     await supabase
       .from('posting_tracker')
       .update({
         [fieldStatus]: status,
         [fieldCheckedAt]: now,
-        [fieldDetectedTitle]: result.title.substring(0, 200),
+        [fieldDetectedTitle]: (result.title || '[no title]').substring(0, 200),
       })
       .eq('id', id);
 
-    return NextResponse.json({ status, matches, title: result.title });
+    return NextResponse.json({ status, reason, title: result.title });
   } catch (e) {
     return NextResponse.json({ error: e.message }, { status: 500 });
   }

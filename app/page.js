@@ -902,12 +902,26 @@ export default function Home() {
   // Audit historis — loop semua slot dengan status 'pending' → panggil analyzer → update.
   // Aman: sequential dengan delay 4 detik biar nggak bikin Facebook rate-limit IP Vercel.
   // Bisa di-stop kapan aja lewat tombol Stop. Tidak ngaruh ke akun bot (beda flow).
-  const runContentAudit = async () => {
+  // Param reAuditAll: true = reset semua status non-kosong ke pending dulu (re-audit semua)
+  const runContentAudit = async (reAuditAll = false) => {
     if (auditRunning) return;
-    if (!confirm('Mulai audit konten? Proses ini akan mengecek semua slot yang masih "pending" dan memerlukan waktu ~30-45 menit. Kamu bisa stop kapan saja.')) return;
+    const msg = reAuditAll
+      ? 'Re-audit SEMUA konten? Status lama (ok/suspect/not_football/error) akan di-reset ke pending lalu dianalisa ulang dengan algoritma baru. Proses bisa 30-45 menit.'
+      : 'Mulai audit konten? Proses ini akan mengecek semua slot yang masih "pending" dan memerlukan waktu ~30-45 menit. Kamu bisa stop kapan saja.';
+    if (!confirm(msg)) return;
 
     setAuditRunning(true);
     setAuditStopRequested(false);
+
+    // Kalau re-audit semua, reset dulu status non-kosong ke pending
+    if (reAuditAll) {
+      setAuditMsg('Reset status semua slot ke pending...');
+      // Reset gambar1
+      await supabase.from('posting_tracker').update({ gambar1_status: 'pending' }).not('gambar1_link', 'is', null);
+      await supabase.from('posting_tracker').update({ gambar2_status: 'pending' }).not('gambar2_link', 'is', null);
+      await supabase.from('posting_tracker').update({ video_status: 'pending' }).not('video_link', 'is', null);
+    }
+
     setAuditMsg('Memuat daftar row pending dari database...');
 
     // Ambil semua row yang punya slot berstatus pending
@@ -1780,9 +1794,14 @@ export default function Home() {
                   </div>
                   <div style={{display:'flex',gap:8}}>
                     {!auditRunning ? (
-                      <button onClick={runContentAudit} style={{...S.btn('#065f46'),padding:'10px 20px',fontSize:12,fontWeight:800}}>
-                        🔍 Mulai Audit
-                      </button>
+                      <>
+                        <button onClick={()=>runContentAudit(false)} style={{...S.btn('#065f46'),padding:'10px 20px',fontSize:12,fontWeight:800}} title="Audit hanya slot pending">
+                          🔍 Audit Pending
+                        </button>
+                        <button onClick={()=>runContentAudit(true)} style={{...S.btn('#0e7490'),padding:'10px 20px',fontSize:12,fontWeight:800}} title="Reset semua status ke pending lalu audit ulang (pakai algoritma baru)">
+                          🔄 Re-Audit Semua
+                        </button>
+                      </>
                     ) : (
                       <button onClick={()=>setAuditStopRequested(true)} style={{...S.btn('#991b1b'),padding:'10px 20px',fontSize:12,fontWeight:800}}>
                         ⏹ Stop
