@@ -331,6 +331,10 @@ export default function Home() {
   const [auditProgress, setAuditProgress] = useState({ done: 0, total: 0, ok: 0, suspect: 0, notFootball: 0, error: 0 });
   const [auditMsg, setAuditMsg] = useState('');
 
+  // Auto backup history (Vercel Cron)
+  const [autoBackups, setAutoBackups] = useState([]);
+  const [autoBackupsLoading, setAutoBackupsLoading] = useState(false);
+
   // Posting tracker
   const [postTracker, setPostTracker] = useState([]);
   const [postTrackerHistory, setPostTrackerHistory] = useState([]); // last 30 days
@@ -976,6 +980,58 @@ export default function Home() {
     loadPostTracker(ptPeriod); // refresh final
   };
 
+  // Load daftar auto backup dari tabel backups_log
+  const loadAutoBackups = async () => {
+    setAutoBackupsLoading(true);
+    const { data, error } = await supabase
+      .from('backups_log')
+      .select('id, created_at, trigger_type, row_counts, size_bytes, error')
+      .order('created_at', { ascending: false })
+      .limit(30);
+    if (!error) setAutoBackups(data || []);
+    setAutoBackupsLoading(false);
+  };
+
+  // Download 1 backup dari backups_log ke file JSON
+  const downloadAutoBackup = async (backupId) => {
+    const { data, error } = await supabase
+      .from('backups_log')
+      .select('*')
+      .eq('id', backupId)
+      .single();
+    if (error || !data) { alert('Gagal load backup: ' + (error?.message || 'unknown')); return; }
+
+    const blob = new Blob([JSON.stringify(data.tables, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const date = new Date(data.created_at).toISOString().split('T')[0];
+    a.download = `backup_auto_${date}_${data.trigger_type}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // Trigger manual backup — panggil API cron (butuh CRON_SECRET)
+  const triggerManualBackup = async () => {
+    const secret = prompt('Masukkan CRON_SECRET untuk trigger backup manual:\n(Kosongkan kalau belum set di Vercel env var)');
+    if (secret === null) return;
+    try {
+      const res = await fetch('/api/cron/backup', {
+        method: 'POST',
+        headers: secret ? { 'Authorization': `Bearer ${secret}` } : {},
+      });
+      const result = await res.json();
+      if (result.success) {
+        alert(`Backup berhasil!\nTotal row: ${result.total_rows}\nUkuran: ${(result.size_bytes / 1024).toFixed(1)} KB\nDurasi: ${result.duration_ms}ms`);
+        loadAutoBackups();
+      } else {
+        alert('Backup gagal: ' + (result.error || 'unknown'));
+      }
+    } catch (e) {
+      alert('Error: ' + e.message);
+    }
+  };
+
   // Backup & Restore
   const downloadBackup = async () => {
     setBackingUp(true);
@@ -1230,7 +1286,7 @@ export default function Home() {
 
       {/* TABS */}
       <div style={S.tabs}>
-        {tabs.map(t => <div key={t.id} style={S.tab(tab===t.id)} onClick={() => { setTab(t.id); if(t.id==='weekly') loadWeeklyStats(wsYear, wsMonth); if(t.id==='posttrack') loadPostTracker(ptPeriod); if(t.id==='botqueue') loadTaskQueue(); }}>{t.label}</div>)}
+        {tabs.map(t => <div key={t.id} style={S.tab(tab===t.id)} onClick={() => { setTab(t.id); if(t.id==='weekly') loadWeeklyStats(wsYear, wsMonth); if(t.id==='posttrack') loadPostTracker(ptPeriod); if(t.id==='botqueue') loadTaskQueue(); if(t.id==='users') loadAutoBackups(); }}>{t.label}</div>)}
       </div>
 
       <div style={S.main}>
@@ -2454,10 +2510,78 @@ export default function Home() {
                 </div>
               )}
 
-              <div style={{marginTop:16,padding:12,background:'#0d1117',border:'1px solid #1f2937',borderRadius:8,fontSize:11,color:'#6b7280'}}>
-                <strong style={{color:'#FFD700'}}>Auto Backup ke Google Drive:</strong> Untuk backup otomatis harian,
-                pakai script lokal di komputer kamu (<code style={{background:'#1f2937',padding:'1px 4px',borderRadius:3}}>scripts/auto-backup.js</code>) via Windows Task Scheduler.
-                Script akan download backup dari dashboard dan upload ke Google Drive otomatis.
+              {/* AUTO BACKUP HISTORY (Vercel Cron) */}
+              <div style={{marginTop:20,padding:16,background:'#0d1117',border:'1px solid #0891b2',borderRadius:8}}>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12,flexWrap:'wrap',gap:8}}>
+                  <div>
+                    <h4 style={{color:'#67e8f9',fontSize:14,margin:0,fontWeight:800,textTransform:'uppercase',letterSpacing:1}}>⏰ Auto Backup Harian</h4>
+                    <p style={{fontSize:11,color:'#9ca3af',margin:'4px 0 0 0'}}>Vercel Cron otomatis backup ke tabel backups_log setiap 02:00 WIB. Disimpan 30 backup terakhir.</p>
+                  </div>
+                  <div style={{display:'flex',gap:8}}>
+                    <button onClick={loadAutoBackups} disabled={autoBackupsLoading} style={{...S.btn('#164e63'),padding:'8px 14px',fontSize:11}}>
+                      {autoBackupsLoading ? '⏳ Loading...' : '🔄 Refresh'}
+                    </button>
+                    <button onClick={triggerManualBackup} style={{...S.btn('#065f46'),padding:'8px 14px',fontSize:11}}>
+                      ⚡ Backup Sekarang
+                    </button>
+                  </div>
+                </div>
+
+                {autoBackups.length === 0 && !autoBackupsLoading && (
+                  <p style={{fontSize:12,color:'#6b7280',textAlign:'center',padding:12}}>
+                    Belum ada auto backup. Klik <strong>Refresh</strong> untuk cek, atau <strong>Backup Sekarang</strong> untuk trigger manual.
+                  </p>
+                )}
+
+                {autoBackups.length > 0 && (
+                  <div style={{maxHeight:300,overflow:'auto'}}>
+                    <table style={{width:'100%',borderCollapse:'collapse',fontSize:11}}>
+                      <thead>
+                        <tr>
+                          <th style={{...S.th,fontSize:10}}>Tanggal</th>
+                          <th style={{...S.th,fontSize:10}}>Tipe</th>
+                          <th style={{...S.th,fontSize:10,textAlign:'right'}}>Total Row</th>
+                          <th style={{...S.th,fontSize:10,textAlign:'right'}}>Ukuran</th>
+                          <th style={{...S.th,fontSize:10}}>Status</th>
+                          <th style={{...S.th,fontSize:10}}>Aksi</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {autoBackups.map(b => {
+                          const totalRows = Object.values(b.row_counts || {}).reduce((a, c) => a + (c || 0), 0);
+                          const sizeKB = ((b.size_bytes || 0) / 1024).toFixed(1);
+                          return (
+                            <tr key={b.id}>
+                              <td style={{...S.td,fontSize:11}}>{new Date(b.created_at).toLocaleString('id-ID')}</td>
+                              <td style={{...S.td,fontSize:11}}>
+                                <span style={{padding:'2px 6px',borderRadius:3,fontSize:9,fontWeight:700,background:b.trigger_type==='auto'?'#164e63':'#7c2d12',color:b.trigger_type==='auto'?'#67e8f9':'#fb923c'}}>
+                                  {(b.trigger_type || 'auto').toUpperCase()}
+                                </span>
+                              </td>
+                              <td style={{...S.td,fontSize:11,textAlign:'right',color:'#e0f2fe'}}>{totalRows.toLocaleString('id-ID')}</td>
+                              <td style={{...S.td,fontSize:11,textAlign:'right',color:'#9ca3af'}}>{sizeKB} KB</td>
+                              <td style={{...S.td,fontSize:10}}>
+                                {b.error ? <span style={{color:'#ef4444'}} title={b.error}>⚠ Error</span> : <span style={{color:'#10b981'}}>✓ OK</span>}
+                              </td>
+                              <td style={{...S.td,fontSize:11}}>
+                                <button onClick={()=>downloadAutoBackup(b.id)} style={{...S.btn('#1e40af'),padding:'4px 10px',fontSize:10}}>📥 Download</button>
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                <div style={{marginTop:12,padding:10,background:'#020617',border:'1px solid #1f2937',borderRadius:6,fontSize:10,color:'#6b7280'}}>
+                  <strong style={{color:'#67e8f9'}}>Setup yang diperlukan:</strong>
+                  <ol style={{margin:'4px 0 0 16px',padding:0}}>
+                    <li>Jalankan SQL <code style={{background:'#1f2937',padding:'0 3px',borderRadius:2}}>003_backups_log.sql</code> di Supabase SQL Editor</li>
+                    <li>Tambah env var <code style={{background:'#1f2937',padding:'0 3px',borderRadius:2}}>CRON_SECRET</code> di Vercel (opsional, untuk manual trigger)</li>
+                    <li>Deploy dashboard — Vercel Cron otomatis aktif dari <code style={{background:'#1f2937',padding:'0 3px',borderRadius:2}}>vercel.json</code></li>
+                  </ol>
+                </div>
               </div>
             </div>
           </>
