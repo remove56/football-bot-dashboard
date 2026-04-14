@@ -335,6 +335,10 @@ export default function Home() {
   const [autoBackups, setAutoBackups] = useState([]);
   const [autoBackupsLoading, setAutoBackupsLoading] = useState(false);
 
+  // Bot health monitoring (heartbeat dari worker)
+  const [botHealth, setBotHealth] = useState([]);
+  const [botHealthLoading, setBotHealthLoading] = useState(false);
+
   // Posting tracker
   const [postTracker, setPostTracker] = useState([]);
   const [postTrackerHistory, setPostTrackerHistory] = useState([]); // last 30 days
@@ -980,6 +984,27 @@ export default function Home() {
     loadPostTracker(ptPeriod); // refresh final
   };
 
+  // Load bot health status dari API /api/bot-heartbeat GET
+  const loadBotHealth = async () => {
+    setBotHealthLoading(true);
+    try {
+      const res = await fetch('/api/bot-heartbeat');
+      const data = await res.json();
+      setBotHealth(data.workers || []);
+    } catch (e) {
+      // silent
+    }
+    setBotHealthLoading(false);
+  };
+
+  // Auto-refresh bot health tiap 30 detik saat di tab Overview
+  useEffect(() => {
+    if (tab !== 'overview' || !isAdmin) return;
+    loadBotHealth();
+    const id = setInterval(loadBotHealth, 30000);
+    return () => clearInterval(id);
+  }, [tab, isAdmin]);
+
   // Load daftar auto backup dari tabel backups_log
   const loadAutoBackups = async () => {
     setAutoBackupsLoading(true);
@@ -1334,6 +1359,88 @@ export default function Home() {
         {/* OVERVIEW (admin) */}
         {tab === 'overview' && isAdmin && (
           <>
+            {/* BOT HEALTH MONITOR */}
+            <div style={{...S.box,marginBottom:24,padding:'16px 20px',border:'1px solid #0891b2'}}>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12,flexWrap:'wrap',gap:8}}>
+                <div>
+                  <div style={{fontSize:13,color:'#67e8f9',fontWeight:800,textTransform:'uppercase',letterSpacing:1}}>🤖 Bot Health Monitor</div>
+                  <div style={{fontSize:11,color:'#9ca3af',marginTop:4}}>Status worker bot yang jalan di komputer lokal. Auto-refresh tiap 30 detik.</div>
+                </div>
+                <button onClick={loadBotHealth} disabled={botHealthLoading} style={{...S.btn('#164e63'),padding:'8px 14px',fontSize:11}}>
+                  {botHealthLoading ? '⏳' : '🔄'} Refresh
+                </button>
+              </div>
+
+              {botHealth.length === 0 && !botHealthLoading && (
+                <div style={{padding:'20px',textAlign:'center',background:'#020617',borderRadius:6,border:'1px dashed #1f2937'}}>
+                  <div style={{fontSize:13,color:'#9ca3af'}}>Belum ada bot worker yang mengirim heartbeat.</div>
+                  <div style={{fontSize:11,color:'#6b7280',marginTop:6}}>Restart bot worker di komputer lokal (bot-worker.js / reels-worker.js) untuk mulai monitoring.</div>
+                </div>
+              )}
+
+              {botHealth.length > 0 && (
+                <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(300px,1fr))',gap:12}}>
+                  {botHealth.map(w => {
+                    const statusColor = w.status === 'active' ? '#10b981'
+                                      : w.status === 'stale' ? '#f59e0b'
+                                      : w.status === 'down' ? '#ef4444'
+                                      : '#6b7280';
+                    const statusBg = w.status === 'active' ? '#064e3b'
+                                   : w.status === 'stale' ? '#78350f'
+                                   : w.status === 'down' ? '#7f1d1d'
+                                   : '#1f2937';
+                    const statusEmoji = w.status === 'active' ? '🟢'
+                                      : w.status === 'stale' ? '🟡'
+                                      : w.status === 'down' ? '🔴'
+                                      : '⚫';
+                    const statusLabel = w.status === 'active' ? 'ACTIVE'
+                                      : w.status === 'stale' ? 'STALE'
+                                      : w.status === 'down' ? 'DOWN'
+                                      : 'NEVER';
+                    const ageText = w.age_seconds !== null
+                      ? (w.age_seconds < 60 ? `${w.age_seconds}s ago`
+                        : w.age_seconds < 3600 ? `${Math.floor(w.age_seconds / 60)}m ago`
+                        : `${Math.floor(w.age_seconds / 3600)}h ago`)
+                      : 'never';
+                    return (
+                      <div key={w.worker_id} style={{background:'#0d1117',border:'1px solid '+statusColor,borderRadius:8,padding:14}}>
+                        <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:10}}>
+                          <div>
+                            <div style={{fontSize:13,fontWeight:800,color:'#e0f2fe'}}>{w.worker_name}</div>
+                            <div style={{fontSize:10,color:'#6b7280',marginTop:2}}>ID: {w.worker_id}</div>
+                          </div>
+                          <span style={{padding:'4px 10px',borderRadius:4,fontSize:10,fontWeight:900,background:statusBg,color:statusColor,border:'1px solid '+statusColor}}>
+                            {statusEmoji} {statusLabel}
+                          </span>
+                        </div>
+                        <div style={{fontSize:11,color:'#9ca3af',lineHeight:1.6}}>
+                          <div><span style={{color:'#6b7280'}}>Heartbeat:</span> <strong style={{color:statusColor}}>{ageText}</strong></div>
+                          {w.current_task && <div><span style={{color:'#6b7280'}}>Sedang:</span> <span style={{color:'#67e8f9'}}>{w.current_task}</span></div>}
+                          {!w.current_task && w.status === 'active' && <div style={{color:'#6b7280',fontStyle:'italic'}}>Idle (menunggu task)</div>}
+                          {w.last_task_info && <div><span style={{color:'#6b7280'}}>Task terakhir:</span> {w.last_task_info}</div>}
+                          <div style={{display:'flex',gap:14,marginTop:6,paddingTop:6,borderTop:'1px solid #1f2937'}}>
+                            <span><span style={{color:'#6b7280'}}>Total:</span> <strong style={{color:'#e0f2fe'}}>{w.total_tasks_today || 0}</strong></span>
+                            <span style={{color:'#10b981'}}>✓ {w.total_success_today || 0}</span>
+                            <span style={{color:'#ef4444'}}>✗ {w.total_failed_today || 0}</span>
+                          </div>
+                          {w.error_message && (
+                            <div style={{marginTop:6,padding:6,background:'#7f1d1d',borderRadius:4,color:'#fca5a5',fontSize:10}}>
+                              ⚠ {w.error_message}
+                            </div>
+                          )}
+                          {(w.pid || w.hostname) && (
+                            <div style={{marginTop:6,fontSize:9,color:'#374151'}}>
+                              {w.hostname && <>📦 {w.hostname}</>} {w.pid && <>· PID {w.pid}</>} {w.version && <>· v{w.version}</>}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
             <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(160px,1fr))',gap:14,marginBottom:24}}>
               <div style={S.stat}><div style={S.num}>{groups.length}</div><div style={S.label}>Grup</div></div>
               <div style={S.stat}><div style={S.num}>{clubs.length}</div><div style={S.label}>Klub</div></div>
