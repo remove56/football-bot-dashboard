@@ -365,6 +365,7 @@ export default function Home() {
   const [chatUploading, setChatUploading] = useState(false);
   const [chatRecording, setChatRecording] = useState(false);
   const [chatRecordSec, setChatRecordSec] = useState(0);
+  const [chatPendingAttachment, setChatPendingAttachment] = useState(null); // { file, previewUrl, type, name, size }
   const chatMediaRecorderRef = useRef(null);
   const chatRecordTimerRef = useRef(null);
 
@@ -1200,27 +1201,34 @@ export default function Home() {
     }
   };
 
-  // Handler untuk pilih file gambar
-  const onChatImageSelect = async (e) => {
+  // Set pending attachment (preview dulu, belum upload)
+  const setPendingImage = (file, fileName) => {
+    if (file.size > 5 * 1024 * 1024) { alert('Gambar maksimal 5 MB'); return; }
+    // Revoke previous preview URL kalau ada
+    if (chatPendingAttachment?.previewUrl) {
+      URL.revokeObjectURL(chatPendingAttachment.previewUrl);
+    }
+    const previewUrl = URL.createObjectURL(file);
+    setChatPendingAttachment({
+      file,
+      previewUrl,
+      type: 'image',
+      name: fileName || file.name,
+      size: file.size,
+    });
+  };
+
+  // Handler untuk pilih file gambar via file picker — simpan ke pending, JANGAN langsung kirim
+  const onChatImageSelect = (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
     if (!file.type.startsWith('image/')) { alert('File harus gambar'); return; }
-    if (file.size > 5 * 1024 * 1024) { alert('Gambar maksimal 5 MB'); return; }
-
-    const url = await uploadChatFile(file, 'images');
-    if (!url) return;
-
-    await sendChatMessage({
-      attachment_url: url,
-      attachment_type: 'image',
-      attachment_name: file.name,
-      attachment_size: file.size,
-    });
+    setPendingImage(file, file.name);
     e.target.value = ''; // reset input
   };
 
-  // Handler Ctrl+V paste — deteksi image di clipboard, auto-upload
-  const onChatPaste = async (e) => {
+  // Handler Ctrl+V paste — deteksi image di clipboard, simpan ke pending
+  const onChatPaste = (e) => {
     const items = e.clipboardData?.items;
     if (!items) return;
     for (let i = 0; i < items.length; i++) {
@@ -1229,26 +1237,43 @@ export default function Home() {
         e.preventDefault(); // cegah paste text default
         const blob = item.getAsFile();
         if (!blob) continue;
-        if (blob.size > 5 * 1024 * 1024) { alert('Gambar maksimal 5 MB'); return; }
-
-        // Generate nama file dari timestamp (clipboard gambar nggak punya nama asli)
         const ext = blob.type.split('/')[1] || 'png';
         const fileName = `pasted-${Date.now()}.${ext}`;
         const file = new File([blob], fileName, { type: blob.type });
-
-        const url = await uploadChatFile(file, 'images');
-        if (!url) return;
-
-        await sendChatMessage({
-          attachment_url: url,
-          attachment_type: 'image',
-          attachment_name: fileName,
-          attachment_size: file.size,
-        });
+        setPendingImage(file, fileName);
         return;
       }
     }
     // Kalau bukan image, biarkan paste default (text)
+  };
+
+  // Cancel pending attachment
+  const cancelPendingAttachment = () => {
+    if (chatPendingAttachment?.previewUrl) {
+      URL.revokeObjectURL(chatPendingAttachment.previewUrl);
+    }
+    setChatPendingAttachment(null);
+  };
+
+  // Kirim pending attachment (upload lalu send dengan caption optional dari chatInput)
+  const sendPendingAttachment = async () => {
+    if (!chatPendingAttachment) return;
+    const { file, type, name, size } = chatPendingAttachment;
+    const url = await uploadChatFile(file, type === 'image' ? 'images' : 'audio');
+    if (!url) return;
+    // sendChatMessage akan ambil chatInput sebagai message (caption)
+    // Kalau chatInput kosong, placeholder '📷 Foto' akan dipakai otomatis
+    await sendChatMessage({
+      attachment_url: url,
+      attachment_type: type,
+      attachment_name: name,
+      attachment_size: size,
+    });
+    // cleanup preview URL
+    if (chatPendingAttachment.previewUrl) {
+      URL.revokeObjectURL(chatPendingAttachment.previewUrl);
+    }
+    setChatPendingAttachment(null);
   };
 
   // Handler untuk record voice message
@@ -1972,6 +1997,21 @@ export default function Home() {
 
                 {/* Input toolbar */}
                 <div style={{padding:12,borderTop:'1px solid #1f2937',background:'#020617'}}>
+                  {/* PREVIEW ATTACHMENT (kalau ada pending) */}
+                  {chatPendingAttachment && (
+                    <div style={{marginBottom:10,padding:10,background:'#0d1117',border:'1px solid #0891b2',borderRadius:6,display:'flex',gap:12,alignItems:'center'}}>
+                      {chatPendingAttachment.type === 'image' && (
+                        <img src={chatPendingAttachment.previewUrl} alt="preview" style={{maxHeight:80,maxWidth:120,borderRadius:4,objectFit:'cover'}}/>
+                      )}
+                      <div style={{flex:1,minWidth:0}}>
+                        <div style={{fontSize:11,color:'#67e8f9',fontWeight:700}}>📷 Gambar siap dikirim</div>
+                        <div style={{fontSize:10,color:'#9ca3af',marginTop:2,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{chatPendingAttachment.name}</div>
+                        <div style={{fontSize:10,color:'#6b7280',marginTop:2}}>{(chatPendingAttachment.size / 1024).toFixed(1)} KB · Tekan Kirim untuk upload, atau tambahkan caption di bawah</div>
+                      </div>
+                      <button onClick={cancelPendingAttachment} disabled={chatUploading} style={{...S.btn('#991b1b'),padding:'8px 12px',fontSize:11}}>✕ Batal</button>
+                    </div>
+                  )}
+
                   {chatRecording ? (
                     <div style={{display:'flex',gap:8,alignItems:'center'}}>
                       <div style={{flex:1,display:'flex',alignItems:'center',gap:10,padding:'10px 14px',background:'#1a0a0a',border:'1px solid #dc2626',borderRadius:6,color:'#fca5a5',fontSize:12,fontWeight:700,animation:'recordPulse 1.5s ease-in-out infinite'}}>
@@ -1983,12 +2023,12 @@ export default function Home() {
                   ) : (
                     <div style={{display:'flex',gap:6,alignItems:'center'}}>
                       {/* Image upload */}
-                      <label style={{cursor:chatUploading?'wait':'pointer',padding:'10px 12px',background:'#164e63',borderRadius:6,fontSize:16,opacity:chatUploading?0.5:1}} title="Kirim foto">
+                      <label style={{cursor:(chatUploading||chatPendingAttachment)?'not-allowed':'pointer',padding:'10px 12px',background:'#164e63',borderRadius:6,fontSize:16,opacity:(chatUploading||chatPendingAttachment)?0.5:1}} title="Kirim foto">
                         {chatUploading ? '⏳' : '📷'}
-                        <input type="file" accept="image/*" style={{display:'none'}} disabled={chatUploading} onChange={onChatImageSelect}/>
+                        <input type="file" accept="image/*" style={{display:'none'}} disabled={chatUploading||!!chatPendingAttachment} onChange={onChatImageSelect}/>
                       </label>
                       {/* Voice record */}
-                      <button onClick={startVoiceRecord} disabled={chatUploading} style={{padding:'10px 12px',background:'#164e63',color:'#67e8f9',border:'none',borderRadius:6,fontSize:16,cursor:chatUploading?'not-allowed':'pointer',opacity:chatUploading?0.5:1}} title="Rekam pesan suara">
+                      <button onClick={startVoiceRecord} disabled={chatUploading||!!chatPendingAttachment} style={{padding:'10px 12px',background:'#164e63',color:'#67e8f9',border:'none',borderRadius:6,fontSize:16,cursor:(chatUploading||chatPendingAttachment)?'not-allowed':'pointer',opacity:(chatUploading||chatPendingAttachment)?0.5:1}} title="Rekam pesan suara">
                         🎤
                       </button>
                       <input
@@ -1996,13 +2036,24 @@ export default function Home() {
                         style={{...S.input,flex:1}}
                         value={chatInput}
                         onChange={e=>setChatInput(e.target.value)}
-                        onKeyDown={e=>e.key==='Enter' && sendChatMessage()}
+                        onKeyDown={e=>{
+                          if (e.key === 'Enter') {
+                            if (chatPendingAttachment) sendPendingAttachment();
+                            else sendChatMessage();
+                          }
+                        }}
                         onPaste={onChatPaste}
-                        placeholder={chatMode === 'dm' ? `Pesan ke ${chatDmPartner?.name || '-'}... (Ctrl+V paste gambar)` : 'Ketik pesan global... (Ctrl+V paste gambar)'}
+                        placeholder={chatPendingAttachment ? 'Tambahkan caption (opsional)...' : (chatMode === 'dm' ? `Pesan ke ${chatDmPartner?.name || '-'}... (Ctrl+V paste gambar)` : 'Ketik pesan global... (Ctrl+V paste gambar)')}
                         maxLength={2000}
                         disabled={chatUploading}
                       />
-                      <button onClick={()=>sendChatMessage()} disabled={chatUploading||(!chatInput.trim())} style={{...S.btn('#065f46'),padding:'10px 20px',fontSize:12,opacity:(chatUploading||!chatInput.trim())?0.5:1}}>Kirim</button>
+                      <button
+                        onClick={()=>chatPendingAttachment ? sendPendingAttachment() : sendChatMessage()}
+                        disabled={chatUploading || (!chatPendingAttachment && !chatInput.trim())}
+                        style={{...S.btn('#065f46'),padding:'10px 20px',fontSize:12,opacity:(chatUploading || (!chatPendingAttachment && !chatInput.trim()))?0.5:1}}
+                      >
+                        {chatUploading ? '⏳' : 'Kirim'}
+                      </button>
                     </div>
                   )}
                 </div>
