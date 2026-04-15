@@ -1920,9 +1920,9 @@ export default function Home() {
   return (
     <>
       {/* NAV */}
-      <div style={S.nav}>
+      <div style={S.nav} className="dash-header">
         <h1 style={S.h1}>Football Bot Dashboard</h1>
-        <div style={{display:'flex',gap:12,alignItems:'center',fontSize:13}}>
+        <div style={{display:'flex',gap:12,alignItems:'center',fontSize:13,flexWrap:'wrap'}}>
           <span style={{color:'#9ca3af'}}>{user.name}</span>
           <span style={S.badge(user.role)}>{user.role}</span>
           <a onClick={()=>setChatOpen(true)} style={{color:'#a5f3fc',cursor:'pointer',fontSize:12,position:'relative',animation:chatUnread>0?'bellPulse 1.5s ease-in-out infinite':'none'}} title="Chat">
@@ -2013,7 +2013,7 @@ export default function Home() {
 
       {/* MODAL ADMIN BROADCAST */}
       {broadcastOpen && (
-        <div onClick={()=>setBroadcastOpen(false)} style={{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(2,6,23,0.85)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
+        <div onClick={()=>setBroadcastOpen(false)} className="responsive-modal-backdrop" style={{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(2,6,23,0.85)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
           <div onClick={e=>e.stopPropagation()} style={{background:'linear-gradient(180deg,#0f172a 0%,#020617 100%)',border:'2px solid #0891b2',borderRadius:10,width:'100%',maxWidth:500,padding:24}}>
             <h3 style={{color:'#67e8f9',margin:'0 0 16px 0',fontSize:15,fontWeight:900,textTransform:'uppercase',letterSpacing:1}}>📢 Kirim Notifikasi</h3>
             <div style={{display:'flex',flexDirection:'column',gap:12}}>
@@ -2135,8 +2135,8 @@ export default function Home() {
       )}
 
       {chatOpen && (
-        <div onClick={()=>setChatOpen(false)} style={{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(2,6,23,0.9)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
-          <div onClick={e=>e.stopPropagation()} style={{background:'linear-gradient(180deg,#0f172a 0%,#020617 100%)',border:'2px solid #0891b2',borderRadius:12,width:'100%',maxWidth:900,height:'85vh',display:'flex',flexDirection:'column',overflow:'hidden',boxShadow:'0 8px 40px rgba(6,182,212,0.3)'}}>
+        <div onClick={()=>setChatOpen(false)} className="responsive-modal-backdrop" style={{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(2,6,23,0.9)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
+          <div onClick={e=>e.stopPropagation()} className="responsive-modal-content" style={{background:'linear-gradient(180deg,#0f172a 0%,#020617 100%)',border:'2px solid #0891b2',borderRadius:12,width:'100%',maxWidth:900,height:'85vh',display:'flex',flexDirection:'column',overflow:'hidden',boxShadow:'0 8px 40px rgba(6,182,212,0.3)'}}>
             {/* Header */}
             <div style={{padding:'14px 20px',borderBottom:'2px solid #0891b2',display:'flex',justifyContent:'space-between',alignItems:'center',background:'linear-gradient(90deg,#0c1220 0%,#020617 100%)'}}>
               <div>
@@ -2163,9 +2163,9 @@ export default function Home() {
               <button onClick={()=>setChatOpen(false)} style={{background:'#991b1b',color:'#fff',border:'none',borderRadius:6,padding:'8px 14px',fontSize:12,fontWeight:700,cursor:'pointer'}}>✕</button>
             </div>
 
-            <div style={{flex:1,display:'flex',overflow:'hidden'}}>
+            <div className="chat-body-flex" style={{flex:1,display:'flex',overflow:'hidden'}}>
               {/* Sidebar: global + DM list */}
-              <div style={{width:220,borderRight:'1px solid #1f2937',background:'#020617',overflow:'auto',display:'flex',flexDirection:'column'}}>
+              <div className="chat-sidebar" style={{width:220,borderRight:'1px solid #1f2937',background:'#020617',overflow:'auto',display:'flex',flexDirection:'column'}}>
                 <div
                   onClick={()=>{setChatMode('global');setChatDmPartner(null);}}
                   style={{
@@ -2410,8 +2410,8 @@ export default function Home() {
 
       {/* MODAL PANDUAN MEMBER */}
       {guideOpen && (
-        <div onClick={()=>setGuideOpen(false)} style={{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(2,6,23,0.9)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
-          <div onClick={e=>e.stopPropagation()} style={{background:'linear-gradient(180deg,#0f172a 0%,#020617 100%)',border:'2px solid #0891b2',borderRadius:12,width:'100%',maxWidth:900,maxHeight:'90vh',display:'flex',flexDirection:'column',overflow:'hidden',boxShadow:'0 8px 40px rgba(6,182,212,0.3)'}}>
+        <div onClick={()=>setGuideOpen(false)} className="responsive-modal-backdrop" style={{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(2,6,23,0.9)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
+          <div onClick={e=>e.stopPropagation()} className="responsive-modal-content" style={{background:'linear-gradient(180deg,#0f172a 0%,#020617 100%)',border:'2px solid #0891b2',borderRadius:12,width:'100%',maxWidth:900,maxHeight:'90vh',display:'flex',flexDirection:'column',overflow:'hidden',boxShadow:'0 8px 40px rgba(6,182,212,0.3)'}}>
             {/* Header */}
             <div style={{padding:'16px 24px',borderBottom:'2px solid #0891b2',display:'flex',justifyContent:'space-between',alignItems:'center',background:'linear-gradient(90deg,#0c1220 0%,#020617 100%)'}}>
               <div>
@@ -2735,11 +2735,11 @@ export default function Home() {
       )}
 
       {/* TABS */}
-      <div style={S.tabs}>
+      <div style={S.tabs} className="dash-tabs">
         {tabs.map(t => <div key={t.id} style={S.tab(tab===t.id)} onClick={() => { setTab(t.id); if(t.id==='weekly') loadWeeklyStats(wsYear, wsMonth); if(t.id==='posttrack') loadPostTracker(ptPeriod); if(t.id==='botqueue') loadTaskQueue(); if(t.id==='users') loadAutoBackups(); if(t.id==='settings') loadSystemStats(); }}>{t.label}</div>)}
       </div>
 
-      <div style={S.main}>
+      <div style={S.main} className="dash-main">
 
         {/* WARNING BANNER GLOBAL — member progress < 50% setelah jam 18:00 (muncul di SEMUA tab) */}
         {!isAdmin && user && (() => {
@@ -2866,7 +2866,7 @@ export default function Home() {
               )}
             </div>
 
-            <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(160px,1fr))',gap:14,marginBottom:24}}>
+            <div className="responsive-stats" style={{marginBottom:24}}>
               <div style={S.stat}><div style={S.num}>{groups.length}</div><div style={S.label}>Grup</div></div>
               <div style={S.stat}><div style={S.num}>{clubs.length}</div><div style={S.label}>Klub</div></div>
               <div style={S.stat}><div style={S.num}>{todayPosts}</div><div style={S.label}>Post Hari Ini</div></div>

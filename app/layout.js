@@ -99,6 +99,135 @@ export default function RootLayout({ children }) {
             0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
             50% { box-shadow: 0 0 0 4px rgba(16, 185, 129, 0); }
           }
+
+          /* ============================================================
+             MOBILE RESPONSIVE — breakpoint 768px (tablet/HP)
+             ============================================================ */
+
+          /* Header row: wrap kalau kepenuhan di mobile */
+          .dash-header {
+            flex-wrap: wrap;
+            gap: 10px;
+          }
+
+          /* Tab navigation: horizontal scroll di mobile */
+          .dash-tabs {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+          }
+          .dash-tabs::-webkit-scrollbar { height: 4px; }
+          .dash-tabs::-webkit-scrollbar-thumb { background: #0891b2; }
+
+          /* Main content: padding lebih kecil di mobile */
+          .dash-main {
+            padding: 24px;
+          }
+
+          /* Grid form: default 2-3 kolom */
+          .responsive-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
+          .responsive-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+          /* Stat cards grid */
+          .responsive-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; }
+
+          /* Modal base — full screen di mobile */
+          .responsive-modal-backdrop {
+            padding: 20px;
+          }
+          .responsive-modal-content {
+            max-width: 900px;
+            width: 100%;
+            max-height: 90vh;
+          }
+
+          /* Chat modal specific — sidebar fixed 220px di desktop */
+          .chat-sidebar { width: 220px; min-width: 220px; }
+          .chat-main-area { flex: 1; }
+
+          @media (max-width: 768px) {
+            /* Header: font logo lebih kecil, icons wrap */
+            .dash-header h1 { font-size: 16px !important; }
+            .dash-header {
+              gap: 6px;
+              padding: 10px 14px !important;
+            }
+            .dash-header a { font-size: 14px !important; }
+
+            /* Tabs: font lebih kecil, padding kompak */
+            .dash-tabs {
+              padding: 0 10px !important;
+            }
+            .dash-tabs > div {
+              padding: 10px 12px !important;
+              font-size: 11px !important;
+              white-space: nowrap;
+              flex-shrink: 0;
+            }
+
+            /* Main content padding kecilin */
+            .dash-main {
+              padding: 14px 10px !important;
+            }
+
+            /* Grid forms stack jadi 1 kolom */
+            .responsive-grid-3,
+            .responsive-grid-2 {
+              grid-template-columns: 1fr !important;
+            }
+
+            /* Stat cards: minimum 130px */
+            .responsive-stats {
+              grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)) !important;
+              gap: 8px !important;
+            }
+
+            /* Modal — hampir full screen di mobile */
+            .responsive-modal-backdrop {
+              padding: 0 !important;
+            }
+            .responsive-modal-content {
+              max-height: 100vh !important;
+              max-width: 100% !important;
+              height: 100vh !important;
+              border-radius: 0 !important;
+              border: none !important;
+            }
+
+            /* Chat modal: sidebar collapsible */
+            .chat-sidebar {
+              width: 100% !important;
+              min-width: 100% !important;
+              max-height: 180px;
+              overflow-y: auto;
+              border-right: none !important;
+              border-bottom: 1px solid #1f2937;
+            }
+            .chat-body-flex {
+              flex-direction: column !important;
+            }
+
+            /* Tables: force horizontal scroll */
+            table {
+              min-width: auto !important;
+            }
+
+            /* Hide some text di mobile, icon only */
+            .mobile-hide-text {
+              display: none !important;
+            }
+          }
+
+          @media (max-width: 480px) {
+            /* Extra small phones */
+            .dash-header h1 { font-size: 14px !important; }
+            .dash-header {
+              padding: 8px 10px !important;
+            }
+            .responsive-stats {
+              grid-template-columns: 1fr 1fr !important;
+            }
+          }
         `}} />
       </head>
       <body style={{
