@@ -103,12 +103,17 @@ export async function POST(req) {
       from_user_id, from_user_name, from_user_role,
       to_user_id, to_user_name,
       message,
+      attachment_url, attachment_type, attachment_name, attachment_size, attachment_duration,
     } = body;
 
-    if (!from_user_id || !from_user_name || !message) {
-      return NextResponse.json({ error: 'from_user_id, from_user_name, message required' }, { status: 400 });
+    if (!from_user_id || !from_user_name) {
+      return NextResponse.json({ error: 'from_user_id, from_user_name required' }, { status: 400 });
     }
-    if (message.length > 2000) {
+    // Pesan boleh kosong kalau ada attachment
+    if (!message && !attachment_url) {
+      return NextResponse.json({ error: 'message or attachment required' }, { status: 400 });
+    }
+    if (message && message.length > 2000) {
       return NextResponse.json({ error: 'message too long (max 2000 char)' }, { status: 400 });
     }
 
@@ -118,7 +123,12 @@ export async function POST(req) {
         from_user_id, from_user_name, from_user_role: from_user_role || 'member',
         to_user_id: to_user_id || null,
         to_user_name: to_user_name || null,
-        message: message.trim(),
+        message: message ? message.trim() : '',
+        attachment_url: attachment_url || null,
+        attachment_type: attachment_type || null,
+        attachment_name: attachment_name || null,
+        attachment_size: attachment_size || null,
+        attachment_duration: attachment_duration || null,
       })
       .select()
       .single();

@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 
 // ============================================================
@@ -361,6 +361,12 @@ export default function Home() {
   const [chatMessages, setChatMessages] = useState([]);
   const [chatInput, setChatInput] = useState('');
   const [chatDmList, setChatDmList] = useState([]); // list of DM conversations
+  const [chatUnread, setChatUnread] = useState(0); // total unread (DM + global)
+  const [chatUploading, setChatUploading] = useState(false);
+  const [chatRecording, setChatRecording] = useState(false);
+  const [chatRecordSec, setChatRecordSec] = useState(0);
+  const chatMediaRecorderRef = useRef(null);
+  const chatRecordTimerRef = useRef(null);
 
   // Pengaturan (Item 5) — bot accounts pakai state existing (baId, baName, dll)
   const [botAccFilter, setBotAccFilter] = useState('all'); // all | grup | reels | both
@@ -1145,8 +1151,10 @@ export default function Home() {
     return () => clearInterval(id);
   }, [chatOpen, chatMode, chatDmPartner, user]);
 
-  const sendChatMessage = async () => {
-    if (!chatInput.trim() || !user?.id) return;
+  const sendChatMessage = async (extras = {}) => {
+    if (!user?.id) return;
+    // Harus ada message atau attachment
+    if (!chatInput.trim() && !extras.attachment_url) return;
     try {
       await fetch('/api/chat', {
         method: 'POST',
@@ -1157,13 +1165,182 @@ export default function Home() {
           from_user_role: user.role,
           to_user_id: chatMode === 'dm' && chatDmPartner ? chatDmPartner.id : null,
           to_user_name: chatMode === 'dm' && chatDmPartner ? chatDmPartner.name : null,
-          message: chatInput.trim(),
+          message: chatInput.trim() || (extras.attachment_type === 'image' ? '📷 Foto' : extras.attachment_type === 'audio' ? '🎤 Pesan suara' : ''),
+          ...extras,
         }),
       });
       setChatInput('');
       loadChatMessages();
     } catch (e) { /* silent */ }
   };
+
+  // Upload file ke Supabase Storage bucket 'chat-media'
+  // Return URL publik, atau null kalau gagal
+  const uploadChatFile = async (file, type) => {
+    try {
+      setChatUploading(true);
+      const ext = file.name.split('.').pop().toLowerCase();
+      const path = `${type}/${user.id}/${Date.now()}-${Math.random().toString(36).substring(2, 8)}.${ext}`;
+      const { error } = await supabase.storage.from('chat-media').upload(path, file, {
+        cacheControl: '3600',
+        upsert: false,
+      });
+      if (error) {
+        alert('Upload gagal: ' + error.message + '\n\nPastikan bucket "chat-media" sudah dibuat di Supabase Storage.');
+        setChatUploading(false);
+        return null;
+      }
+      const { data: urlData } = supabase.storage.from('chat-media').getPublicUrl(path);
+      setChatUploading(false);
+      return urlData.publicUrl;
+    } catch (e) {
+      alert('Error upload: ' + e.message);
+      setChatUploading(false);
+      return null;
+    }
+  };
+
+  // Handler untuk pilih file gambar
+  const onChatImageSelect = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) { alert('File harus gambar'); return; }
+    if (file.size > 5 * 1024 * 1024) { alert('Gambar maksimal 5 MB'); return; }
+
+    const url = await uploadChatFile(file, 'images');
+    if (!url) return;
+
+    await sendChatMessage({
+      attachment_url: url,
+      attachment_type: 'image',
+      attachment_name: file.name,
+      attachment_size: file.size,
+    });
+    e.target.value = ''; // reset input
+  };
+
+  // Handler untuk record voice message
+  const startVoiceRecord = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mediaRecorder = new MediaRecorder(stream);
+      chatMediaRecorderRef.current = mediaRecorder;
+      const chunks = [];
+      mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
+      mediaRecorder.onstop = async () => {
+        const blob = new Blob(chunks, { type: 'audio/webm' });
+        stream.getTracks().forEach(t => t.stop());
+        if (blob.size < 1000) { alert('Rekaman terlalu pendek'); return; }
+        const durationSec = chatRecordSec;
+        const file = new File([blob], `voice-${Date.now()}.webm`, { type: 'audio/webm' });
+        const url = await uploadChatFile(file, 'audio');
+        if (!url) return;
+        await sendChatMessage({
+          attachment_url: url,
+          attachment_type: 'audio',
+          attachment_name: file.name,
+          attachment_size: file.size,
+          attachment_duration: durationSec,
+        });
+      };
+      mediaRecorder.start();
+      setChatRecording(true);
+      setChatRecordSec(0);
+      chatRecordTimerRef.current = setInterval(() => {
+        setChatRecordSec(prev => {
+          if (prev >= 60) { stopVoiceRecord(); return 60; } // max 60 detik
+          return prev + 1;
+        });
+      }, 1000);
+    } catch (e) {
+      alert('Gagal akses mikrofon: ' + e.message);
+    }
+  };
+
+  const stopVoiceRecord = () => {
+    if (chatMediaRecorderRef.current && chatMediaRecorderRef.current.state === 'recording') {
+      chatMediaRecorderRef.current.stop();
+    }
+    if (chatRecordTimerRef.current) {
+      clearInterval(chatRecordTimerRef.current);
+      chatRecordTimerRef.current = null;
+    }
+    setChatRecording(false);
+  };
+
+  const cancelVoiceRecord = () => {
+    if (chatMediaRecorderRef.current && chatMediaRecorderRef.current.state === 'recording') {
+      chatMediaRecorderRef.current.onstop = null; // skip upload
+      chatMediaRecorderRef.current.stop();
+    }
+    if (chatRecordTimerRef.current) {
+      clearInterval(chatRecordTimerRef.current);
+      chatRecordTimerRef.current = null;
+    }
+    setChatRecording(false);
+    setChatRecordSec(0);
+  };
+
+  // Hitung chat unread count (DM unread + global messages baru)
+  const loadChatUnread = async () => {
+    if (!user?.id) return;
+    try {
+      // 1. DM unread: messages to me that are unread
+      const { data: dmData } = await supabase
+        .from('chat_messages')
+        .select('id', { count: 'exact', head: true })
+        .eq('to_user_id', user.id)
+        .is('read_at', null)
+        .eq('deleted', false);
+      const dmCount = dmData?.length || 0;
+
+      // Alternative count query
+      const { count: dmUnreadCount } = await supabase
+        .from('chat_messages')
+        .select('*', { count: 'exact', head: true })
+        .eq('to_user_id', user.id)
+        .is('read_at', null)
+        .eq('deleted', false);
+
+      // 2. Global unread: messages after last_seen timestamp from localStorage
+      const lastSeen = localStorage.getItem(`chat-lastseen-global-${user.id}`);
+      let globalCount = 0;
+      if (lastSeen) {
+        const { count } = await supabase
+          .from('chat_messages')
+          .select('*', { count: 'exact', head: true })
+          .is('to_user_id', null)
+          .gt('created_at', lastSeen)
+          .neq('from_user_id', user.id)
+          .eq('deleted', false);
+        globalCount = count || 0;
+      }
+
+      setChatUnread((dmUnreadCount || 0) + globalCount);
+    } catch (e) { /* silent */ }
+  };
+
+  // Mark global chat as "seen" — update localStorage timestamp
+  const markGlobalChatSeen = () => {
+    if (!user?.id) return;
+    localStorage.setItem(`chat-lastseen-global-${user.id}`, new Date().toISOString());
+    loadChatUnread();
+  };
+
+  // Auto-poll chat unread tiap 10 detik
+  useEffect(() => {
+    if (!user?.id) return;
+    loadChatUnread();
+    const id = setInterval(loadChatUnread, 10000);
+    return () => clearInterval(id);
+  }, [user]);
+
+  // Saat buka chat + mode global → mark as seen
+  useEffect(() => {
+    if (chatOpen && chatMode === 'global') {
+      markGlobalChatSeen();
+    }
+  }, [chatOpen, chatMode]);
 
   const openDmWith = async (partnerId, partnerName) => {
     setChatMode('dm');
@@ -1513,11 +1690,18 @@ export default function Home() {
         <div style={{display:'flex',gap:12,alignItems:'center',fontSize:13}}>
           <span style={{color:'#9ca3af'}}>{user.name}</span>
           <span style={S.badge(user.role)}>{user.role}</span>
-          <a onClick={()=>setChatOpen(true)} style={{color:'#a5f3fc',cursor:'pointer',fontSize:12,position:'relative'}} title="Chat">💬 Chat</a>
-          <a onClick={()=>setNotifOpen(!notifOpen)} style={{color:'#a5f3fc',cursor:'pointer',fontSize:12,position:'relative'}} title="Notifikasi">
+          <a onClick={()=>setChatOpen(true)} style={{color:'#a5f3fc',cursor:'pointer',fontSize:12,position:'relative',animation:chatUnread>0?'bellPulse 1.5s ease-in-out infinite':'none'}} title="Chat">
+            💬 Chat
+            {chatUnread > 0 && (
+              <span style={{position:'absolute',top:-6,right:-8,background:'#ef4444',color:'#fff',borderRadius:'50%',minWidth:16,height:16,fontSize:9,fontWeight:900,display:'inline-flex',alignItems:'center',justifyContent:'center',padding:'0 4px',boxShadow:'0 0 10px rgba(239,68,68,0.8)'}}>
+                {chatUnread > 99 ? '99+' : chatUnread}
+              </span>
+            )}
+          </a>
+          <a onClick={()=>setNotifOpen(!notifOpen)} style={{color:'#a5f3fc',cursor:'pointer',fontSize:12,position:'relative',animation:notifUnread>0?'bellPulse 1.5s ease-in-out infinite':'none'}} title="Notifikasi">
             🔔
             {notifUnread > 0 && (
-              <span style={{position:'absolute',top:-6,right:-10,background:'#ef4444',color:'#fff',borderRadius:'50%',minWidth:16,height:16,fontSize:9,fontWeight:900,display:'inline-flex',alignItems:'center',justifyContent:'center',padding:'0 4px'}}>
+              <span style={{position:'absolute',top:-6,right:-10,background:'#ef4444',color:'#fff',borderRadius:'50%',minWidth:16,height:16,fontSize:9,fontWeight:900,display:'inline-flex',alignItems:'center',justifyContent:'center',padding:'0 4px',boxShadow:'0 0 10px rgba(239,68,68,0.8)'}}>
                 {notifUnread > 99 ? '99+' : notifUnread}
               </span>
             )}
@@ -1706,7 +1890,7 @@ export default function Home() {
                     return (
                       <div key={m.id} style={{display:'flex',justifyContent:isMe?'flex-end':'flex-start'}}>
                         <div style={{
-                          maxWidth:'70%',
+                          maxWidth:'75%',
                           padding:'10px 14px',
                           borderRadius:8,
                           background: isMe ? '#065f46' : '#0d1117',
@@ -1717,7 +1901,34 @@ export default function Home() {
                               {m.from_user_name} {m.from_user_role === 'admin' && '👑'}
                             </div>
                           )}
-                          <div style={{fontSize:12,color:'#e0f2fe',whiteSpace:'pre-wrap',wordBreak:'break-word'}}>{m.message}</div>
+
+                          {/* IMAGE ATTACHMENT */}
+                          {m.attachment_type === 'image' && m.attachment_url && (
+                            <div style={{marginBottom:m.message && m.message !== '📷 Foto' ? 6 : 0}}>
+                              <img
+                                src={m.attachment_url}
+                                alt={m.attachment_name || 'image'}
+                                style={{maxWidth:'100%',maxHeight:300,borderRadius:6,cursor:'pointer',display:'block'}}
+                                onClick={()=>window.open(m.attachment_url,'_blank')}
+                              />
+                            </div>
+                          )}
+
+                          {/* AUDIO ATTACHMENT */}
+                          {m.attachment_type === 'audio' && m.attachment_url && (
+                            <div style={{marginBottom:m.message && m.message !== '🎤 Pesan suara' ? 6 : 0,display:'flex',alignItems:'center',gap:8}}>
+                              <audio controls src={m.attachment_url} style={{height:36,maxWidth:240}}/>
+                              {m.attachment_duration && (
+                                <span style={{fontSize:10,color:'#9ca3af'}}>{m.attachment_duration}s</span>
+                              )}
+                            </div>
+                          )}
+
+                          {/* TEXT MESSAGE (skip kalau cuma placeholder untuk attachment) */}
+                          {m.message && m.message !== '📷 Foto' && m.message !== '🎤 Pesan suara' && (
+                            <div style={{fontSize:12,color:'#e0f2fe',whiteSpace:'pre-wrap',wordBreak:'break-word'}}>{m.message}</div>
+                          )}
+
                           <div style={{fontSize:9,color:'#6b7280',marginTop:4,textAlign:'right'}}>
                             {new Date(m.created_at).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}
                           </div>
@@ -1727,18 +1938,40 @@ export default function Home() {
                   })}
                 </div>
 
-                {/* Input box */}
-                <div style={{padding:12,borderTop:'1px solid #1f2937',display:'flex',gap:8,background:'#020617'}}>
-                  <input
-                    type="text"
-                    style={{...S.input,flex:1}}
-                    value={chatInput}
-                    onChange={e=>setChatInput(e.target.value)}
-                    onKeyDown={e=>e.key==='Enter' && sendChatMessage()}
-                    placeholder={chatMode === 'dm' ? `Pesan ke ${chatDmPartner?.name || '-'}...` : 'Ketik pesan global...'}
-                    maxLength={2000}
-                  />
-                  <button onClick={sendChatMessage} style={{...S.btn('#065f46'),padding:'10px 20px',fontSize:12}}>Kirim</button>
+                {/* Input toolbar */}
+                <div style={{padding:12,borderTop:'1px solid #1f2937',background:'#020617'}}>
+                  {chatRecording ? (
+                    <div style={{display:'flex',gap:8,alignItems:'center'}}>
+                      <div style={{flex:1,display:'flex',alignItems:'center',gap:10,padding:'10px 14px',background:'#1a0a0a',border:'1px solid #dc2626',borderRadius:6,color:'#fca5a5',fontSize:12,fontWeight:700,animation:'recordPulse 1.5s ease-in-out infinite'}}>
+                        🎤 Merekam... {chatRecordSec}s / 60s
+                      </div>
+                      <button onClick={cancelVoiceRecord} style={{...S.btn('#374151'),padding:'10px 14px',fontSize:11}}>✕ Batal</button>
+                      <button onClick={stopVoiceRecord} style={{...S.btn('#065f46'),padding:'10px 20px',fontSize:12}}>✓ Kirim</button>
+                    </div>
+                  ) : (
+                    <div style={{display:'flex',gap:6,alignItems:'center'}}>
+                      {/* Image upload */}
+                      <label style={{cursor:chatUploading?'wait':'pointer',padding:'10px 12px',background:'#164e63',borderRadius:6,fontSize:16,opacity:chatUploading?0.5:1}} title="Kirim foto">
+                        {chatUploading ? '⏳' : '📷'}
+                        <input type="file" accept="image/*" style={{display:'none'}} disabled={chatUploading} onChange={onChatImageSelect}/>
+                      </label>
+                      {/* Voice record */}
+                      <button onClick={startVoiceRecord} disabled={chatUploading} style={{padding:'10px 12px',background:'#164e63',color:'#67e8f9',border:'none',borderRadius:6,fontSize:16,cursor:chatUploading?'not-allowed':'pointer',opacity:chatUploading?0.5:1}} title="Rekam pesan suara">
+                        🎤
+                      </button>
+                      <input
+                        type="text"
+                        style={{...S.input,flex:1}}
+                        value={chatInput}
+                        onChange={e=>setChatInput(e.target.value)}
+                        onKeyDown={e=>e.key==='Enter' && sendChatMessage()}
+                        placeholder={chatMode === 'dm' ? `Pesan ke ${chatDmPartner?.name || '-'}...` : 'Ketik pesan global...'}
+                        maxLength={2000}
+                        disabled={chatUploading}
+                      />
+                      <button onClick={()=>sendChatMessage()} disabled={chatUploading||(!chatInput.trim())} style={{...S.btn('#065f46'),padding:'10px 20px',fontSize:12,opacity:(chatUploading||!chatInput.trim())?0.5:1}}>Kirim</button>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

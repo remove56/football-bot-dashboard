@@ -76,6 +76,18 @@ export default function RootLayout({ children }) {
             background: rgba(6, 182, 212, 0.4);
             color: #e0f2fe;
           }
+
+          /* Bell/chat pulse animation — saat ada unread */
+          @keyframes bellPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.15); }
+          }
+
+          /* Recording pulse — tombol record voice */
+          @keyframes recordPulse {
+            0%, 100% { background-color: #991b1b; box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+            50% { background-color: #dc2626; box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+          }
         `}} />
       </head>
       <body style={{
