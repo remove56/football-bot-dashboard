@@ -1903,18 +1903,52 @@ export default function Home() {
   const todayPosts = todayLinks + todayBot;
   const totalSuccess = activity.filter(a => a.success).length + links.filter(l => l.status === 'approved').length;
 
-  // Analytics — gabungan dari activity_log + link_submissions
+  // Analytics — gabungan data dari beberapa source:
+  //   - activity_log (post dari bot auto-posting)
+  //   - link_submissions (link manual submission — legacy)
+  //   - posting_tracker (workflow utama member sekarang lewat tab Tracking Postingan)
+  //
+  // Per row posting_tracker bisa punya 1-3 konten (gambar1 + gambar2 + video).
+  // Hitung total konten per cycle = jumlah field terisi.
   const clubs = [...new Set(groups.map(g => g.club))].sort();
   const clubStats = clubs.map(c => {
     const clubGroups = groups.filter(g => g.club === c);
     const clubGroupIds = clubGroups.map(g => g.id);
-    // Hitung dari activity_log (bot)
+
+    // Bot auto-posts (dari activity_log)
     const botPosts = activity.filter(a => a.team === c);
-    // Hitung dari link_submissions (member manual)
-    const memberPosts = links.filter(l => clubGroupIds.includes(l.group_id) && l.status === 'approved');
-    const total = botPosts.length + memberPosts.length;
-    const success = botPosts.filter(a => a.success).length + memberPosts.length;
-    return { club: c, groups: clubGroups.length, total, success, memberPosts: memberPosts.length, botPosts: botPosts.length };
+    const botCount = botPosts.length;
+    const botSuccess = botPosts.filter(a => a.success).length;
+
+    // Legacy link submissions (kalau ada)
+    const legacyLinks = links.filter(l => clubGroupIds.includes(l.group_id) && l.status === 'approved');
+    const legacyCount = legacyLinks.length;
+
+    // Main workflow: posting_tracker — hitung field terisi (gambar1, gambar2, video) per row
+    const trackerRows = postTrackerHistory.filter(p => clubGroupIds.includes(p.group_id));
+    let trackerContents = 0;
+    for (const r of trackerRows) {
+      if (r.gambar1_link) trackerContents++;
+      if (r.gambar2_link) trackerContents++;
+      if (r.video_link) trackerContents++;
+    }
+
+    const memberCount = legacyCount + trackerContents;
+    const total = botCount + memberCount;
+    const success = botSuccess + memberCount; // member submit = langsung dianggap sukses
+    const trackerCycles = trackerRows.length;
+    const trackerCompleted = trackerRows.filter(r => r.is_complete).length;
+
+    return {
+      club: c,
+      groups: clubGroups.length,
+      total,
+      success,
+      memberPosts: memberCount,
+      botPosts: botCount,
+      trackerCycles,
+      trackerCompleted,
+    };
   }).sort((a, b) => b.total - a.total);
 
   return (
@@ -2889,21 +2923,78 @@ export default function Home() {
 
         {/* ANALYTICS (admin) */}
         {tab === 'analytics' && isAdmin && (
-          <div style={S.box}>
-            <h3 style={{color:'#FFD700',marginBottom:16,fontSize:16}}>Performa Per Klub</h3>
-            <table style={{width:'100%',borderCollapse:'collapse'}}>
-              <thead><tr><th style={S.th}>Klub</th><th style={S.th}>Grup</th><th style={S.th}>Bot</th><th style={S.th}>Member</th><th style={S.th}>Total</th><th style={S.th}>Rasio</th></tr></thead>
-              <tbody>
-                {clubStats.map(c => {
-                  const r = c.total > 0 ? Math.round(c.success/c.total*100) : 0;
-                  return (
-                    <tr key={c.club}><td style={S.td}><strong>{c.club}</strong></td><td style={S.td}>{c.groups}</td><td style={S.td}>{c.botPosts}</td><td style={S.td}>{c.memberPosts}</td><td style={S.td}>{c.total}</td>
-                    <td style={S.td}><div style={{display:'flex',alignItems:'center',gap:6}}><div style={{width:60,height:6,background:'#1f2937',borderRadius:3}}><div style={{width:`${r}%`,height:'100%',background:r>=80?'#10b981':r>=50?'#f59e0b':'#ef4444',borderRadius:3}}/></div><span style={{fontSize:11}}>{r}%</span></div></td></tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          <>
+            {/* Summary stats */}
+            <div className="responsive-stats" style={{marginBottom:20}}>
+              <div style={S.stat}>
+                <div style={S.num}>{clubStats.reduce((a,c)=>a+c.trackerCycles,0)}</div>
+                <div style={S.label}>Total Siklus</div>
+              </div>
+              <div style={S.stat}>
+                <div style={S.num}>{clubStats.reduce((a,c)=>a+c.trackerCompleted,0)}</div>
+                <div style={S.label}>Siklus Selesai</div>
+              </div>
+              <div style={S.stat}>
+                <div style={S.num}>{clubStats.reduce((a,c)=>a+c.memberPosts,0)}</div>
+                <div style={S.label}>Total Konten Member</div>
+              </div>
+              <div style={S.stat}>
+                <div style={S.num}>{clubStats.reduce((a,c)=>a+c.botPosts,0)}</div>
+                <div style={S.label}>Total Post Bot</div>
+              </div>
+            </div>
+
+            <div style={S.box}>
+              <h3 style={{color:'#FFD700',marginBottom:4,fontSize:16}}>Performa Per Klub</h3>
+              <p style={{color:'#9ca3af',fontSize:11,margin:'0 0 16px 0'}}>
+                Konten Member dihitung dari Tracking Postingan (gambar1 + gambar2 + video per siklus).
+                Data bot dari activity_log. 30 hari terakhir.
+              </p>
+              <div style={{overflowX:'auto'}}>
+                <table style={{width:'100%',borderCollapse:'collapse',minWidth:760}}>
+                  <thead>
+                    <tr>
+                      <th style={S.th}>Klub</th>
+                      <th style={{...S.th,textAlign:'center'}}>Grup</th>
+                      <th style={{...S.th,textAlign:'center'}}>Siklus<br/><span style={{fontSize:9,fontWeight:400}}>dikerjakan</span></th>
+                      <th style={{...S.th,textAlign:'center'}}>Selesai<br/><span style={{fontSize:9,fontWeight:400}}>4/4 lengkap</span></th>
+                      <th style={{...S.th,textAlign:'center'}}>Bot</th>
+                      <th style={{...S.th,textAlign:'center'}}>Member</th>
+                      <th style={{...S.th,textAlign:'center'}}>Total</th>
+                      <th style={{...S.th,minWidth:140}}>Rasio Complete</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {clubStats.map(c => {
+                      const completeRate = c.trackerCycles > 0 ? Math.round(c.trackerCompleted/c.trackerCycles*100) : 0;
+                      return (
+                        <tr key={c.club}>
+                          <td style={S.td}><strong style={{color:'#e0f2fe'}}>{c.club}</strong></td>
+                          <td style={{...S.td,textAlign:'center'}}>{c.groups}</td>
+                          <td style={{...S.td,textAlign:'center',color:'#9ca3af'}}>{c.trackerCycles}</td>
+                          <td style={{...S.td,textAlign:'center',color:c.trackerCompleted>0?'#10b981':'#6b7280',fontWeight:700}}>{c.trackerCompleted}</td>
+                          <td style={{...S.td,textAlign:'center',color:c.botPosts>0?'#60a5fa':'#6b7280'}}>{c.botPosts}</td>
+                          <td style={{...S.td,textAlign:'center',color:c.memberPosts>0?'#67e8f9':'#6b7280',fontWeight:600}}>{c.memberPosts}</td>
+                          <td style={{...S.td,textAlign:'center',fontWeight:700,color:'#FFD700'}}>{c.total}</td>
+                          <td style={S.td}>
+                            <div style={{display:'flex',alignItems:'center',gap:6}}>
+                              <div style={{flex:1,height:6,background:'#1f2937',borderRadius:3}}>
+                                <div style={{width:`${completeRate}%`,height:'100%',background:completeRate>=80?'#10b981':completeRate>=50?'#f59e0b':completeRate>0?'#ef4444':'#374151',borderRadius:3}}/>
+                              </div>
+                              <span style={{fontSize:11,minWidth:32,textAlign:'right'}}>{completeRate}%</span>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {clubStats.length === 0 && (
+                      <tr><td colSpan={8} style={{...S.td,textAlign:'center',color:'#6b7280',padding:20}}>Belum ada data</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </>
         )}
 
         {/* DATA MINGGUAN (semua role) */}
