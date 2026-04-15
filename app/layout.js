@@ -88,6 +88,17 @@ export default function RootLayout({ children }) {
             0%, 100% { background-color: #991b1b; box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
             50% { background-color: #dc2626; box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
           }
+
+          /* Chat message delete button — show on hover */
+          .chat-message-row:hover .msg-delete-btn {
+            opacity: 1 !important;
+          }
+
+          /* Online dot pulse animation */
+          @keyframes onlinePulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            50% { box-shadow: 0 0 0 4px rgba(16, 185, 129, 0); }
+          }
         `}} />
       </head>
       <body style={{

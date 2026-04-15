@@ -368,6 +368,8 @@ export default function Home() {
   const [chatPendingAttachment, setChatPendingAttachment] = useState(null); // { file, previewUrl, type, name, size }
   const [chatLightbox, setChatLightbox] = useState(null); // { url, name } — kalau ada, buka lightbox viewer
   const [soundEnabled, setSoundEnabled] = useState(true); // sound notification toggle
+  const [appearOffline, setAppearOffline] = useState(false); // user can hide their online status
+  const [onlineUsers, setOnlineUsers] = useState({}); // { userId: last_active_at }
   const chatMediaRecorderRef = useRef(null);
   const chatRecordTimerRef = useRef(null);
   const prevChatUnreadRef = useRef(null); // null = belum init, biar first load nggak beep
@@ -1477,6 +1479,84 @@ export default function Home() {
     prevNotifUnreadRef.current = notifUnread;
   }, [notifUnread]);
 
+  // ========== USER PRESENCE (online/offline) ==========
+  // Load appear offline preference saat mount
+  useEffect(() => {
+    if (!user?.id) return;
+    const saved = localStorage.getItem(`fb-dash-appear-offline-${user.id}`);
+    if (saved === 'true') setAppearOffline(true);
+  }, [user]);
+
+  // Auto-update last_active_at tiap 30 detik (kecuali appearOffline = true)
+  useEffect(() => {
+    if (!user?.id) return;
+    const updatePresence = async () => {
+      if (appearOffline) return;
+      try {
+        await supabase
+          .from('users')
+          .update({ last_active_at: new Date().toISOString() })
+          .eq('id', user.id);
+      } catch (e) { /* silent */ }
+    };
+    updatePresence(); // langsung update saat mount
+    const id = setInterval(updatePresence, 30000);
+    return () => clearInterval(id);
+  }, [user, appearOffline]);
+
+  // Poll online status semua user tiap 20 detik
+  const loadOnlineUsers = async () => {
+    try {
+      const { data } = await supabase.from('users').select('id, last_active_at');
+      const map = {};
+      for (const u of data || []) {
+        map[u.id] = u.last_active_at;
+      }
+      setOnlineUsers(map);
+    } catch (e) { /* silent */ }
+  };
+
+  useEffect(() => {
+    if (!user?.id) return;
+    loadOnlineUsers();
+    const id = setInterval(loadOnlineUsers, 20000);
+    return () => clearInterval(id);
+  }, [user]);
+
+  // Helper: cek apakah user online berdasarkan last_active_at
+  const isUserOnline = (userId) => {
+    const lastActive = onlineUsers[userId];
+    if (!lastActive) return false;
+    const age = Date.now() - new Date(lastActive).getTime();
+    return age < 120000; // 2 menit
+  };
+
+  const toggleAppearOffline = () => {
+    if (!user?.id) return;
+    const newVal = !appearOffline;
+    setAppearOffline(newVal);
+    localStorage.setItem(`fb-dash-appear-offline-${user.id}`, String(newVal));
+    // Kalau user switch ke offline mode, set last_active_at ke null supaya langsung offline
+    if (newVal) {
+      supabase.from('users').update({ last_active_at: null }).eq('id', user.id);
+    } else {
+      // Kalau switch ke online, update langsung
+      supabase.from('users').update({ last_active_at: new Date().toISOString() }).eq('id', user.id);
+    }
+    loadOnlineUsers();
+  };
+
+  // Delete chat message (soft delete)
+  const deleteChatMessage = async (messageId) => {
+    if (!confirm('Hapus pesan ini? Tidak bisa di-undo.')) return;
+    try {
+      await fetch(`/api/chat?id=${messageId}`, { method: 'DELETE' });
+      loadChatMessages();
+    } catch (e) {
+      alert('Gagal hapus: ' + e.message);
+    }
+  };
+
   const toggleSoundEnabled = () => {
     const newVal = !soundEnabled;
     setSoundEnabled(newVal);
@@ -1861,6 +1941,9 @@ export default function Home() {
               </span>
             )}
           </a>
+          <a onClick={toggleAppearOffline} style={{color:appearOffline?'#6b7280':'#10b981',cursor:'pointer',fontSize:12}} title={appearOffline ? 'Status: Tampil Offline (klik untuk online)' : 'Status: Online (klik untuk sembunyikan)'}>
+            {appearOffline ? '⚫' : '🟢'}
+          </a>
           <a onClick={toggleSoundEnabled} style={{color:'#a5f3fc',cursor:'pointer',fontSize:12}} title={soundEnabled ? 'Suara ON (klik untuk matikan)' : 'Suara OFF (klik untuk nyalakan)'}>
             {soundEnabled ? '🔊' : '🔇'}
           </a>
@@ -2058,8 +2141,23 @@ export default function Home() {
             <div style={{padding:'14px 20px',borderBottom:'2px solid #0891b2',display:'flex',justifyContent:'space-between',alignItems:'center',background:'linear-gradient(90deg,#0c1220 0%,#020617 100%)'}}>
               <div>
                 <h2 style={{margin:0,color:'#67e8f9',fontSize:16,fontWeight:900,textTransform:'uppercase',letterSpacing:1}}>💬 Chat</h2>
-                <div style={{fontSize:10,color:'#9ca3af',marginTop:2}}>
-                  {chatMode === 'global' ? 'Global — semua member bisa baca' : `DM dengan ${chatDmPartner?.name || '-'}`}
+                <div style={{fontSize:10,color:'#9ca3af',marginTop:2,display:'flex',alignItems:'center',gap:6}}>
+                  {chatMode === 'global' ? (
+                    <span>Global — semua member bisa baca</span>
+                  ) : (
+                    <>
+                      <span>DM dengan <strong style={{color:'#e0f2fe'}}>{chatDmPartner?.name || '-'}</strong></span>
+                      {chatDmPartner && isUserOnline(chatDmPartner.id) && (
+                        <span style={{color:'#10b981',fontWeight:700,display:'inline-flex',alignItems:'center',gap:3}}>
+                          <span style={{width:7,height:7,background:'#10b981',borderRadius:'50%',display:'inline-block'}}/>
+                          online
+                        </span>
+                      )}
+                      {chatDmPartner && !isUserOnline(chatDmPartner.id) && (
+                        <span style={{color:'#6b7280'}}>offline</span>
+                      )}
+                    </>
+                  )}
                 </div>
               </div>
               <button onClick={()=>setChatOpen(false)} style={{background:'#991b1b',color:'#fff',border:'none',borderRadius:6,padding:'8px 14px',fontSize:12,fontWeight:700,cursor:'pointer'}}>✕</button>
@@ -2086,39 +2184,50 @@ export default function Home() {
                 <div style={{padding:'8px 16px',fontSize:9,color:'#6b7280',textTransform:'uppercase',letterSpacing:1,marginTop:4}}>Direct Messages</div>
 
                 {/* DM list existing */}
-                {chatDmList.map(conv => (
-                  <div key={conv.partner_id}
-                    onClick={()=>openDmWith(conv.partner_id, conv.partner_name)}
-                    style={{
-                      padding:'10px 16px',
-                      fontSize:11,
-                      cursor:'pointer',
-                      color: chatMode === 'dm' && chatDmPartner?.id === conv.partner_id ? '#67e8f9' : '#9ca3af',
-                      background: chatMode === 'dm' && chatDmPartner?.id === conv.partner_id ? '#0c1220' : 'transparent',
-                      borderLeft: chatMode === 'dm' && chatDmPartner?.id === conv.partner_id ? '3px solid #06b6d4' : '3px solid transparent',
-                      borderBottom:'1px solid #1f2937',
-                    }}
-                  >
-                    <div style={{fontWeight:700,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                      <span>👤 {conv.partner_name}</span>
-                      {conv.unread > 0 && <span style={{background:'#ef4444',color:'#fff',borderRadius:'50%',minWidth:16,height:16,fontSize:9,display:'inline-flex',alignItems:'center',justifyContent:'center',padding:'0 4px'}}>{conv.unread}</span>}
+                {chatDmList.map(conv => {
+                  const online = isUserOnline(conv.partner_id);
+                  return (
+                    <div key={conv.partner_id}
+                      onClick={()=>openDmWith(conv.partner_id, conv.partner_name)}
+                      style={{
+                        padding:'10px 16px',
+                        fontSize:11,
+                        cursor:'pointer',
+                        color: chatMode === 'dm' && chatDmPartner?.id === conv.partner_id ? '#67e8f9' : '#9ca3af',
+                        background: chatMode === 'dm' && chatDmPartner?.id === conv.partner_id ? '#0c1220' : 'transparent',
+                        borderLeft: chatMode === 'dm' && chatDmPartner?.id === conv.partner_id ? '3px solid #06b6d4' : '3px solid transparent',
+                        borderBottom:'1px solid #1f2937',
+                      }}
+                    >
+                      <div style={{fontWeight:700,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                        <span style={{display:'inline-flex',alignItems:'center',gap:6}}>
+                          👤 {conv.partner_name}
+                          {online && <span title="Online" style={{width:8,height:8,background:'#10b981',borderRadius:'50%',display:'inline-block',animation:'onlinePulse 2s ease-in-out infinite'}}/>}
+                        </span>
+                        {conv.unread > 0 && <span style={{background:'#ef4444',color:'#fff',borderRadius:'50%',minWidth:16,height:16,fontSize:9,display:'inline-flex',alignItems:'center',justifyContent:'center',padding:'0 4px'}}>{conv.unread}</span>}
+                      </div>
+                      <div style={{fontSize:10,color:online?'#10b981':'#6b7280',marginTop:2,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis',maxWidth:180}}>
+                        {online ? '🟢 Online' : conv.last_message.substring(0, 40)}
+                      </div>
                     </div>
-                    <div style={{fontSize:10,color:'#6b7280',marginTop:2,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis',maxWidth:180}}>
-                      {conv.last_message.substring(0, 40)}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
 
                 {/* Pilih member baru untuk DM */}
                 <div style={{padding:'8px 16px',fontSize:9,color:'#6b7280',textTransform:'uppercase',letterSpacing:1,marginTop:8,borderTop:'1px solid #1f2937'}}>Mulai Chat Baru</div>
-                {users.filter(u => u.id !== user.id && !chatDmList.some(c => c.partner_id === u.id)).map(u => (
-                  <div key={u.id}
-                    onClick={()=>openDmWith(u.id, u.name)}
-                    style={{padding:'8px 16px',fontSize:11,cursor:'pointer',color:'#9ca3af',borderBottom:'1px solid #0c1220'}}
-                  >
-                    + {u.name} <span style={{fontSize:9,color:'#6b7280'}}>({u.role})</span>
-                  </div>
-                ))}
+                {users.filter(u => u.id !== user.id && !chatDmList.some(c => c.partner_id === u.id)).map(u => {
+                  const online = isUserOnline(u.id);
+                  return (
+                    <div key={u.id}
+                      onClick={()=>openDmWith(u.id, u.name)}
+                      style={{padding:'8px 16px',fontSize:11,cursor:'pointer',color:'#9ca3af',borderBottom:'1px solid #0c1220',display:'flex',alignItems:'center',gap:6}}
+                    >
+                      + {u.name}
+                      {online && <span title="Online" style={{width:7,height:7,background:'#10b981',borderRadius:'50%',display:'inline-block'}}/>}
+                      <span style={{fontSize:9,color:'#6b7280',marginLeft:'auto'}}>({u.role})</span>
+                    </div>
+                  );
+                })}
               </div>
 
               {/* Main chat area */}
@@ -2130,52 +2239,97 @@ export default function Home() {
                   {chatMessages.map(m => {
                     const isMe = m.from_user_id === user.id;
                     const roleColor = m.from_user_role === 'admin' ? '#c084fc' : '#67e8f9';
+                    const isDeleted = m.deleted;
+                    // Read receipt logic: untuk DM, cek read_at. Global nggak ada read tracking per user.
+                    const isRead = m.to_user_id && m.read_at;
                     return (
-                      <div key={m.id} style={{display:'flex',justifyContent:isMe?'flex-end':'flex-start'}}>
+                      <div key={m.id} style={{display:'flex',justifyContent:isMe?'flex-end':'flex-start',position:'relative',group:'message'}} className="chat-message-row">
                         <div style={{
                           maxWidth:'75%',
                           padding:'10px 14px',
                           borderRadius:8,
-                          background: isMe ? '#065f46' : '#0d1117',
-                          border:'1px solid ' + (isMe ? '#10b981' : '#1f2937'),
+                          background: isDeleted ? '#1f2937' : (isMe ? '#065f46' : '#0d1117'),
+                          border:'1px solid ' + (isDeleted ? '#374151' : (isMe ? '#10b981' : '#1f2937')),
+                          opacity: isDeleted ? 0.6 : 1,
+                          position:'relative',
                         }}>
-                          {!isMe && (
+                          {!isMe && !isDeleted && (
                             <div style={{fontSize:10,fontWeight:700,color:roleColor,marginBottom:4}}>
                               {m.from_user_name} {m.from_user_role === 'admin' && '👑'}
                             </div>
                           )}
 
-                          {/* IMAGE ATTACHMENT */}
-                          {m.attachment_type === 'image' && m.attachment_url && (
-                            <div style={{marginBottom:m.message && m.message !== '📷 Foto' ? 6 : 0}}>
-                              <img
-                                src={m.attachment_url}
-                                alt={m.attachment_name || 'image'}
-                                style={{maxWidth:'100%',maxHeight:300,borderRadius:6,cursor:'pointer',display:'block'}}
-                                onClick={()=>setChatLightbox({ url: m.attachment_url, name: m.attachment_name || 'image' })}
-                              />
-                            </div>
-                          )}
-
-                          {/* AUDIO ATTACHMENT */}
-                          {m.attachment_type === 'audio' && m.attachment_url && (
-                            <div style={{marginBottom:m.message && m.message !== '🎤 Pesan suara' ? 6 : 0,display:'flex',alignItems:'center',gap:8}}>
-                              <audio controls src={m.attachment_url} style={{height:36,maxWidth:240}}/>
-                              {m.attachment_duration && (
-                                <span style={{fontSize:10,color:'#9ca3af'}}>{m.attachment_duration}s</span>
+                          {isDeleted ? (
+                            <div style={{fontSize:11,color:'#6b7280',fontStyle:'italic'}}>🚫 Pesan dihapus</div>
+                          ) : (
+                            <>
+                              {/* IMAGE ATTACHMENT */}
+                              {m.attachment_type === 'image' && m.attachment_url && (
+                                <div style={{marginBottom:m.message && m.message !== '📷 Foto' ? 6 : 0}}>
+                                  <img
+                                    src={m.attachment_url}
+                                    alt={m.attachment_name || 'image'}
+                                    style={{maxWidth:'100%',maxHeight:300,borderRadius:6,cursor:'pointer',display:'block'}}
+                                    onClick={()=>setChatLightbox({ url: m.attachment_url, name: m.attachment_name || 'image' })}
+                                  />
+                                </div>
                               )}
-                            </div>
+
+                              {/* AUDIO ATTACHMENT */}
+                              {m.attachment_type === 'audio' && m.attachment_url && (
+                                <div style={{marginBottom:m.message && m.message !== '🎤 Pesan suara' ? 6 : 0,display:'flex',alignItems:'center',gap:8}}>
+                                  <audio controls src={m.attachment_url} style={{height:36,maxWidth:240}}/>
+                                  {m.attachment_duration && (
+                                    <span style={{fontSize:10,color:'#9ca3af'}}>{m.attachment_duration}s</span>
+                                  )}
+                                </div>
+                              )}
+
+                              {/* TEXT MESSAGE (skip kalau cuma placeholder untuk attachment) */}
+                              {m.message && m.message !== '📷 Foto' && m.message !== '🎤 Pesan suara' && (
+                                <div style={{fontSize:12,color:'#e0f2fe',whiteSpace:'pre-wrap',wordBreak:'break-word'}}>{m.message}</div>
+                              )}
+                            </>
                           )}
 
-                          {/* TEXT MESSAGE (skip kalau cuma placeholder untuk attachment) */}
-                          {m.message && m.message !== '📷 Foto' && m.message !== '🎤 Pesan suara' && (
-                            <div style={{fontSize:12,color:'#e0f2fe',whiteSpace:'pre-wrap',wordBreak:'break-word'}}>{m.message}</div>
-                          )}
-
-                          <div style={{fontSize:9,color:'#6b7280',marginTop:4,textAlign:'right'}}>
-                            {new Date(m.created_at).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}
+                          {/* Footer: waktu + read receipt */}
+                          <div style={{fontSize:9,color:'#6b7280',marginTop:4,textAlign:'right',display:'flex',justifyContent:'flex-end',alignItems:'center',gap:4}}>
+                            <span>{new Date(m.created_at).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}</span>
+                            {/* Read receipt icon — hanya untuk own messages di DM */}
+                            {isMe && !isDeleted && m.to_user_id && (
+                              <span style={{fontSize:11,color:isRead?'#38bdf8':'#6b7280',fontWeight:700,letterSpacing:-2}} title={isRead?'Sudah dibaca':'Terkirim'}>
+                                {isRead ? '✓✓' : '✓'}
+                              </span>
+                            )}
                           </div>
                         </div>
+
+                        {/* Delete button — muncul saat hover, hanya untuk own messages yang belum dihapus */}
+                        {isMe && !isDeleted && (
+                          <button
+                            onClick={()=>deleteChatMessage(m.id)}
+                            title="Hapus pesan"
+                            style={{
+                              position:'absolute',
+                              top:0,
+                              right:-28,
+                              background:'#991b1b',
+                              color:'#fff',
+                              border:'none',
+                              borderRadius:'50%',
+                              width:22,
+                              height:22,
+                              fontSize:11,
+                              cursor:'pointer',
+                              opacity:0,
+                              transition:'opacity 0.2s',
+                              display:'flex',
+                              alignItems:'center',
+                              justifyContent:'center',
+                            }}
+                            className="msg-delete-btn"
+                          >✕</button>
+                        )}
                       </div>
                     );
                   })}
