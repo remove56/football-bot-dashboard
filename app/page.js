@@ -2243,7 +2243,7 @@ export default function Home() {
                     // Read receipt logic: untuk DM, cek read_at. Global nggak ada read tracking per user.
                     const isRead = m.to_user_id && m.read_at;
                     return (
-                      <div key={m.id} style={{display:'flex',justifyContent:isMe?'flex-end':'flex-start',position:'relative',group:'message'}} className="chat-message-row">
+                      <div key={m.id} style={{display:'flex',justifyContent:isMe?'flex-end':'flex-start'}} className="chat-message-row">
                         <div style={{
                           maxWidth:'75%',
                           padding:'10px 14px',
@@ -2253,6 +2253,37 @@ export default function Home() {
                           opacity: isDeleted ? 0.6 : 1,
                           position:'relative',
                         }}>
+                          {/* Delete button — position absolute di dalam bubble (pojok kanan atas) */}
+                          {isMe && !isDeleted && (
+                            <button
+                              onClick={()=>deleteChatMessage(m.id)}
+                              title="Hapus pesan"
+                              style={{
+                                position:'absolute',
+                                top:4,
+                                right:4,
+                                background:'rgba(153,27,27,0.95)',
+                                color:'#fff',
+                                border:'1px solid #dc2626',
+                                borderRadius:'50%',
+                                width:20,
+                                height:20,
+                                fontSize:9,
+                                fontWeight:900,
+                                cursor:'pointer',
+                                opacity:0,
+                                transition:'opacity 0.2s',
+                                display:'flex',
+                                alignItems:'center',
+                                justifyContent:'center',
+                                boxShadow:'0 2px 6px rgba(0,0,0,0.6)',
+                                zIndex:5,
+                                padding:0,
+                                lineHeight:1,
+                              }}
+                              className="msg-delete-btn"
+                            >✕</button>
+                          )}
                           {!isMe && !isDeleted && (
                             <div style={{fontSize:10,fontWeight:700,color:roleColor,marginBottom:4}}>
                               {m.from_user_name} {m.from_user_role === 'admin' && '👑'}
@@ -2304,32 +2335,6 @@ export default function Home() {
                           </div>
                         </div>
 
-                        {/* Delete button — muncul saat hover, hanya untuk own messages yang belum dihapus */}
-                        {isMe && !isDeleted && (
-                          <button
-                            onClick={()=>deleteChatMessage(m.id)}
-                            title="Hapus pesan"
-                            style={{
-                              position:'absolute',
-                              top:0,
-                              right:-28,
-                              background:'#991b1b',
-                              color:'#fff',
-                              border:'none',
-                              borderRadius:'50%',
-                              width:22,
-                              height:22,
-                              fontSize:11,
-                              cursor:'pointer',
-                              opacity:0,
-                              transition:'opacity 0.2s',
-                              display:'flex',
-                              alignItems:'center',
-                              justifyContent:'center',
-                            }}
-                            className="msg-delete-btn"
-                          >✕</button>
-                        )}
                       </div>
                     );
                   })}
