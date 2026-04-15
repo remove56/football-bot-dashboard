@@ -382,6 +382,9 @@ export default function Home() {
   const [systemStats, setSystemStats] = useState(null);
   const [settingsMsg, setSettingsMsg] = useState('');
 
+  // Activity log filter
+  const [activityFilter, setActivityFilter] = useState('all'); // all | member | bot
+
   // Posting tracker
   const [postTracker, setPostTracker] = useState([]);
   const [postTrackerHistory, setPostTrackerHistory] = useState([]); // last 30 days
@@ -1535,6 +1538,34 @@ export default function Home() {
     return age < 120000; // 2 menit
   };
 
+  // Helper: format "last seen" WhatsApp-style
+  const formatLastSeen = (userId) => {
+    const lastActive = onlineUsers[userId];
+    if (!lastActive) return 'Belum pernah online';
+    const date = new Date(lastActive);
+    const age = Date.now() - date.getTime();
+    if (age < 120000) return 'online';
+    if (age < 60000) return 'Terakhir dilihat baru saja';
+    if (age < 3600000) {
+      const mins = Math.floor(age / 60000);
+      return `Terakhir dilihat ${mins} menit lalu`;
+    }
+    const today = new Date();
+    const isToday = date.toDateString() === today.toDateString();
+    const yesterday = new Date();
+    yesterday.setDate(today.getDate() - 1);
+    const isYesterday = date.toDateString() === yesterday.toDateString();
+    const timeStr = date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+    if (isToday) return `Terakhir dilihat hari ini jam ${timeStr}`;
+    if (isYesterday) return `Terakhir dilihat kemarin jam ${timeStr}`;
+    if (age < 7 * 86400000) {
+      const days = Math.floor(age / 86400000);
+      return `Terakhir dilihat ${days} hari lalu jam ${timeStr}`;
+    }
+    const dateStr = date.toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+    return `Terakhir dilihat ${dateStr}`;
+  };
+
   const toggleAppearOffline = () => {
     if (!user?.id) return;
     const newVal = !appearOffline;
@@ -2210,20 +2241,23 @@ export default function Home() {
             <div style={{padding:'14px 20px',borderBottom:'2px solid #0891b2',display:'flex',justifyContent:'space-between',alignItems:'center',background:'linear-gradient(90deg,#0c1220 0%,#020617 100%)'}}>
               <div>
                 <h2 style={{margin:0,color:'#67e8f9',fontSize:16,fontWeight:900,textTransform:'uppercase',letterSpacing:1}}>💬 Chat</h2>
-                <div style={{fontSize:10,color:'#9ca3af',marginTop:2,display:'flex',alignItems:'center',gap:6}}>
+                <div style={{fontSize:10,color:'#9ca3af',marginTop:2,display:'flex',alignItems:'center',gap:6,flexWrap:'wrap'}}>
                   {chatMode === 'global' ? (
                     <span>Global — semua member bisa baca</span>
                   ) : (
                     <>
                       <span>DM dengan <strong style={{color:'#e0f2fe'}}>{chatDmPartner?.name || '-'}</strong></span>
-                      {chatDmPartner && isUserOnline(chatDmPartner.id) && (
-                        <span style={{color:'#10b981',fontWeight:700,display:'inline-flex',alignItems:'center',gap:3}}>
-                          <span style={{width:7,height:7,background:'#10b981',borderRadius:'50%',display:'inline-block'}}/>
-                          online
-                        </span>
-                      )}
-                      {chatDmPartner && !isUserOnline(chatDmPartner.id) && (
-                        <span style={{color:'#6b7280'}}>offline</span>
+                      {chatDmPartner && (
+                        isUserOnline(chatDmPartner.id) ? (
+                          <span style={{color:'#10b981',fontWeight:700,display:'inline-flex',alignItems:'center',gap:3}}>
+                            <span style={{width:7,height:7,background:'#10b981',borderRadius:'50%',display:'inline-block'}}/>
+                            online
+                          </span>
+                        ) : (
+                          <span style={{color:'#6b7280',fontStyle:'italic'}}>
+                            · {formatLastSeen(chatDmPartner.id)}
+                          </span>
+                        )
                       )}
                     </>
                   )}
@@ -2321,8 +2355,8 @@ export default function Home() {
                     const displayAttachmentType = localViewed ? localViewed.attachment_type : m.attachment_type;
                     const displayAttachmentName = localViewed ? localViewed.attachment_name : m.attachment_name;
                     const displayAttachmentDuration = localViewed ? localViewed.attachment_duration : m.attachment_duration;
-                    // Admin bisa hapus pesan siapapun, member cuma pesan sendiri
-                    const canDelete = !isDeleted && (isMe || user.role === 'admin');
+                    // Semua user (admin + member) bisa hapus pesan siapapun
+                    const canDelete = !isDeleted;
                     return (
                       <div key={m.id} style={{display:'flex',justifyContent:isMe?'flex-end':'flex-start'}} className="chat-message-row">
                         <div style={{
@@ -4296,17 +4330,131 @@ export default function Home() {
         )}
 
         {/* ACTIVITY LOG (admin) */}
-        {tab === 'activity' && isAdmin && (
-          <div style={{background:'#111827',borderRadius:12,overflow:'hidden',border:'1px solid #1f2937'}}>
-            {activity.slice(0,100).map((a,i) => (
-              <div key={i} style={{padding:'10px 14px',borderBottom:'1px solid #1f2937',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                <div><span style={{...S.badge(a.type==='video'?'member':'ok'),marginRight:6,fontSize:10}}>{a.type||'news'}</span><span style={{fontSize:13}}>{(a.title||'').substring(0,65)}</span></div>
-                <div style={{textAlign:'right',fontSize:11,color:'#6b7280'}}><span style={S.badge(a.success?'ok':'fail')}>{a.success?'OK':'GAGAL'}</span><br/>{a.team||''} &middot; {a.created_at?new Date(a.created_at).toLocaleString('id-ID'):''}</div>
+        {tab === 'activity' && isAdmin && (() => {
+          // Combine activity_log (bot) + posting_tracker (member manual) → satu timeline
+          const botEntries = (activity || []).map(a => ({
+            key: `bot-${a.id}`,
+            type: 'bot',
+            timestamp: a.created_at,
+            title: a.title || 'Untitled',
+            subtitle: a.team || '',
+            success: a.success,
+            icon: '🤖',
+            action: a.type || 'post',
+          }));
+
+          // Member submissions — setiap field gambar1/gambar2/video dianggap 1 entry
+          const memberEntries = [];
+          for (const p of postTrackerHistory || []) {
+            if (p.gambar1_link && p.gambar1_at) {
+              memberEntries.push({
+                key: `member-${p.id}-g1`,
+                type: 'member',
+                timestamp: p.gambar1_at,
+                title: `${p.user_name} submit Gambar 1 untuk ${p.group_name}`,
+                subtitle: `Siklus ${p.cycle} · ${p.period}`,
+                success: true,
+                icon: '👤',
+                action: 'submit',
+                link: p.gambar1_link,
+              });
+            }
+            if (p.gambar2_link && p.gambar2_at) {
+              memberEntries.push({
+                key: `member-${p.id}-g2`,
+                type: 'member',
+                timestamp: p.gambar2_at,
+                title: `${p.user_name} submit Gambar 2 untuk ${p.group_name}`,
+                subtitle: `Siklus ${p.cycle} · ${p.period}`,
+                success: true,
+                icon: '👤',
+                action: 'submit',
+                link: p.gambar2_link,
+              });
+            }
+            if (p.video_link && p.video_at) {
+              memberEntries.push({
+                key: `member-${p.id}-v`,
+                type: 'member',
+                timestamp: p.video_at,
+                title: `${p.user_name} submit Video untuk ${p.group_name}`,
+                subtitle: `Siklus ${p.cycle} · ${p.period}`,
+                success: true,
+                icon: '👤',
+                action: 'submit',
+                link: p.video_link,
+              });
+            }
+          }
+
+          // Gabung + sort terbaru dulu
+          const allEntries = [...botEntries, ...memberEntries]
+            .filter(e => e.timestamp)
+            .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+
+          const filtered = activityFilter === 'all'
+            ? allEntries
+            : allEntries.filter(e => e.type === activityFilter);
+
+          return (
+            <>
+              {/* Filter + stats */}
+              <div style={{display:'flex',gap:10,marginBottom:16,flexWrap:'wrap',alignItems:'center'}}>
+                <div style={{display:'flex',gap:6}}>
+                  {[
+                    { id: 'all', label: `Semua (${allEntries.length})` },
+                    { id: 'member', label: `👤 Member (${memberEntries.length})` },
+                    { id: 'bot', label: `🤖 Bot (${botEntries.length})` },
+                  ].map(f => (
+                    <button key={f.id} onClick={()=>setActivityFilter(f.id)} style={{
+                      padding:'8px 14px',fontSize:11,borderRadius:4,border:'1px solid #1f2937',cursor:'pointer',
+                      background: activityFilter === f.id ? '#0c4a6e' : '#111827',
+                      color: activityFilter === f.id ? '#67e8f9' : '#9ca3af',
+                      fontWeight: activityFilter === f.id ? 700 : 400,
+                    }}>{f.label}</button>
+                  ))}
+                </div>
+                <span style={{fontSize:11,color:'#6b7280',marginLeft:'auto'}}>Menampilkan {Math.min(filtered.length, 200)} dari {filtered.length} entri</span>
               </div>
-            ))}
-            {activity.length===0 && <div style={{padding:20,textAlign:'center',color:'#6b7280'}}>Belum ada aktivitas</div>}
-          </div>
-        )}
+
+              <div style={{background:'#111827',borderRadius:12,overflow:'hidden',border:'1px solid #1f2937'}}>
+                {filtered.slice(0, 200).map(e => (
+                  <div key={e.key} style={{padding:'12px 16px',borderBottom:'1px solid #1f2937',display:'flex',justifyContent:'space-between',alignItems:'center',gap:12}}>
+                    <div style={{flex:1,minWidth:0}}>
+                      <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:3}}>
+                        <span style={{fontSize:14}}>{e.icon}</span>
+                        <span style={{
+                          padding:'2px 8px',
+                          borderRadius:3,
+                          fontSize:9,
+                          fontWeight:700,
+                          textTransform:'uppercase',
+                          letterSpacing:1,
+                          background: e.type === 'bot' ? '#1e3a5f' : '#064e3b',
+                          color: e.type === 'bot' ? '#60a5fa' : '#6ee7b7',
+                        }}>{e.type === 'bot' ? 'BOT' : 'MEMBER'}</span>
+                        {e.action && <span style={{fontSize:9,color:'#6b7280'}}>{e.action}</span>}
+                      </div>
+                      <div style={{fontSize:13,color:'#e0f2fe',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{e.title}</div>
+                      {e.subtitle && <div style={{fontSize:10,color:'#6b7280',marginTop:2}}>{e.subtitle}</div>}
+                    </div>
+                    <div style={{textAlign:'right',fontSize:10,color:'#6b7280',minWidth:140,flexShrink:0}}>
+                      {e.success ? (
+                        <span style={{...S.badge('ok'),fontSize:9}}>OK</span>
+                      ) : (
+                        <span style={{...S.badge('fail'),fontSize:9}}>GAGAL</span>
+                      )}
+                      <br/>
+                      <span>{new Date(e.timestamp).toLocaleString('id-ID',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</span>
+                      {e.link && <> · <a href={e.link} target="_blank" rel="noreferrer" style={{color:'#67e8f9',textDecoration:'none'}}>lihat</a></>}
+                    </div>
+                  </div>
+                ))}
+                {filtered.length === 0 && <div style={{padding:30,textAlign:'center',color:'#6b7280'}}>Belum ada aktivitas {activityFilter !== 'all' ? `untuk tipe ${activityFilter}` : ''}</div>}
+              </div>
+            </>
+          );
+        })()}
 
         {/* PENGATURAN TAB (admin) */}
         {tab === 'settings' && isAdmin && (
