@@ -362,6 +362,14 @@ export default function Home() {
   const [chatInput, setChatInput] = useState('');
   const [chatDmList, setChatDmList] = useState([]); // list of DM conversations
 
+  // Pengaturan (Item 5)
+  const [botAccounts, setBotAccounts] = useState([]);
+  const [botAccFilter, setBotAccFilter] = useState('all'); // all | grup | reels | both
+  const [newBotAcc, setNewBotAcc] = useState({ account_id: '', account_name: '', account_type: 'grup' });
+  const [editBotAccId, setEditBotAccId] = useState(null);
+  const [systemStats, setSystemStats] = useState(null);
+  const [settingsMsg, setSettingsMsg] = useState('');
+
   // Posting tracker
   const [postTracker, setPostTracker] = useState([]);
   const [postTrackerHistory, setPostTrackerHistory] = useState([]); // last 30 days
@@ -1172,6 +1180,120 @@ export default function Home() {
     }
   };
 
+  // ========== PENGATURAN (Item 5) ==========
+  const loadBotAccounts = async () => {
+    const { data, error } = await supabase
+      .from('bot_accounts')
+      .select('*')
+      .order('account_type')
+      .order('account_name');
+    if (!error) setBotAccounts(data || []);
+  };
+
+  const addBotAccount = async () => {
+    setSettingsMsg('');
+    if (!newBotAcc.account_id || !newBotAcc.account_name) {
+      setSettingsMsg('ID dan Nama akun wajib diisi');
+      return;
+    }
+    const { error } = await supabase.from('bot_accounts').insert({
+      account_id: newBotAcc.account_id.trim(),
+      account_name: newBotAcc.account_name.trim(),
+      account_type: newBotAcc.account_type,
+      is_active: true,
+    });
+    if (error) { setSettingsMsg('Gagal: ' + error.message); return; }
+    setSettingsMsg('Akun bot ditambahkan');
+    setNewBotAcc({ account_id: '', account_name: '', account_type: 'grup' });
+    loadBotAccounts();
+  };
+
+  const toggleBotAccount = async (id, newActive) => {
+    const { error } = await supabase
+      .from('bot_accounts')
+      .update({ is_active: newActive })
+      .eq('id', id);
+    if (error) { setSettingsMsg('Gagal: ' + error.message); return; }
+    loadBotAccounts();
+  };
+
+  const updateBotAccount = async (id, updates) => {
+    const { error } = await supabase
+      .from('bot_accounts')
+      .update(updates)
+      .eq('id', id);
+    if (error) { setSettingsMsg('Gagal: ' + error.message); return; }
+    setEditBotAccId(null);
+    loadBotAccounts();
+  };
+
+  const deleteBotAccount = async (id, name) => {
+    if (!confirm(`Hapus akun bot "${name}"? Tidak bisa di-undo.`)) return;
+    const { error } = await supabase.from('bot_accounts').delete().eq('id', id);
+    if (error) { setSettingsMsg('Gagal: ' + error.message); return; }
+    setSettingsMsg('Akun bot dihapus');
+    loadBotAccounts();
+  };
+
+  // System Actions
+  const resetWorkerCounters = async () => {
+    if (!confirm('Reset counter harian semua worker bot ke 0?')) return;
+    try {
+      const { error } = await supabase.rpc('reset_worker_daily_counters');
+      if (error) { setSettingsMsg('Gagal: ' + error.message); return; }
+      setSettingsMsg('Counter worker di-reset');
+      loadBotHealth();
+    } catch (e) { setSettingsMsg('Error: ' + e.message); }
+  };
+
+  const cleanupOldChat = async () => {
+    if (!confirm('Hapus permanen pesan chat lebih dari 30 hari?')) return;
+    try {
+      const { data, error } = await supabase.rpc('cleanup_old_chat');
+      if (error) { setSettingsMsg('Gagal: ' + error.message); return; }
+      setSettingsMsg(`${data || 0} pesan chat lama dihapus`);
+    } catch (e) { setSettingsMsg('Error: ' + e.message); }
+  };
+
+  const cleanupOldBackups = async () => {
+    if (!confirm('Hapus backup lama (sisain 30 terbaru)?')) return;
+    try {
+      const { data, error } = await supabase.rpc('cleanup_old_backups');
+      if (error) { setSettingsMsg('Gagal: ' + error.message); return; }
+      setSettingsMsg(`${data || 0} backup lama dihapus`);
+      loadAutoBackups();
+    } catch (e) { setSettingsMsg('Error: ' + e.message); }
+  };
+
+  const loadSystemStats = async () => {
+    setSettingsMsg('Menghitung statistik...');
+    try {
+      const [usersRes, groupsRes, trackerRes, linkRes, activityRes, chatRes, notifRes, backupsRes] = await Promise.all([
+        supabase.from('users').select('id', { count: 'exact', head: true }),
+        supabase.from('groups').select('id', { count: 'exact', head: true }),
+        supabase.from('posting_tracker').select('id', { count: 'exact', head: true }),
+        supabase.from('link_submissions').select('id', { count: 'exact', head: true }),
+        supabase.from('activity_log').select('id', { count: 'exact', head: true }),
+        supabase.from('chat_messages').select('id', { count: 'exact', head: true }),
+        supabase.from('notifications').select('id', { count: 'exact', head: true }),
+        supabase.from('backups_log').select('id, size_bytes'),
+      ]);
+      const totalBackupSize = (backupsRes.data || []).reduce((a, b) => a + (b.size_bytes || 0), 0);
+      setSystemStats({
+        users: usersRes.count || 0,
+        groups: groupsRes.count || 0,
+        posting_tracker: trackerRes.count || 0,
+        link_submissions: linkRes.count || 0,
+        activity_log: activityRes.count || 0,
+        chat_messages: chatRes.count || 0,
+        notifications: notifRes.count || 0,
+        backups: (backupsRes.data || []).length,
+        backups_size_kb: Math.round(totalBackupSize / 1024),
+      });
+      setSettingsMsg('');
+    } catch (e) { setSettingsMsg('Error load stats: ' + e.message); }
+  };
+
   // Load daftar auto backup dari tabel backups_log
   const loadAutoBackups = async () => {
     setAutoBackupsLoading(true);
@@ -1407,6 +1529,7 @@ export default function Home() {
     { id: 'groups', label: `Grup (${groups.length})` },
     { id: 'users', label: 'Kelola User' },
     { id: 'activity', label: 'Activity Log' },
+    { id: 'settings', label: '⚙️ Pengaturan' },
   ];
   const memberTabs = [
     { id: 'groups', label: 'Daftar Grup' },
@@ -2009,7 +2132,7 @@ export default function Home() {
 
       {/* TABS */}
       <div style={S.tabs}>
-        {tabs.map(t => <div key={t.id} style={S.tab(tab===t.id)} onClick={() => { setTab(t.id); if(t.id==='weekly') loadWeeklyStats(wsYear, wsMonth); if(t.id==='posttrack') loadPostTracker(ptPeriod); if(t.id==='botqueue') loadTaskQueue(); if(t.id==='users') loadAutoBackups(); }}>{t.label}</div>)}
+        {tabs.map(t => <div key={t.id} style={S.tab(tab===t.id)} onClick={() => { setTab(t.id); if(t.id==='weekly') loadWeeklyStats(wsYear, wsMonth); if(t.id==='posttrack') loadPostTracker(ptPeriod); if(t.id==='botqueue') loadTaskQueue(); if(t.id==='users') loadAutoBackups(); if(t.id==='settings') { loadBotAccounts(); loadSystemStats(); } }}>{t.label}</div>)}
       </div>
 
       <div style={S.main}>
@@ -3403,6 +3526,196 @@ export default function Home() {
             ))}
             {activity.length===0 && <div style={{padding:20,textAlign:'center',color:'#6b7280'}}>Belum ada aktivitas</div>}
           </div>
+        )}
+
+        {/* PENGATURAN TAB (admin) */}
+        {tab === 'settings' && isAdmin && (
+          <>
+            {settingsMsg && <p style={{fontSize:13,color:settingsMsg.includes('Gagal')||settingsMsg.includes('Error')?'#ef4444':'#10b981',marginBottom:16}}>{settingsMsg}</p>}
+
+            {/* SECTION 1: BOT ACCOUNTS MANAGER */}
+            <div style={{...S.box,marginBottom:20}}>
+              <h3 style={{color:'#67e8f9',fontSize:15,margin:'0 0 6px 0',fontWeight:800,textTransform:'uppercase',letterSpacing:1}}>🤖 Bot Accounts Manager</h3>
+              <p style={{fontSize:12,color:'#9ca3af',margin:'0 0 16px 0'}}>Kelola akun-akun bot (Facebook / TikTok / IG) yang dipakai oleh bot worker. Toggle aktif/tidak aktif tanpa perlu edit database.</p>
+
+              {/* Filter */}
+              <div style={{display:'flex',gap:8,marginBottom:12}}>
+                {['all','grup','reels','both'].map(f => (
+                  <button key={f} onClick={()=>setBotAccFilter(f)} style={{
+                    padding:'6px 12px',fontSize:11,borderRadius:4,border:'1px solid #1f2937',cursor:'pointer',
+                    background: botAccFilter === f ? '#0c4a6e' : '#111827',
+                    color: botAccFilter === f ? '#67e8f9' : '#9ca3af',
+                    fontWeight: botAccFilter === f ? 700 : 400,
+                    textTransform:'uppercase',letterSpacing:1,
+                  }}>{f === 'all' ? 'Semua' : f}</button>
+                ))}
+                <button onClick={loadBotAccounts} style={{...S.btn('#164e63'),padding:'6px 12px',fontSize:11,marginLeft:'auto'}}>🔄 Refresh</button>
+              </div>
+
+              {/* Form tambah akun baru */}
+              <div style={{background:'#0d1117',border:'1px solid #1f2937',borderRadius:6,padding:12,marginBottom:12}}>
+                <div style={{fontSize:11,color:'#67e8f9',fontWeight:700,textTransform:'uppercase',marginBottom:8}}>+ Tambah Akun Baru</div>
+                <div style={{display:'grid',gridTemplateColumns:'2fr 2fr 1fr auto',gap:8}}>
+                  <input style={S.input} placeholder="Account ID (angka FB)" value={newBotAcc.account_id} onChange={e=>setNewBotAcc({...newBotAcc,account_id:e.target.value})}/>
+                  <input style={S.input} placeholder="Nama akun (display name)" value={newBotAcc.account_name} onChange={e=>setNewBotAcc({...newBotAcc,account_name:e.target.value})}/>
+                  <select style={S.input} value={newBotAcc.account_type} onChange={e=>setNewBotAcc({...newBotAcc,account_type:e.target.value})}>
+                    <option value="grup">Grup</option>
+                    <option value="reels">Reels</option>
+                    <option value="both">Both</option>
+                  </select>
+                  <button onClick={addBotAccount} style={{...S.btn('#065f46'),padding:'10px 16px',fontSize:12}}>+ Tambah</button>
+                </div>
+              </div>
+
+              {/* Tabel bot accounts */}
+              <div style={{overflowX:'auto'}}>
+                <table style={{width:'100%',borderCollapse:'collapse',fontSize:12}}>
+                  <thead>
+                    <tr>
+                      <th style={S.th}>Account ID</th>
+                      <th style={S.th}>Nama</th>
+                      <th style={S.th}>Tipe</th>
+                      <th style={S.th}>Status</th>
+                      <th style={S.th}>Aksi</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {botAccounts
+                      .filter(acc => botAccFilter === 'all' || acc.account_type === botAccFilter)
+                      .map(acc => (
+                        <tr key={acc.id}>
+                          {editBotAccId === acc.id ? (
+                            <>
+                              <td style={S.td}><input style={{...S.input,fontSize:11}} defaultValue={acc.account_id} id={`edit-id-${acc.id}`}/></td>
+                              <td style={S.td}><input style={{...S.input,fontSize:11}} defaultValue={acc.account_name} id={`edit-name-${acc.id}`}/></td>
+                              <td style={S.td}>
+                                <select style={{...S.input,fontSize:11}} defaultValue={acc.account_type} id={`edit-type-${acc.id}`}>
+                                  <option value="grup">Grup</option>
+                                  <option value="reels">Reels</option>
+                                  <option value="both">Both</option>
+                                </select>
+                              </td>
+                              <td style={S.td}>
+                                <span style={{fontSize:10,color:acc.is_active?'#10b981':'#ef4444'}}>
+                                  {acc.is_active ? '🟢 Active' : '🔴 Inactive'}
+                                </span>
+                              </td>
+                              <td style={S.td}>
+                                <button onClick={()=>{
+                                  const newId = document.getElementById(`edit-id-${acc.id}`).value;
+                                  const newName = document.getElementById(`edit-name-${acc.id}`).value;
+                                  const newType = document.getElementById(`edit-type-${acc.id}`).value;
+                                  updateBotAccount(acc.id, { account_id: newId, account_name: newName, account_type: newType });
+                                }} style={{...S.btn('#065f46'),padding:'4px 10px',fontSize:10,marginRight:4}}>✓ Save</button>
+                                <button onClick={()=>setEditBotAccId(null)} style={{...S.btn('#374151'),padding:'4px 10px',fontSize:10}}>✕</button>
+                              </td>
+                            </>
+                          ) : (
+                            <>
+                              <td style={{...S.td,fontFamily:'monospace',fontSize:11}}>{acc.account_id}</td>
+                              <td style={{...S.td,fontWeight:600}}>{acc.account_name}</td>
+                              <td style={S.td}>
+                                <span style={{padding:'2px 8px',borderRadius:3,fontSize:9,fontWeight:700,background:'#0c4a6e',color:'#67e8f9',textTransform:'uppercase'}}>{acc.account_type}</span>
+                              </td>
+                              <td style={S.td}>
+                                <label style={{display:'flex',alignItems:'center',gap:6,cursor:'pointer',fontSize:11}}>
+                                  <input type="checkbox" checked={!!acc.is_active} onChange={e=>toggleBotAccount(acc.id, e.target.checked)}/>
+                                  <span style={{color:acc.is_active?'#10b981':'#ef4444'}}>{acc.is_active ? 'Active' : 'Inactive'}</span>
+                                </label>
+                              </td>
+                              <td style={S.td}>
+                                <button onClick={()=>setEditBotAccId(acc.id)} style={{...S.btn('#164e63'),padding:'4px 10px',fontSize:10,marginRight:4}}>✏️ Edit</button>
+                                <button onClick={()=>deleteBotAccount(acc.id, acc.account_name)} style={{...S.btn('#991b1b'),padding:'4px 10px',fontSize:10}}>🗑</button>
+                              </td>
+                            </>
+                          )}
+                        </tr>
+                      ))}
+                    {botAccounts.length === 0 && (
+                      <tr><td colSpan={5} style={{...S.td,textAlign:'center',color:'#6b7280',padding:20}}>Belum ada akun bot. Tambah di form atas.</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* SECTION 2: SYSTEM ACTIONS */}
+            <div style={{...S.box,marginBottom:20}}>
+              <h3 style={{color:'#67e8f9',fontSize:15,margin:'0 0 6px 0',fontWeight:800,textTransform:'uppercase',letterSpacing:1}}>⚡ System Actions</h3>
+              <p style={{fontSize:12,color:'#9ca3af',margin:'0 0 16px 0'}}>Tombol-tombol admin untuk maintenance database.</p>
+
+              <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(280px,1fr))',gap:12}}>
+                <div style={{background:'#0d1117',border:'1px solid #1f2937',borderRadius:6,padding:14}}>
+                  <div style={{fontSize:12,color:'#67e8f9',fontWeight:700,marginBottom:4}}>🔄 Reset Worker Counters</div>
+                  <p style={{fontSize:10,color:'#9ca3af',margin:'0 0 10px 0'}}>Reset counter harian (total/success/failed) untuk semua bot worker ke 0.</p>
+                  <button onClick={resetWorkerCounters} style={{...S.btn('#164e63'),padding:'8px 14px',fontSize:11,width:'100%'}}>Reset Sekarang</button>
+                </div>
+
+                <div style={{background:'#0d1117',border:'1px solid #1f2937',borderRadius:6,padding:14}}>
+                  <div style={{fontSize:12,color:'#67e8f9',fontWeight:700,marginBottom:4}}>🗑 Cleanup Chat Lama</div>
+                  <p style={{fontSize:10,color:'#9ca3af',margin:'0 0 10px 0'}}>Hapus pesan chat yang umurnya lebih dari 30 hari.</p>
+                  <button onClick={cleanupOldChat} style={{...S.btn('#7c2d12'),padding:'8px 14px',fontSize:11,width:'100%'}}>Cleanup</button>
+                </div>
+
+                <div style={{background:'#0d1117',border:'1px solid #1f2937',borderRadius:6,padding:14}}>
+                  <div style={{fontSize:12,color:'#67e8f9',fontWeight:700,marginBottom:4}}>🗑 Cleanup Backup Lama</div>
+                  <p style={{fontSize:10,color:'#9ca3af',margin:'0 0 10px 0'}}>Hapus backup lebih lama dari 30 terbaru (otomatis juga jalan harian).</p>
+                  <button onClick={cleanupOldBackups} style={{...S.btn('#7c2d12'),padding:'8px 14px',fontSize:11,width:'100%'}}>Cleanup</button>
+                </div>
+
+                <div style={{background:'#0d1117',border:'1px solid #1f2937',borderRadius:6,padding:14}}>
+                  <div style={{fontSize:12,color:'#67e8f9',fontWeight:700,marginBottom:4}}>⚡ Backup Sekarang</div>
+                  <p style={{fontSize:10,color:'#9ca3af',margin:'0 0 10px 0'}}>Trigger backup manual sekarang (buka tab Kelola User untuk lihat hasilnya).</p>
+                  <button onClick={triggerManualBackup} style={{...S.btn('#065f46'),padding:'8px 14px',fontSize:11,width:'100%'}}>Backup Now</button>
+                </div>
+              </div>
+            </div>
+
+            {/* SECTION 3: DATABASE STATISTICS */}
+            <div style={{...S.box,marginBottom:20}}>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
+                <div>
+                  <h3 style={{color:'#67e8f9',fontSize:15,margin:'0 0 4px 0',fontWeight:800,textTransform:'uppercase',letterSpacing:1}}>📊 Database Statistics</h3>
+                  <p style={{fontSize:12,color:'#9ca3af',margin:0}}>Statistik total row per tabel.</p>
+                </div>
+                <button onClick={loadSystemStats} style={{...S.btn('#164e63'),padding:'8px 14px',fontSize:11}}>🔄 Refresh</button>
+              </div>
+              {!systemStats && <p style={{fontSize:12,color:'#6b7280'}}>Memuat statistik...</p>}
+              {systemStats && (
+                <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(160px,1fr))',gap:10}}>
+                  {[
+                    { label: '👥 Users', key: 'users' },
+                    { label: '🏟 Groups', key: 'groups' },
+                    { label: '📝 Posting Tracker', key: 'posting_tracker' },
+                    { label: '🔗 Link Submissions', key: 'link_submissions' },
+                    { label: '📋 Activity Log', key: 'activity_log' },
+                    { label: '💬 Chat Messages', key: 'chat_messages' },
+                    { label: '🔔 Notifications', key: 'notifications' },
+                    { label: '💾 Backups', key: 'backups' },
+                  ].map(s => (
+                    <div key={s.key} style={{background:'#0d1117',border:'1px solid #1f2937',borderRadius:6,padding:12}}>
+                      <div style={{fontSize:11,color:'#9ca3af'}}>{s.label}</div>
+                      <div style={{fontSize:20,fontWeight:900,color:'#67e8f9',marginTop:4}}>{(systemStats[s.key] || 0).toLocaleString('id-ID')}</div>
+                    </div>
+                  ))}
+                  <div style={{background:'#0d1117',border:'1px solid #0891b2',borderRadius:6,padding:12}}>
+                    <div style={{fontSize:11,color:'#9ca3af'}}>💾 Total Backup Size</div>
+                    <div style={{fontSize:20,fontWeight:900,color:'#67e8f9',marginTop:4}}>{systemStats.backups_size_kb?.toLocaleString('id-ID') || 0} KB</div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Info box */}
+            <div style={{padding:14,background:'#0d1117',border:'1px solid #1f2937',borderRadius:8,fontSize:11,color:'#6b7280'}}>
+              <strong style={{color:'#67e8f9'}}>💡 Tips admin:</strong>
+              <ul style={{margin:'6px 0 0 20px',padding:0}}>
+                <li>Matikan akun bot yang lagi bermasalah daripada hapus — biar history tetap terjaga</li>
+                <li>Cleanup chat + backup lama sebulan sekali untuk hemat storage Supabase</li>
+                <li>Reset worker counter setiap pergantian hari kalau mau statistik harian fresh</li>
+              </ul>
+            </div>
+          </>
         )}
 
       </div>
