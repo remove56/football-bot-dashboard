@@ -372,8 +372,6 @@ export default function Home() {
   const chatRecordTimerRef = useRef(null);
   const prevChatUnreadRef = useRef(null); // null = belum init, biar first load nggak beep
   const prevNotifUnreadRef = useRef(null);
-  const audioCtxRef = useRef(null);
-  const audioInitializedRef = useRef(false);
 
   // Pengaturan (Item 5) — bot accounts pakai state existing (baId, baName, dll)
   const [botAccFilter, setBotAccFilter] = useState('all'); // all | grup | reels | both
@@ -1415,91 +1413,43 @@ export default function Home() {
     return () => window.removeEventListener('keydown', handleKey);
   }, [chatLightbox]);
 
-  // ========== SOUND NOTIFICATION ==========
-  // Load preferensi sound dari localStorage saat mount
+  // ========== SOUND NOTIFICATION (HTML5 Audio — reliable di Firefox) ==========
+  // Pre-load Audio elements sekali saja
+  const chatAudioRef = useRef(null);
+  const notifAudioRef = useRef(null);
+
   useEffect(() => {
+    // Load preferensi
     const saved = localStorage.getItem('fb-dash-sound-enabled');
     if (saved !== null) setSoundEnabled(saved === 'true');
+
+    // Pre-load audio files
+    if (typeof Audio !== 'undefined') {
+      chatAudioRef.current = new Audio('/sounds/chat-beep.wav');
+      chatAudioRef.current.volume = 0.5;
+      chatAudioRef.current.preload = 'auto';
+
+      notifAudioRef.current = new Audio('/sounds/notif-beep.wav');
+      notifAudioRef.current.volume = 0.5;
+      notifAudioRef.current.preload = 'auto';
+    }
   }, []);
 
-  // Init AudioContext saat user pertama kali klik apapun di dashboard
-  // Ini workaround: browser block audio sampai ada user gesture
-  useEffect(() => {
-    if (audioInitializedRef.current) return;
-    const initAudio = () => {
-      if (audioInitializedRef.current) return;
-      try {
-        const Ctx = window.AudioContext || window.webkitAudioContext;
-        if (!Ctx) return;
-        audioCtxRef.current = new Ctx();
-        if (audioCtxRef.current.state === 'suspended') {
-          audioCtxRef.current.resume();
-        }
-        audioInitializedRef.current = true;
-      } catch (e) { /* silent */ }
-    };
-    // Listen 1 kali click / keydown untuk init
-    document.addEventListener('click', initAudio, { once: true });
-    document.addEventListener('keydown', initAudio, { once: true });
-    return () => {
-      document.removeEventListener('click', initAudio);
-      document.removeEventListener('keydown', initAudio);
-    };
-  }, []);
-
-  // Play beep sound — generate via Web Audio API, nggak perlu file
-  // type: 'chat' | 'notif'
+  // Play beep via HTML5 Audio — lebih reliable daripada Web Audio API
   const playBeep = (type = 'chat') => {
     if (!soundEnabled) return;
+    const audio = type === 'notif' ? notifAudioRef.current : chatAudioRef.current;
+    if (!audio) return;
     try {
-      // Init context kalau belum (in case user click didn't fire yet)
-      if (!audioCtxRef.current) {
-        const Ctx = window.AudioContext || window.webkitAudioContext;
-        if (!Ctx) { console.warn('[Sound] Web Audio API tidak tersedia'); return; }
-        audioCtxRef.current = new Ctx();
+      audio.currentTime = 0; // rewind biar bisa play berkali-kali cepat
+      const promise = audio.play();
+      if (promise && promise.catch) {
+        promise.catch(err => {
+          console.warn('[Sound] Play blocked:', err.message, '— butuh user interaction');
+        });
       }
-      const ctx = audioCtxRef.current;
-      if (ctx.state === 'suspended') {
-        ctx.resume().catch(() => { /* silent */ });
-      }
-      if (ctx.state !== 'running') {
-        console.warn('[Sound] AudioContext state:', ctx.state, '— butuh user gesture');
-        return;
-      }
-
-      // Config beda per tipe
-      const config = type === 'notif'
-        ? { freq1: 880, freq2: 660, duration: 0.15, gap: 0.08 } // notif: higher pitch
-        : { freq1: 600, freq2: 800, duration: 0.1, gap: 0.06 }; // chat: bip-bip cepat
-
-      const now = ctx.currentTime;
-
-      // Tone 1
-      const osc1 = ctx.createOscillator();
-      const gain1 = ctx.createGain();
-      osc1.type = 'sine';
-      osc1.frequency.value = config.freq1;
-      gain1.gain.setValueAtTime(0.001, now);
-      gain1.gain.exponentialRampToValueAtTime(0.2, now + 0.01);
-      gain1.gain.exponentialRampToValueAtTime(0.001, now + config.duration);
-      osc1.connect(gain1).connect(ctx.destination);
-      osc1.start(now);
-      osc1.stop(now + config.duration + 0.05);
-
-      // Tone 2 (bip ke-2)
-      const osc2 = ctx.createOscillator();
-      const gain2 = ctx.createGain();
-      osc2.type = 'sine';
-      osc2.frequency.value = config.freq2;
-      const start2 = now + config.duration + config.gap;
-      gain2.gain.setValueAtTime(0.001, start2);
-      gain2.gain.exponentialRampToValueAtTime(0.2, start2 + 0.01);
-      gain2.gain.exponentialRampToValueAtTime(0.001, start2 + config.duration);
-      osc2.connect(gain2).connect(ctx.destination);
-      osc2.start(start2);
-      osc2.stop(start2 + config.duration + 0.05);
     } catch (e) {
-      // silent — AudioContext mungkin di-block (belum ada user gesture)
+      console.warn('[Sound] Error:', e.message);
     }
   };
 
@@ -1528,54 +1478,22 @@ export default function Home() {
   }, [notifUnread]);
 
   const toggleSoundEnabled = () => {
-    // Force init AudioContext di user gesture ini (klik tombol)
-    try {
-      if (!audioCtxRef.current) {
-        const Ctx = window.AudioContext || window.webkitAudioContext;
-        if (Ctx) audioCtxRef.current = new Ctx();
-      }
-      if (audioCtxRef.current?.state === 'suspended') {
-        audioCtxRef.current.resume();
-      }
-      audioInitializedRef.current = true;
-    } catch (e) { /* silent */ }
-
     const newVal = !soundEnabled;
     setSoundEnabled(newVal);
     localStorage.setItem('fb-dash-sound-enabled', String(newVal));
-    // Play test beep saat enable (panggil playBeep dengan state baru, bukan state lama)
-    if (newVal) {
-      // playBeep check soundEnabled dari state, tapi state belum terupdate saat ini
-      // Jadi panggil langsung inline tanpa check
-      setTimeout(() => {
-        try {
-          const ctx = audioCtxRef.current;
-          if (!ctx || ctx.state !== 'running') return;
-          const now = ctx.currentTime;
-          const osc1 = ctx.createOscillator();
-          const gain1 = ctx.createGain();
-          osc1.type = 'sine';
-          osc1.frequency.value = 880;
-          gain1.gain.setValueAtTime(0.001, now);
-          gain1.gain.exponentialRampToValueAtTime(0.25, now + 0.01);
-          gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
-          osc1.connect(gain1).connect(ctx.destination);
-          osc1.start(now);
-          osc1.stop(now + 0.2);
-
-          const osc2 = ctx.createOscillator();
-          const gain2 = ctx.createGain();
-          osc2.type = 'sine';
-          osc2.frequency.value = 660;
-          const start2 = now + 0.25;
-          gain2.gain.setValueAtTime(0.001, start2);
-          gain2.gain.exponentialRampToValueAtTime(0.25, start2 + 0.01);
-          gain2.gain.exponentialRampToValueAtTime(0.001, start2 + 0.15);
-          osc2.connect(gain2).connect(ctx.destination);
-          osc2.start(start2);
-          osc2.stop(start2 + 0.2);
-        } catch (e) { /* silent */ }
-      }, 50);
+    // Play test beep saat enable — dipanggil SYNCHRONOUSLY dalam click handler
+    // biar dianggap user gesture oleh browser
+    if (newVal && notifAudioRef.current) {
+      try {
+        notifAudioRef.current.currentTime = 0;
+        const promise = notifAudioRef.current.play();
+        if (promise && promise.catch) {
+          promise.catch(err => {
+            console.warn('[Sound] Test play blocked:', err.message);
+            alert('Browser memblokir audio. Silakan izinkan autoplay di Firefox:\n1. Klik icon gembok di address bar\n2. Permissions → Autoplay → Allow Audio and Video\n3. Refresh halaman');
+          });
+        }
+      } catch (e) { /* silent */ }
     }
   };
 
