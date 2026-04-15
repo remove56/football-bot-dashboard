@@ -104,6 +104,7 @@ export async function POST(req) {
       to_user_id, to_user_name,
       message,
       attachment_url, attachment_type, attachment_name, attachment_size, attachment_duration,
+      view_once,
     } = body;
 
     if (!from_user_id || !from_user_name) {
@@ -129,6 +130,7 @@ export async function POST(req) {
         attachment_name: attachment_name || null,
         attachment_size: attachment_size || null,
         attachment_duration: attachment_duration || null,
+        view_once: !!view_once,
       })
       .select()
       .single();
@@ -143,11 +145,37 @@ export async function POST(req) {
 export async function PATCH(req) {
   try {
     const { searchParams } = new URL(req.url);
+    const action = searchParams.get('action');
+
+    // Action: mark view-once message as viewed + clear content for privacy
+    if (action === 'view-once') {
+      const id = searchParams.get('id');
+      if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 });
+
+      const { error } = await supabase
+        .from('chat_messages')
+        .update({
+          viewed_at: new Date().toISOString(),
+          // Clear isi pesan + attachment untuk privacy setelah dilihat
+          message: '[🔥 pesan sekali lihat]',
+          attachment_url: null,
+          attachment_name: null,
+          attachment_size: null,
+          attachment_duration: null,
+        })
+        .eq('id', id)
+        .eq('view_once', true)
+        .is('viewed_at', null); // cuma mark kalau belum dilihat
+
+      if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ ok: true });
+    }
+
+    // Default action: mark DM read
     const user1 = searchParams.get('user1');
     const user2 = searchParams.get('user2');
     if (!user1 || !user2) return NextResponse.json({ error: 'user1 and user2 required' }, { status: 400 });
 
-    // Mark semua DM dari user2 ke user1 (yang belum read) sebagai read
     const { error } = await supabase
       .from('chat_messages')
       .update({ read_at: new Date().toISOString() })

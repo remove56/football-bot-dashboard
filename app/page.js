@@ -367,6 +367,8 @@ export default function Home() {
   const [chatRecordSec, setChatRecordSec] = useState(0);
   const [chatPendingAttachment, setChatPendingAttachment] = useState(null); // { file, previewUrl, type, name, size }
   const [chatLightbox, setChatLightbox] = useState(null); // { url, name } — kalau ada, buka lightbox viewer
+  const [chatViewOnceMode, setChatViewOnceMode] = useState(false); // toggle 🔥 view once
+  const chatLocalViewedRef = useRef(new Map()); // id -> { message, attachment_url, ... } konten lokal sebelum di-clear di DB
   const [soundEnabled, setSoundEnabled] = useState(true); // sound notification toggle
   const [appearOffline, setAppearOffline] = useState(false); // user can hide their online status
   const [onlineUsers, setOnlineUsers] = useState({}); // { userId: last_active_at }
@@ -1173,10 +1175,12 @@ export default function Home() {
           to_user_id: chatMode === 'dm' && chatDmPartner ? chatDmPartner.id : null,
           to_user_name: chatMode === 'dm' && chatDmPartner ? chatDmPartner.name : null,
           message: chatInput.trim() || (extras.attachment_type === 'image' ? '📷 Foto' : extras.attachment_type === 'audio' ? '🎤 Pesan suara' : ''),
+          view_once: chatViewOnceMode,
           ...extras,
         }),
       });
       setChatInput('');
+      setChatViewOnceMode(false); // reset setelah kirim
       loadChatMessages();
     } catch (e) { /* silent */ }
   };
@@ -1556,6 +1560,37 @@ export default function Home() {
       alert('Gagal hapus: ' + e.message);
     }
   };
+
+  // Auto mark view-once messages sebagai viewed saat muncul di chat
+  // Simpan konten lokal sebelum di-clear di DB, supaya user masih bisa lihat
+  // sekali pada session saat ini.
+  useEffect(() => {
+    if (!user?.id || !chatOpen) return;
+    chatMessages.forEach(async (m) => {
+      if (!m.view_once) return;
+      if (m.deleted) return;
+      if (m.from_user_id === user.id) return; // sender nggak perlu mark
+      if (m.viewed_at) return; // udah pernah dilihat
+      if (chatLocalViewedRef.current.has(m.id)) return; // udah di-mark session ini
+
+      // Untuk DM, cek recipient. Untuk global, skip (view once cuma untuk DM)
+      if (m.to_user_id !== user.id) return;
+
+      // Simpan konten lokal dulu sebelum di-clear di DB
+      chatLocalViewedRef.current.set(m.id, {
+        message: m.message,
+        attachment_url: m.attachment_url,
+        attachment_type: m.attachment_type,
+        attachment_name: m.attachment_name,
+        attachment_duration: m.attachment_duration,
+      });
+
+      // Panggil API mark viewed (clear content di DB)
+      try {
+        await fetch(`/api/chat?action=view-once&id=${m.id}`, { method: 'PATCH' });
+      } catch (e) { /* silent */ }
+    });
+  }, [chatMessages, user, chatOpen]);
 
   const toggleSoundEnabled = () => {
     const newVal = !soundEnabled;
@@ -2276,6 +2311,18 @@ export default function Home() {
                     const isDeleted = m.deleted;
                     // Read receipt logic: untuk DM, cek read_at. Global nggak ada read tracking per user.
                     const isRead = m.to_user_id && m.read_at;
+                    // View once: recipient bisa lihat konten lokal selama session ini (sebelum refresh)
+                    const isViewOnce = m.view_once;
+                    const localViewed = chatLocalViewedRef.current.get(m.id);
+                    const isViewOnceConsumed = isViewOnce && !isMe && m.viewed_at && !localViewed;
+                    // Content yang di-display: kalau view once + recipient + locally viewed, pakai localViewed
+                    const displayMessage = localViewed ? localViewed.message : m.message;
+                    const displayAttachmentUrl = localViewed ? localViewed.attachment_url : m.attachment_url;
+                    const displayAttachmentType = localViewed ? localViewed.attachment_type : m.attachment_type;
+                    const displayAttachmentName = localViewed ? localViewed.attachment_name : m.attachment_name;
+                    const displayAttachmentDuration = localViewed ? localViewed.attachment_duration : m.attachment_duration;
+                    // Admin bisa hapus pesan siapapun, member cuma pesan sendiri
+                    const canDelete = !isDeleted && (isMe || user.role === 'admin');
                     return (
                       <div key={m.id} style={{display:'flex',justifyContent:isMe?'flex-end':'flex-start'}} className="chat-message-row">
                         <div style={{
@@ -2287,11 +2334,11 @@ export default function Home() {
                           opacity: isDeleted ? 0.6 : 1,
                           position:'relative',
                         }}>
-                          {/* Delete button — position absolute di dalam bubble (pojok kanan atas) */}
-                          {isMe && !isDeleted && (
+                          {/* Delete button — admin bisa hapus siapapun, member cuma pesan sendiri */}
+                          {canDelete && (
                             <button
                               onClick={()=>deleteChatMessage(m.id)}
-                              title="Hapus pesan"
+                              title={isMe ? 'Hapus pesan' : `Hapus pesan (admin)`}
                               style={{
                                 position:'absolute',
                                 top:4,
@@ -2326,33 +2373,51 @@ export default function Home() {
 
                           {isDeleted ? (
                             <div style={{fontSize:11,color:'#6b7280',fontStyle:'italic'}}>🚫 Pesan dihapus</div>
+                          ) : isViewOnceConsumed ? (
+                            <div style={{fontSize:11,color:'#fb923c',fontStyle:'italic',display:'flex',alignItems:'center',gap:6}}>
+                              🔥 Pesan sekali lihat — sudah dibuka
+                            </div>
                           ) : (
                             <>
+                              {/* View once indicator */}
+                              {isViewOnce && (
+                                <div style={{fontSize:9,color:'#fb923c',fontWeight:700,marginBottom:4,display:'flex',alignItems:'center',gap:3}}>
+                                  🔥 SEKALI LIHAT {localViewed && '· akan hilang next session'}
+                                </div>
+                              )}
+
                               {/* IMAGE ATTACHMENT */}
-                              {m.attachment_type === 'image' && m.attachment_url && (
-                                <div style={{marginBottom:m.message && m.message !== '📷 Foto' ? 6 : 0}}>
+                              {displayAttachmentType === 'image' && displayAttachmentUrl && (
+                                <div style={{marginBottom:displayMessage && displayMessage !== '📷 Foto' ? 6 : 0}}>
                                   <img
-                                    src={m.attachment_url}
-                                    alt={m.attachment_name || 'image'}
+                                    src={displayAttachmentUrl}
+                                    alt={displayAttachmentName || 'image'}
                                     style={{maxWidth:'100%',maxHeight:300,borderRadius:6,cursor:'pointer',display:'block'}}
-                                    onClick={()=>setChatLightbox({ url: m.attachment_url, name: m.attachment_name || 'image' })}
+                                    onClick={()=>setChatLightbox({ url: displayAttachmentUrl, name: displayAttachmentName || 'image' })}
                                   />
                                 </div>
                               )}
 
                               {/* AUDIO ATTACHMENT */}
-                              {m.attachment_type === 'audio' && m.attachment_url && (
-                                <div style={{marginBottom:m.message && m.message !== '🎤 Pesan suara' ? 6 : 0,display:'flex',alignItems:'center',gap:8}}>
-                                  <audio controls src={m.attachment_url} style={{height:36,maxWidth:240}}/>
-                                  {m.attachment_duration && (
-                                    <span style={{fontSize:10,color:'#9ca3af'}}>{m.attachment_duration}s</span>
+                              {displayAttachmentType === 'audio' && displayAttachmentUrl && (
+                                <div style={{marginBottom:displayMessage && displayMessage !== '🎤 Pesan suara' ? 6 : 0,display:'flex',alignItems:'center',gap:8}}>
+                                  <audio controls src={displayAttachmentUrl} style={{height:36,maxWidth:240}}/>
+                                  {displayAttachmentDuration && (
+                                    <span style={{fontSize:10,color:'#9ca3af'}}>{displayAttachmentDuration}s</span>
                                   )}
                                 </div>
                               )}
 
                               {/* TEXT MESSAGE (skip kalau cuma placeholder untuk attachment) */}
-                              {m.message && m.message !== '📷 Foto' && m.message !== '🎤 Pesan suara' && (
-                                <div style={{fontSize:12,color:'#e0f2fe',whiteSpace:'pre-wrap',wordBreak:'break-word'}}>{m.message}</div>
+                              {displayMessage && displayMessage !== '📷 Foto' && displayMessage !== '🎤 Pesan suara' && displayMessage !== '[🔥 pesan sekali lihat]' && (
+                                <div style={{fontSize:12,color:'#e0f2fe',whiteSpace:'pre-wrap',wordBreak:'break-word'}}>{displayMessage}</div>
+                              )}
+
+                              {/* View once: sender liat status */}
+                              {isViewOnce && isMe && m.viewed_at && (
+                                <div style={{fontSize:9,color:'#10b981',marginTop:4,fontStyle:'italic'}}>
+                                  ✓ Sudah dilihat {new Date(m.viewed_at).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}
+                                </div>
                               )}
                             </>
                           )}
@@ -2410,6 +2475,26 @@ export default function Home() {
                       <button onClick={startVoiceRecord} disabled={chatUploading||!!chatPendingAttachment} style={{padding:'10px 12px',background:'#164e63',color:'#67e8f9',border:'none',borderRadius:6,fontSize:16,cursor:(chatUploading||chatPendingAttachment)?'not-allowed':'pointer',opacity:(chatUploading||chatPendingAttachment)?0.5:1}} title="Rekam pesan suara">
                         🎤
                       </button>
+                      {/* View once toggle — hanya aktif di DM mode */}
+                      {chatMode === 'dm' && (
+                        <button
+                          onClick={()=>setChatViewOnceMode(!chatViewOnceMode)}
+                          disabled={chatUploading}
+                          title={chatViewOnceMode ? 'View Once ON — pesan akan hilang setelah dilihat' : 'Toggle View Once (🔥 pesan sekali lihat)'}
+                          style={{
+                            padding:'10px 12px',
+                            background: chatViewOnceMode ? '#7c2d12' : '#164e63',
+                            color: chatViewOnceMode ? '#fb923c' : '#67e8f9',
+                            border: chatViewOnceMode ? '2px solid #fb923c' : 'none',
+                            borderRadius:6,
+                            fontSize:16,
+                            cursor: chatUploading ? 'not-allowed' : 'pointer',
+                            opacity: chatUploading ? 0.5 : 1,
+                          }}
+                        >
+                          🔥
+                        </button>
+                      )}
                       <input
                         type="text"
                         style={{...S.input,flex:1}}
