@@ -343,6 +343,25 @@ export default function Home() {
   const [guideOpen, setGuideOpen] = useState(false);
   const [guideSection, setGuideSection] = useState('welcome');
 
+  // Notifications system
+  const [notifications, setNotifications] = useState([]);
+  const [notifUnread, setNotifUnread] = useState(0);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [broadcastOpen, setBroadcastOpen] = useState(false);
+  const [broadcastTitle, setBroadcastTitle] = useState('');
+  const [broadcastMessage, setBroadcastMessage] = useState('');
+  const [broadcastType, setBroadcastType] = useState('info');
+  const [broadcastTarget, setBroadcastTarget] = useState('all'); // 'all' or user_id
+  const [broadcastMsg, setBroadcastMsg] = useState('');
+
+  // Chat system
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatMode, setChatMode] = useState('global'); // 'global' or 'dm'
+  const [chatDmPartner, setChatDmPartner] = useState(null); // { id, name }
+  const [chatMessages, setChatMessages] = useState([]);
+  const [chatInput, setChatInput] = useState('');
+  const [chatDmList, setChatDmList] = useState([]); // list of DM conversations
+
   // Posting tracker
   const [postTracker, setPostTracker] = useState([]);
   const [postTrackerHistory, setPostTrackerHistory] = useState([]); // last 30 days
@@ -1010,6 +1029,149 @@ export default function Home() {
     return () => clearInterval(id);
   }, [tab, user]);
 
+  // ========== NOTIFICATIONS ==========
+  const loadNotifications = async () => {
+    if (!user?.id) return;
+    try {
+      const res = await fetch(`/api/notifications?user_id=${user.id}&limit=30`);
+      const data = await res.json();
+      setNotifications(data.notifications || []);
+      setNotifUnread(data.unread || 0);
+    } catch (e) { /* silent */ }
+  };
+
+  // Auto-poll notifications tiap 20 detik + saat user login
+  useEffect(() => {
+    if (!user?.id) return;
+    loadNotifications();
+    const id = setInterval(loadNotifications, 20000);
+    return () => clearInterval(id);
+  }, [user]);
+
+  const markNotificationRead = async (notificationId) => {
+    try {
+      await fetch('/api/notifications', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ notification_id: notificationId }),
+      });
+      loadNotifications();
+    } catch (e) { /* silent */ }
+  };
+
+  const markAllNotificationsRead = async () => {
+    if (!user?.id) return;
+    try {
+      await fetch('/api/notifications', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mark_all_for_user_id: user.id }),
+      });
+      loadNotifications();
+    } catch (e) { /* silent */ }
+  };
+
+  const sendBroadcast = async () => {
+    setBroadcastMsg('');
+    if (!broadcastTitle.trim() || !broadcastMessage.trim()) {
+      setBroadcastMsg('Judul dan isi pesan wajib');
+      return;
+    }
+    try {
+      const targetUser = broadcastTarget === 'all' ? null : users.find(u => u.id === broadcastTarget);
+      const res = await fetch('/api/notifications', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          from_user_id: user.id,
+          from_user_name: user.name,
+          to_user_id: targetUser ? targetUser.id : null,
+          to_user_name: targetUser ? targetUser.name : null,
+          title: broadcastTitle.trim(),
+          message: broadcastMessage.trim(),
+          type: broadcastType,
+        }),
+      });
+      const data = await res.json();
+      if (data.error) { setBroadcastMsg('Gagal: ' + data.error); return; }
+      setBroadcastMsg('Pesan berhasil dikirim!');
+      setTimeout(() => {
+        setBroadcastOpen(false);
+        setBroadcastTitle(''); setBroadcastMessage(''); setBroadcastMsg('');
+        loadNotifications();
+      }, 1200);
+    } catch (e) {
+      setBroadcastMsg('Error: ' + e.message);
+    }
+  };
+
+  // ========== CHAT ==========
+  const loadChatMessages = async () => {
+    if (!user?.id) return;
+    try {
+      let url = '/api/chat?';
+      if (chatMode === 'global') url += 'scope=global&limit=100';
+      else if (chatMode === 'dm' && chatDmPartner) url += `scope=dm&user1=${user.id}&user2=${chatDmPartner.id}&limit=100`;
+      else return;
+      const res = await fetch(url);
+      const data = await res.json();
+      setChatMessages(data.messages || []);
+    } catch (e) { /* silent */ }
+  };
+
+  const loadDmList = async () => {
+    if (!user?.id) return;
+    try {
+      const res = await fetch(`/api/chat?scope=dm_list&user_id=${user.id}`);
+      const data = await res.json();
+      setChatDmList(data.conversations || []);
+    } catch (e) { /* silent */ }
+  };
+
+  // Auto-refresh chat saat modal terbuka (polling 5 detik)
+  useEffect(() => {
+    if (!chatOpen || !user?.id) return;
+    loadChatMessages();
+    loadDmList();
+    const id = setInterval(() => {
+      loadChatMessages();
+      loadDmList();
+    }, 5000);
+    return () => clearInterval(id);
+  }, [chatOpen, chatMode, chatDmPartner, user]);
+
+  const sendChatMessage = async () => {
+    if (!chatInput.trim() || !user?.id) return;
+    try {
+      await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          from_user_id: user.id,
+          from_user_name: user.name,
+          from_user_role: user.role,
+          to_user_id: chatMode === 'dm' && chatDmPartner ? chatDmPartner.id : null,
+          to_user_name: chatMode === 'dm' && chatDmPartner ? chatDmPartner.name : null,
+          message: chatInput.trim(),
+        }),
+      });
+      setChatInput('');
+      loadChatMessages();
+    } catch (e) { /* silent */ }
+  };
+
+  const openDmWith = async (partnerId, partnerName) => {
+    setChatMode('dm');
+    setChatDmPartner({ id: partnerId, name: partnerName });
+    // Mark as read saat buka
+    if (user?.id) {
+      try {
+        await fetch(`/api/chat?mark_read=1&user1=${user.id}&user2=${partnerId}`, { method: 'PATCH' });
+        loadDmList();
+      } catch (e) { /* silent */ }
+    }
+  };
+
   // Load daftar auto backup dari tabel backups_log
   const loadAutoBackups = async () => {
     setAutoBackupsLoading(true);
@@ -1286,11 +1448,238 @@ export default function Home() {
         <div style={{display:'flex',gap:12,alignItems:'center',fontSize:13}}>
           <span style={{color:'#9ca3af'}}>{user.name}</span>
           <span style={S.badge(user.role)}>{user.role}</span>
-          <a onClick={()=>setGuideOpen(true)} style={{color:'#a5f3fc',cursor:'pointer',fontSize:12}} title="Panduan Pemakaian">❓ Panduan</a>
-          <a onClick={()=>setPwModal(true)} style={{color:'#67e8f9',cursor:'pointer',fontSize:12}} title="Ganti Password">🔑 Password</a>
+          <a onClick={()=>setChatOpen(true)} style={{color:'#a5f3fc',cursor:'pointer',fontSize:12,position:'relative'}} title="Chat">💬 Chat</a>
+          <a onClick={()=>setNotifOpen(!notifOpen)} style={{color:'#a5f3fc',cursor:'pointer',fontSize:12,position:'relative'}} title="Notifikasi">
+            🔔
+            {notifUnread > 0 && (
+              <span style={{position:'absolute',top:-6,right:-10,background:'#ef4444',color:'#fff',borderRadius:'50%',minWidth:16,height:16,fontSize:9,fontWeight:900,display:'inline-flex',alignItems:'center',justifyContent:'center',padding:'0 4px'}}>
+                {notifUnread > 99 ? '99+' : notifUnread}
+              </span>
+            )}
+          </a>
+          <a onClick={()=>setGuideOpen(true)} style={{color:'#a5f3fc',cursor:'pointer',fontSize:12}} title="Panduan Pemakaian">❓</a>
+          <a onClick={()=>setPwModal(true)} style={{color:'#67e8f9',cursor:'pointer',fontSize:12}} title="Ganti Password">🔑</a>
           <a onClick={logout} style={{color:'#ef4444',cursor:'pointer'}}>Logout</a>
         </div>
       </div>
+
+      {/* DROPDOWN NOTIFIKASI */}
+      {notifOpen && (
+        <>
+          <div onClick={()=>setNotifOpen(false)} style={{position:'fixed',top:0,left:0,right:0,bottom:0,zIndex:998}}/>
+          <div style={{position:'fixed',top:56,right:20,width:380,maxHeight:'70vh',background:'linear-gradient(180deg,#0f172a 0%,#020617 100%)',border:'2px solid #0891b2',borderRadius:10,boxShadow:'0 8px 40px rgba(6,182,212,0.4)',zIndex:999,display:'flex',flexDirection:'column',overflow:'hidden'}}>
+            <div style={{padding:'12px 16px',borderBottom:'1px solid #1f2937',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+              <div>
+                <div style={{fontSize:13,color:'#67e8f9',fontWeight:800,textTransform:'uppercase',letterSpacing:1}}>🔔 Notifikasi</div>
+                <div style={{fontSize:10,color:'#9ca3af'}}>{notifUnread} belum dibaca</div>
+              </div>
+              <div style={{display:'flex',gap:6}}>
+                {user?.role === 'admin' && (
+                  <button onClick={()=>{setBroadcastOpen(true);setNotifOpen(false);}} style={{...S.btn('#065f46'),padding:'6px 10px',fontSize:10}}>+ Kirim</button>
+                )}
+                {notifUnread > 0 && (
+                  <button onClick={markAllNotificationsRead} style={{...S.btn('#164e63'),padding:'6px 10px',fontSize:10}}>Tandai Baca</button>
+                )}
+              </div>
+            </div>
+            <div style={{flex:1,overflow:'auto'}}>
+              {notifications.length === 0 && (
+                <div style={{padding:30,textAlign:'center',color:'#6b7280',fontSize:12}}>Belum ada notifikasi</div>
+              )}
+              {notifications.map(n => {
+                const typeColors = {
+                  info: '#67e8f9', warning: '#f59e0b', success: '#10b981',
+                  error: '#ef4444', announce: '#c084fc',
+                };
+                const typeIcons = {
+                  info: 'ℹ️', warning: '⚠️', success: '✅', error: '❌', announce: '📢',
+                };
+                const color = typeColors[n.type] || '#67e8f9';
+                const icon = typeIcons[n.type] || 'ℹ️';
+                const isUnread = !n.read_at;
+                return (
+                  <div key={n.id} onClick={()=>isUnread&&markNotificationRead(n.id)} style={{
+                    padding:'12px 16px',
+                    borderBottom:'1px solid #1f2937',
+                    cursor: isUnread ? 'pointer' : 'default',
+                    background: isUnread ? '#0c1220' : 'transparent',
+                    borderLeft: '3px solid ' + (isUnread ? color : '#1f2937'),
+                  }}>
+                    <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',gap:8}}>
+                      <div style={{fontSize:12,fontWeight:700,color,flex:1}}>{icon} {n.title}</div>
+                      <div style={{fontSize:9,color:'#6b7280',whiteSpace:'nowrap'}}>{new Date(n.created_at).toLocaleString('id-ID',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</div>
+                    </div>
+                    <div style={{fontSize:11,color:'#9ca3af',marginTop:4,whiteSpace:'pre-wrap'}}>{n.message}</div>
+                    <div style={{fontSize:9,color:'#6b7280',marginTop:4}}>
+                      {n.to_user_id ? '📧 Personal' : '📢 Broadcast'} · dari <strong>{n.from_user_name}</strong>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </>
+      )}
+
+      {/* MODAL ADMIN BROADCAST */}
+      {broadcastOpen && (
+        <div onClick={()=>setBroadcastOpen(false)} style={{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(2,6,23,0.85)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:'linear-gradient(180deg,#0f172a 0%,#020617 100%)',border:'2px solid #0891b2',borderRadius:10,width:'100%',maxWidth:500,padding:24}}>
+            <h3 style={{color:'#67e8f9',margin:'0 0 16px 0',fontSize:15,fontWeight:900,textTransform:'uppercase',letterSpacing:1}}>📢 Kirim Notifikasi</h3>
+            <div style={{display:'flex',flexDirection:'column',gap:12}}>
+              <div><label style={{display:'block',fontSize:11,color:'#67e8f9',marginBottom:4,fontWeight:700,textTransform:'uppercase'}}>Target</label>
+                <select style={S.input} value={broadcastTarget} onChange={e=>setBroadcastTarget(e.target.value)}>
+                  <option value="all">📢 Semua User (Broadcast)</option>
+                  {users.filter(u => u.role === 'member').map(u => (
+                    <option key={u.id} value={u.id}>👤 {u.name}</option>
+                  ))}
+                </select>
+              </div>
+              <div><label style={{display:'block',fontSize:11,color:'#67e8f9',marginBottom:4,fontWeight:700,textTransform:'uppercase'}}>Tipe</label>
+                <select style={S.input} value={broadcastType} onChange={e=>setBroadcastType(e.target.value)}>
+                  <option value="info">ℹ️ Info</option>
+                  <option value="warning">⚠️ Warning</option>
+                  <option value="success">✅ Success</option>
+                  <option value="error">❌ Error</option>
+                  <option value="announce">📢 Announcement</option>
+                </select>
+              </div>
+              <div><label style={{display:'block',fontSize:11,color:'#67e8f9',marginBottom:4,fontWeight:700,textTransform:'uppercase'}}>Judul</label>
+                <input style={S.input} value={broadcastTitle} onChange={e=>setBroadcastTitle(e.target.value)} placeholder="Judul singkat..." maxLength={100}/></div>
+              <div><label style={{display:'block',fontSize:11,color:'#67e8f9',marginBottom:4,fontWeight:700,textTransform:'uppercase'}}>Pesan</label>
+                <textarea style={{...S.input,minHeight:100,resize:'vertical',fontFamily:'inherit'}} value={broadcastMessage} onChange={e=>setBroadcastMessage(e.target.value)} placeholder="Isi pesan..." maxLength={1000}/></div>
+              {broadcastMsg && <p style={{fontSize:12,color:broadcastMsg.includes('berhasil')?'#10b981':'#ef4444',margin:0}}>{broadcastMsg}</p>}
+              <div style={{display:'flex',gap:8}}>
+                <button onClick={sendBroadcast} style={{...S.btn('#065f46'),flex:1,padding:'10px'}}>📤 Kirim</button>
+                <button onClick={()=>{setBroadcastOpen(false);setBroadcastTitle('');setBroadcastMessage('');setBroadcastMsg('');}} style={{...S.btn('#374151'),flex:1,padding:'10px'}}>Batal</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL CHAT */}
+      {chatOpen && (
+        <div onClick={()=>setChatOpen(false)} style={{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(2,6,23,0.9)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:'linear-gradient(180deg,#0f172a 0%,#020617 100%)',border:'2px solid #0891b2',borderRadius:12,width:'100%',maxWidth:900,height:'85vh',display:'flex',flexDirection:'column',overflow:'hidden',boxShadow:'0 8px 40px rgba(6,182,212,0.3)'}}>
+            {/* Header */}
+            <div style={{padding:'14px 20px',borderBottom:'2px solid #0891b2',display:'flex',justifyContent:'space-between',alignItems:'center',background:'linear-gradient(90deg,#0c1220 0%,#020617 100%)'}}>
+              <div>
+                <h2 style={{margin:0,color:'#67e8f9',fontSize:16,fontWeight:900,textTransform:'uppercase',letterSpacing:1}}>💬 Chat</h2>
+                <div style={{fontSize:10,color:'#9ca3af',marginTop:2}}>
+                  {chatMode === 'global' ? 'Global — semua member bisa baca' : `DM dengan ${chatDmPartner?.name || '-'}`}
+                </div>
+              </div>
+              <button onClick={()=>setChatOpen(false)} style={{background:'#991b1b',color:'#fff',border:'none',borderRadius:6,padding:'8px 14px',fontSize:12,fontWeight:700,cursor:'pointer'}}>✕</button>
+            </div>
+
+            <div style={{flex:1,display:'flex',overflow:'hidden'}}>
+              {/* Sidebar: global + DM list */}
+              <div style={{width:220,borderRight:'1px solid #1f2937',background:'#020617',overflow:'auto',display:'flex',flexDirection:'column'}}>
+                <div
+                  onClick={()=>{setChatMode('global');setChatDmPartner(null);}}
+                  style={{
+                    padding:'12px 16px',
+                    fontSize:12,
+                    cursor:'pointer',
+                    color: chatMode === 'global' ? '#67e8f9' : '#9ca3af',
+                    background: chatMode === 'global' ? '#0c1220' : 'transparent',
+                    borderLeft: chatMode === 'global' ? '3px solid #06b6d4' : '3px solid transparent',
+                    fontWeight: chatMode === 'global' ? 700 : 400,
+                    borderBottom:'1px solid #1f2937',
+                  }}
+                >
+                  🌐 Global Chat
+                </div>
+                <div style={{padding:'8px 16px',fontSize:9,color:'#6b7280',textTransform:'uppercase',letterSpacing:1,marginTop:4}}>Direct Messages</div>
+
+                {/* DM list existing */}
+                {chatDmList.map(conv => (
+                  <div key={conv.partner_id}
+                    onClick={()=>openDmWith(conv.partner_id, conv.partner_name)}
+                    style={{
+                      padding:'10px 16px',
+                      fontSize:11,
+                      cursor:'pointer',
+                      color: chatMode === 'dm' && chatDmPartner?.id === conv.partner_id ? '#67e8f9' : '#9ca3af',
+                      background: chatMode === 'dm' && chatDmPartner?.id === conv.partner_id ? '#0c1220' : 'transparent',
+                      borderLeft: chatMode === 'dm' && chatDmPartner?.id === conv.partner_id ? '3px solid #06b6d4' : '3px solid transparent',
+                      borderBottom:'1px solid #1f2937',
+                    }}
+                  >
+                    <div style={{fontWeight:700,display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                      <span>👤 {conv.partner_name}</span>
+                      {conv.unread > 0 && <span style={{background:'#ef4444',color:'#fff',borderRadius:'50%',minWidth:16,height:16,fontSize:9,display:'inline-flex',alignItems:'center',justifyContent:'center',padding:'0 4px'}}>{conv.unread}</span>}
+                    </div>
+                    <div style={{fontSize:10,color:'#6b7280',marginTop:2,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis',maxWidth:180}}>
+                      {conv.last_message.substring(0, 40)}
+                    </div>
+                  </div>
+                ))}
+
+                {/* Pilih member baru untuk DM */}
+                <div style={{padding:'8px 16px',fontSize:9,color:'#6b7280',textTransform:'uppercase',letterSpacing:1,marginTop:8,borderTop:'1px solid #1f2937'}}>Mulai Chat Baru</div>
+                {users.filter(u => u.id !== user.id && !chatDmList.some(c => c.partner_id === u.id)).map(u => (
+                  <div key={u.id}
+                    onClick={()=>openDmWith(u.id, u.name)}
+                    style={{padding:'8px 16px',fontSize:11,cursor:'pointer',color:'#9ca3af',borderBottom:'1px solid #0c1220'}}
+                  >
+                    + {u.name} <span style={{fontSize:9,color:'#6b7280'}}>({u.role})</span>
+                  </div>
+                ))}
+              </div>
+
+              {/* Main chat area */}
+              <div style={{flex:1,display:'flex',flexDirection:'column',overflow:'hidden'}}>
+                <div style={{flex:1,overflow:'auto',padding:16,display:'flex',flexDirection:'column',gap:8}}>
+                  {chatMessages.length === 0 && (
+                    <div style={{textAlign:'center',color:'#6b7280',padding:30,fontSize:12}}>Belum ada pesan. Mulai chat!</div>
+                  )}
+                  {chatMessages.map(m => {
+                    const isMe = m.from_user_id === user.id;
+                    const roleColor = m.from_user_role === 'admin' ? '#c084fc' : '#67e8f9';
+                    return (
+                      <div key={m.id} style={{display:'flex',justifyContent:isMe?'flex-end':'flex-start'}}>
+                        <div style={{
+                          maxWidth:'70%',
+                          padding:'10px 14px',
+                          borderRadius:8,
+                          background: isMe ? '#065f46' : '#0d1117',
+                          border:'1px solid ' + (isMe ? '#10b981' : '#1f2937'),
+                        }}>
+                          {!isMe && (
+                            <div style={{fontSize:10,fontWeight:700,color:roleColor,marginBottom:4}}>
+                              {m.from_user_name} {m.from_user_role === 'admin' && '👑'}
+                            </div>
+                          )}
+                          <div style={{fontSize:12,color:'#e0f2fe',whiteSpace:'pre-wrap',wordBreak:'break-word'}}>{m.message}</div>
+                          <div style={{fontSize:9,color:'#6b7280',marginTop:4,textAlign:'right'}}>
+                            {new Date(m.created_at).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Input box */}
+                <div style={{padding:12,borderTop:'1px solid #1f2937',display:'flex',gap:8,background:'#020617'}}>
+                  <input
+                    type="text"
+                    style={{...S.input,flex:1}}
+                    value={chatInput}
+                    onChange={e=>setChatInput(e.target.value)}
+                    onKeyDown={e=>e.key==='Enter' && sendChatMessage()}
+                    placeholder={chatMode === 'dm' ? `Pesan ke ${chatDmPartner?.name || '-'}...` : 'Ketik pesan global...'}
+                    maxLength={2000}
+                  />
+                  <button onClick={sendChatMessage} style={{...S.btn('#065f46'),padding:'10px 20px',fontSize:12}}>Kirim</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* MODAL PANDUAN MEMBER */}
       {guideOpen && (
