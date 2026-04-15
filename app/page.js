@@ -1219,6 +1219,38 @@ export default function Home() {
     e.target.value = ''; // reset input
   };
 
+  // Handler Ctrl+V paste — deteksi image di clipboard, auto-upload
+  const onChatPaste = async (e) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (item.type.startsWith('image/')) {
+        e.preventDefault(); // cegah paste text default
+        const blob = item.getAsFile();
+        if (!blob) continue;
+        if (blob.size > 5 * 1024 * 1024) { alert('Gambar maksimal 5 MB'); return; }
+
+        // Generate nama file dari timestamp (clipboard gambar nggak punya nama asli)
+        const ext = blob.type.split('/')[1] || 'png';
+        const fileName = `pasted-${Date.now()}.${ext}`;
+        const file = new File([blob], fileName, { type: blob.type });
+
+        const url = await uploadChatFile(file, 'images');
+        if (!url) return;
+
+        await sendChatMessage({
+          attachment_url: url,
+          attachment_type: 'image',
+          attachment_name: fileName,
+          attachment_size: file.size,
+        });
+        return;
+      }
+    }
+    // Kalau bukan image, biarkan paste default (text)
+  };
+
   // Handler untuk record voice message
   const startVoiceRecord = async () => {
     try {
@@ -1965,7 +1997,8 @@ export default function Home() {
                         value={chatInput}
                         onChange={e=>setChatInput(e.target.value)}
                         onKeyDown={e=>e.key==='Enter' && sendChatMessage()}
-                        placeholder={chatMode === 'dm' ? `Pesan ke ${chatDmPartner?.name || '-'}...` : 'Ketik pesan global...'}
+                        onPaste={onChatPaste}
+                        placeholder={chatMode === 'dm' ? `Pesan ke ${chatDmPartner?.name || '-'}... (Ctrl+V paste gambar)` : 'Ketik pesan global... (Ctrl+V paste gambar)'}
                         maxLength={2000}
                         disabled={chatUploading}
                       />
