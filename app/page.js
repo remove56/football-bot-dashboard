@@ -367,8 +367,12 @@ export default function Home() {
   const [chatRecordSec, setChatRecordSec] = useState(0);
   const [chatPendingAttachment, setChatPendingAttachment] = useState(null); // { file, previewUrl, type, name, size }
   const [chatLightbox, setChatLightbox] = useState(null); // { url, name } — kalau ada, buka lightbox viewer
+  const [soundEnabled, setSoundEnabled] = useState(true); // sound notification toggle
   const chatMediaRecorderRef = useRef(null);
   const chatRecordTimerRef = useRef(null);
+  const prevChatUnreadRef = useRef(0);
+  const prevNotifUnreadRef = useRef(0);
+  const audioCtxRef = useRef(null);
 
   // Pengaturan (Item 5) — bot accounts pakai state existing (baId, baName, dll)
   const [botAccFilter, setBotAccFilter] = useState('all'); // all | grup | reels | both
@@ -1410,6 +1414,93 @@ export default function Home() {
     return () => window.removeEventListener('keydown', handleKey);
   }, [chatLightbox]);
 
+  // ========== SOUND NOTIFICATION ==========
+  // Load preferensi sound dari localStorage saat mount
+  useEffect(() => {
+    const saved = localStorage.getItem('fb-dash-sound-enabled');
+    if (saved !== null) setSoundEnabled(saved === 'true');
+  }, []);
+
+  // Play beep sound — generate via Web Audio API, nggak perlu file
+  // type: 'chat' | 'notif'
+  const playBeep = (type = 'chat') => {
+    if (!soundEnabled) return;
+    try {
+      // Lazy init audio context (browser butuh user gesture sebelum bisa bikin AudioContext)
+      if (!audioCtxRef.current) {
+        const Ctx = window.AudioContext || window.webkitAudioContext;
+        if (!Ctx) return;
+        audioCtxRef.current = new Ctx();
+      }
+      const ctx = audioCtxRef.current;
+      if (ctx.state === 'suspended') ctx.resume();
+
+      // Config beda per tipe
+      const config = type === 'notif'
+        ? { freq1: 880, freq2: 660, duration: 0.15, gap: 0.08 } // notif: higher pitch
+        : { freq1: 600, freq2: 800, duration: 0.1, gap: 0.06 }; // chat: bip-bip cepat
+
+      const now = ctx.currentTime;
+
+      // Tone 1
+      const osc1 = ctx.createOscillator();
+      const gain1 = ctx.createGain();
+      osc1.type = 'sine';
+      osc1.frequency.value = config.freq1;
+      gain1.gain.setValueAtTime(0.001, now);
+      gain1.gain.exponentialRampToValueAtTime(0.2, now + 0.01);
+      gain1.gain.exponentialRampToValueAtTime(0.001, now + config.duration);
+      osc1.connect(gain1).connect(ctx.destination);
+      osc1.start(now);
+      osc1.stop(now + config.duration + 0.05);
+
+      // Tone 2 (bip ke-2)
+      const osc2 = ctx.createOscillator();
+      const gain2 = ctx.createGain();
+      osc2.type = 'sine';
+      osc2.frequency.value = config.freq2;
+      const start2 = now + config.duration + config.gap;
+      gain2.gain.setValueAtTime(0.001, start2);
+      gain2.gain.exponentialRampToValueAtTime(0.2, start2 + 0.01);
+      gain2.gain.exponentialRampToValueAtTime(0.001, start2 + config.duration);
+      osc2.connect(gain2).connect(ctx.destination);
+      osc2.start(start2);
+      osc2.stop(start2 + config.duration + 0.05);
+    } catch (e) {
+      // silent — AudioContext mungkin di-block (belum ada user gesture)
+    }
+  };
+
+  // Detect unread increase → play beep
+  useEffect(() => {
+    if (chatUnread > prevChatUnreadRef.current && prevChatUnreadRef.current >= 0) {
+      // Skip first load (prev = 0 → initial value from API, bukan beneran pesan baru)
+      if (prevChatUnreadRef.current > 0 || chatUnread > 1) {
+        playBeep('chat');
+      }
+    }
+    prevChatUnreadRef.current = chatUnread;
+  }, [chatUnread]);
+
+  useEffect(() => {
+    if (notifUnread > prevNotifUnreadRef.current && prevNotifUnreadRef.current >= 0) {
+      if (prevNotifUnreadRef.current > 0 || notifUnread > 1) {
+        playBeep('notif');
+      }
+    }
+    prevNotifUnreadRef.current = notifUnread;
+  }, [notifUnread]);
+
+  const toggleSoundEnabled = () => {
+    const newVal = !soundEnabled;
+    setSoundEnabled(newVal);
+    localStorage.setItem('fb-dash-sound-enabled', String(newVal));
+    // Play test beep saat enable
+    if (newVal) {
+      setTimeout(() => playBeep('notif'), 100);
+    }
+  };
+
   const openDmWith = async (partnerId, partnerName) => {
     setChatMode('dm');
     setChatDmPartner({ id: partnerId, name: partnerName });
@@ -1773,6 +1864,9 @@ export default function Home() {
                 {notifUnread > 99 ? '99+' : notifUnread}
               </span>
             )}
+          </a>
+          <a onClick={toggleSoundEnabled} style={{color:'#a5f3fc',cursor:'pointer',fontSize:12}} title={soundEnabled ? 'Suara ON (klik untuk matikan)' : 'Suara OFF (klik untuk nyalakan)'}>
+            {soundEnabled ? '🔊' : '🔇'}
           </a>
           <a onClick={()=>setGuideOpen(true)} style={{color:'#a5f3fc',cursor:'pointer',fontSize:12}} title="Panduan Pemakaian">❓</a>
           <a onClick={()=>setPwModal(true)} style={{color:'#67e8f9',cursor:'pointer',fontSize:12}} title="Ganti Password">🔑</a>
