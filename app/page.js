@@ -366,6 +366,7 @@ export default function Home() {
   const [chatRecording, setChatRecording] = useState(false);
   const [chatRecordSec, setChatRecordSec] = useState(0);
   const [chatPendingAttachment, setChatPendingAttachment] = useState(null); // { file, previewUrl, type, name, size }
+  const [chatLightbox, setChatLightbox] = useState(null); // { url, name } — kalau ada, buka lightbox viewer
   const chatMediaRecorderRef = useRef(null);
   const chatRecordTimerRef = useRef(null);
 
@@ -1399,6 +1400,16 @@ export default function Home() {
     }
   }, [chatOpen, chatMode]);
 
+  // Keyboard Esc untuk tutup lightbox
+  useEffect(() => {
+    if (!chatLightbox) return;
+    const handleKey = (e) => {
+      if (e.key === 'Escape') setChatLightbox(null);
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => window.removeEventListener('keydown', handleKey);
+  }, [chatLightbox]);
+
   const openDmWith = async (partnerId, partnerName) => {
     setChatMode('dm');
     setChatDmPartner({ id: partnerId, name: partnerName });
@@ -1865,6 +1876,91 @@ export default function Home() {
       )}
 
       {/* MODAL CHAT */}
+      {/* LIGHTBOX IMAGE VIEWER — buka gambar tanpa pindah tab */}
+      {chatLightbox && (
+        <div
+          onClick={()=>setChatLightbox(null)}
+          style={{
+            position:'fixed',top:0,left:0,right:0,bottom:0,
+            background:'rgba(0,0,0,0.92)',
+            zIndex:2000,
+            display:'flex',alignItems:'center',justifyContent:'center',
+            cursor:'zoom-out',
+            padding:20,
+          }}
+        >
+          {/* Tombol close */}
+          <button
+            onClick={(e)=>{e.stopPropagation();setChatLightbox(null);}}
+            style={{
+              position:'absolute',top:20,right:20,
+              background:'#991b1b',color:'#fff',border:'none',
+              borderRadius:'50%',width:44,height:44,
+              fontSize:20,fontWeight:900,cursor:'pointer',
+              boxShadow:'0 4px 20px rgba(0,0,0,0.5)',
+              zIndex:2001,
+            }}
+            title="Tutup (Esc)"
+          >✕</button>
+
+          {/* Tombol download */}
+          <a
+            href={chatLightbox.url}
+            download={chatLightbox.name}
+            onClick={(e)=>e.stopPropagation()}
+            style={{
+              position:'absolute',top:20,right:80,
+              background:'#065f46',color:'#fff',textDecoration:'none',
+              borderRadius:22,padding:'10px 18px',
+              fontSize:12,fontWeight:700,
+              boxShadow:'0 4px 20px rgba(0,0,0,0.5)',
+              zIndex:2001,
+              display:'inline-flex',alignItems:'center',gap:6,
+            }}
+            title="Download"
+          >📥 Download</a>
+
+          {/* Info nama file */}
+          <div style={{
+            position:'absolute',top:20,left:20,
+            color:'#e0f2fe',fontSize:12,
+            background:'rgba(6,182,212,0.2)',
+            padding:'8px 14px',borderRadius:6,
+            border:'1px solid #0891b2',
+            maxWidth:'60%',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',
+            zIndex:2001,
+          }}>
+            🖼 {chatLightbox.name}
+          </div>
+
+          {/* Gambar — click image jangan close */}
+          <img
+            src={chatLightbox.url}
+            alt={chatLightbox.name}
+            onClick={(e)=>e.stopPropagation()}
+            style={{
+              maxWidth:'90vw',
+              maxHeight:'90vh',
+              objectFit:'contain',
+              borderRadius:4,
+              cursor:'default',
+              boxShadow:'0 20px 80px rgba(0,0,0,0.8)',
+            }}
+          />
+
+          {/* Hint keyboard */}
+          <div style={{
+            position:'absolute',bottom:20,left:'50%',transform:'translateX(-50%)',
+            color:'#9ca3af',fontSize:11,
+            background:'rgba(2,6,23,0.8)',
+            padding:'6px 14px',borderRadius:6,
+            border:'1px solid #1f2937',
+          }}>
+            Klik di luar gambar atau tekan <kbd style={{background:'#374151',padding:'1px 6px',borderRadius:3,fontSize:10}}>Esc</kbd> untuk tutup
+          </div>
+        </div>
+      )}
+
       {chatOpen && (
         <div onClick={()=>setChatOpen(false)} style={{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(2,6,23,0.9)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
           <div onClick={e=>e.stopPropagation()} style={{background:'linear-gradient(180deg,#0f172a 0%,#020617 100%)',border:'2px solid #0891b2',borderRadius:12,width:'100%',maxWidth:900,height:'85vh',display:'flex',flexDirection:'column',overflow:'hidden',boxShadow:'0 8px 40px rgba(6,182,212,0.3)'}}>
@@ -1966,7 +2062,7 @@ export default function Home() {
                                 src={m.attachment_url}
                                 alt={m.attachment_name || 'image'}
                                 style={{maxWidth:'100%',maxHeight:300,borderRadius:6,cursor:'pointer',display:'block'}}
-                                onClick={()=>window.open(m.attachment_url,'_blank')}
+                                onClick={()=>setChatLightbox({ url: m.attachment_url, name: m.attachment_name || 'image' })}
                               />
                             </div>
                           )}
