@@ -370,9 +370,10 @@ export default function Home() {
   const [soundEnabled, setSoundEnabled] = useState(true); // sound notification toggle
   const chatMediaRecorderRef = useRef(null);
   const chatRecordTimerRef = useRef(null);
-  const prevChatUnreadRef = useRef(0);
-  const prevNotifUnreadRef = useRef(0);
+  const prevChatUnreadRef = useRef(null); // null = belum init, biar first load nggak beep
+  const prevNotifUnreadRef = useRef(null);
   const audioCtxRef = useRef(null);
+  const audioInitializedRef = useRef(false);
 
   // Pengaturan (Item 5) — bot accounts pakai state existing (baId, baName, dll)
   const [botAccFilter, setBotAccFilter] = useState('all'); // all | grup | reels | both
@@ -1421,19 +1422,50 @@ export default function Home() {
     if (saved !== null) setSoundEnabled(saved === 'true');
   }, []);
 
+  // Init AudioContext saat user pertama kali klik apapun di dashboard
+  // Ini workaround: browser block audio sampai ada user gesture
+  useEffect(() => {
+    if (audioInitializedRef.current) return;
+    const initAudio = () => {
+      if (audioInitializedRef.current) return;
+      try {
+        const Ctx = window.AudioContext || window.webkitAudioContext;
+        if (!Ctx) return;
+        audioCtxRef.current = new Ctx();
+        if (audioCtxRef.current.state === 'suspended') {
+          audioCtxRef.current.resume();
+        }
+        audioInitializedRef.current = true;
+      } catch (e) { /* silent */ }
+    };
+    // Listen 1 kali click / keydown untuk init
+    document.addEventListener('click', initAudio, { once: true });
+    document.addEventListener('keydown', initAudio, { once: true });
+    return () => {
+      document.removeEventListener('click', initAudio);
+      document.removeEventListener('keydown', initAudio);
+    };
+  }, []);
+
   // Play beep sound — generate via Web Audio API, nggak perlu file
   // type: 'chat' | 'notif'
   const playBeep = (type = 'chat') => {
     if (!soundEnabled) return;
     try {
-      // Lazy init audio context (browser butuh user gesture sebelum bisa bikin AudioContext)
+      // Init context kalau belum (in case user click didn't fire yet)
       if (!audioCtxRef.current) {
         const Ctx = window.AudioContext || window.webkitAudioContext;
-        if (!Ctx) return;
+        if (!Ctx) { console.warn('[Sound] Web Audio API tidak tersedia'); return; }
         audioCtxRef.current = new Ctx();
       }
       const ctx = audioCtxRef.current;
-      if (ctx.state === 'suspended') ctx.resume();
+      if (ctx.state === 'suspended') {
+        ctx.resume().catch(() => { /* silent */ });
+      }
+      if (ctx.state !== 'running') {
+        console.warn('[Sound] AudioContext state:', ctx.state, '— butuh user gesture');
+        return;
+      }
 
       // Config beda per tipe
       const config = type === 'notif'
@@ -1472,32 +1504,78 @@ export default function Home() {
   };
 
   // Detect unread increase → play beep
+  // prevRef === null artinya first load (init) — cuma set baseline, jangan beep
   useEffect(() => {
-    if (chatUnread > prevChatUnreadRef.current && prevChatUnreadRef.current >= 0) {
-      // Skip first load (prev = 0 → initial value from API, bukan beneran pesan baru)
-      if (prevChatUnreadRef.current > 0 || chatUnread > 1) {
-        playBeep('chat');
-      }
+    if (prevChatUnreadRef.current === null) {
+      prevChatUnreadRef.current = chatUnread;
+      return;
+    }
+    if (chatUnread > prevChatUnreadRef.current) {
+      playBeep('chat');
     }
     prevChatUnreadRef.current = chatUnread;
   }, [chatUnread]);
 
   useEffect(() => {
-    if (notifUnread > prevNotifUnreadRef.current && prevNotifUnreadRef.current >= 0) {
-      if (prevNotifUnreadRef.current > 0 || notifUnread > 1) {
-        playBeep('notif');
-      }
+    if (prevNotifUnreadRef.current === null) {
+      prevNotifUnreadRef.current = notifUnread;
+      return;
+    }
+    if (notifUnread > prevNotifUnreadRef.current) {
+      playBeep('notif');
     }
     prevNotifUnreadRef.current = notifUnread;
   }, [notifUnread]);
 
   const toggleSoundEnabled = () => {
+    // Force init AudioContext di user gesture ini (klik tombol)
+    try {
+      if (!audioCtxRef.current) {
+        const Ctx = window.AudioContext || window.webkitAudioContext;
+        if (Ctx) audioCtxRef.current = new Ctx();
+      }
+      if (audioCtxRef.current?.state === 'suspended') {
+        audioCtxRef.current.resume();
+      }
+      audioInitializedRef.current = true;
+    } catch (e) { /* silent */ }
+
     const newVal = !soundEnabled;
     setSoundEnabled(newVal);
     localStorage.setItem('fb-dash-sound-enabled', String(newVal));
-    // Play test beep saat enable
+    // Play test beep saat enable (panggil playBeep dengan state baru, bukan state lama)
     if (newVal) {
-      setTimeout(() => playBeep('notif'), 100);
+      // playBeep check soundEnabled dari state, tapi state belum terupdate saat ini
+      // Jadi panggil langsung inline tanpa check
+      setTimeout(() => {
+        try {
+          const ctx = audioCtxRef.current;
+          if (!ctx || ctx.state !== 'running') return;
+          const now = ctx.currentTime;
+          const osc1 = ctx.createOscillator();
+          const gain1 = ctx.createGain();
+          osc1.type = 'sine';
+          osc1.frequency.value = 880;
+          gain1.gain.setValueAtTime(0.001, now);
+          gain1.gain.exponentialRampToValueAtTime(0.25, now + 0.01);
+          gain1.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+          osc1.connect(gain1).connect(ctx.destination);
+          osc1.start(now);
+          osc1.stop(now + 0.2);
+
+          const osc2 = ctx.createOscillator();
+          const gain2 = ctx.createGain();
+          osc2.type = 'sine';
+          osc2.frequency.value = 660;
+          const start2 = now + 0.25;
+          gain2.gain.setValueAtTime(0.001, start2);
+          gain2.gain.exponentialRampToValueAtTime(0.25, start2 + 0.01);
+          gain2.gain.exponentialRampToValueAtTime(0.001, start2 + 0.15);
+          osc2.connect(gain2).connect(ctx.destination);
+          osc2.start(start2);
+          osc2.stop(start2 + 0.2);
+        } catch (e) { /* silent */ }
+      }, 50);
     }
   };
 
