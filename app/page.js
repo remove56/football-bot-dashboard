@@ -997,13 +997,14 @@ export default function Home() {
     setBotHealthLoading(false);
   };
 
-  // Auto-refresh bot health tiap 30 detik saat di tab Overview
+  // Auto-refresh bot health tiap 30 detik saat di tab Overview (admin only)
   useEffect(() => {
-    if (tab !== 'overview' || !isAdmin) return;
+    if (tab !== 'overview') return;
+    if (!user || user.role !== 'admin') return;
     loadBotHealth();
     const id = setInterval(loadBotHealth, 30000);
     return () => clearInterval(id);
-  }, [tab, isAdmin]);
+  }, [tab, user]);
 
   // Load daftar auto backup dari tabel backups_log
   const loadAutoBackups = async () => {
