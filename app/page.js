@@ -339,6 +339,10 @@ export default function Home() {
   const [botHealth, setBotHealth] = useState([]);
   const [botHealthLoading, setBotHealthLoading] = useState(false);
 
+  // Panduan member modal
+  const [guideOpen, setGuideOpen] = useState(false);
+  const [guideSection, setGuideSection] = useState('welcome');
+
   // Posting tracker
   const [postTracker, setPostTracker] = useState([]);
   const [postTrackerHistory, setPostTrackerHistory] = useState([]); // last 30 days
@@ -1282,10 +1286,314 @@ export default function Home() {
         <div style={{display:'flex',gap:12,alignItems:'center',fontSize:13}}>
           <span style={{color:'#9ca3af'}}>{user.name}</span>
           <span style={S.badge(user.role)}>{user.role}</span>
+          <a onClick={()=>setGuideOpen(true)} style={{color:'#a5f3fc',cursor:'pointer',fontSize:12}} title="Panduan Pemakaian">❓ Panduan</a>
           <a onClick={()=>setPwModal(true)} style={{color:'#67e8f9',cursor:'pointer',fontSize:12}} title="Ganti Password">🔑 Password</a>
           <a onClick={logout} style={{color:'#ef4444',cursor:'pointer'}}>Logout</a>
         </div>
       </div>
+
+      {/* MODAL PANDUAN MEMBER */}
+      {guideOpen && (
+        <div onClick={()=>setGuideOpen(false)} style={{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(2,6,23,0.9)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
+          <div onClick={e=>e.stopPropagation()} style={{background:'linear-gradient(180deg,#0f172a 0%,#020617 100%)',border:'2px solid #0891b2',borderRadius:12,width:'100%',maxWidth:900,maxHeight:'90vh',display:'flex',flexDirection:'column',overflow:'hidden',boxShadow:'0 8px 40px rgba(6,182,212,0.3)'}}>
+            {/* Header */}
+            <div style={{padding:'16px 24px',borderBottom:'2px solid #0891b2',display:'flex',justifyContent:'space-between',alignItems:'center',background:'linear-gradient(90deg,#0c1220 0%,#020617 100%)'}}>
+              <div>
+                <h2 style={{margin:0,color:'#67e8f9',fontSize:18,fontWeight:900,textTransform:'uppercase',letterSpacing:1.5}}>❓ Panduan Pemakaian</h2>
+                <div style={{fontSize:11,color:'#9ca3af',marginTop:2}}>Football Bot Dashboard — untuk member & admin</div>
+              </div>
+              <button onClick={()=>setGuideOpen(false)} style={{background:'#991b1b',color:'#fff',border:'none',borderRadius:6,padding:'8px 14px',fontSize:13,fontWeight:700,cursor:'pointer'}}>✕ Tutup</button>
+            </div>
+
+            {/* Body: sidebar + content */}
+            <div style={{flex:1,display:'flex',overflow:'hidden'}}>
+              {/* Sidebar sections */}
+              <div style={{width:220,borderRight:'1px solid #1f2937',background:'#020617',overflow:'auto',padding:'12px 0'}}>
+                {[
+                  { id: 'welcome',    label: '👋 Selamat Datang' },
+                  { id: 'target',     label: '🎯 Target & Siklus' },
+                  { id: 'submit',     label: '📝 Cara Submit' },
+                  { id: 'rules',      label: '✅ Aturan Konten' },
+                  { id: 'dedup',      label: '🔍 Sistem Dedup' },
+                  { id: 'progress',   label: '📊 Baca Progress' },
+                  { id: 'faq',        label: '💬 FAQ' },
+                  { id: 'trouble',    label: '🚨 Troubleshoot' },
+                ].map(s => (
+                  <div key={s.id} onClick={()=>setGuideSection(s.id)} style={{
+                    padding:'10px 16px',
+                    fontSize:12,
+                    cursor:'pointer',
+                    color: guideSection === s.id ? '#67e8f9' : '#9ca3af',
+                    background: guideSection === s.id ? '#0c1220' : 'transparent',
+                    borderLeft: guideSection === s.id ? '3px solid #06b6d4' : '3px solid transparent',
+                    fontWeight: guideSection === s.id ? 700 : 400,
+                  }}>
+                    {s.label}
+                  </div>
+                ))}
+              </div>
+
+              {/* Content area */}
+              <div style={{flex:1,padding:'20px 28px',overflow:'auto',fontSize:13,lineHeight:1.7,color:'#e0f2fe'}}>
+                {guideSection === 'welcome' && (
+                  <div>
+                    <h3 style={{color:'#67e8f9',fontSize:18,marginTop:0}}>👋 Selamat Datang di Football Bot Dashboard</h3>
+                    <p>Dashboard ini adalah pusat kendali untuk tim posting konten sepakbola ke grup Facebook. Dashboard bantu kamu tracking progress harian, submit link postingan, dan kelola target.</p>
+
+                    <h4 style={{color:'#a5f3fc',marginTop:20,fontSize:14}}>Siapa yang pakai?</h4>
+                    <ul style={{paddingLeft:20}}>
+                      <li><strong style={{color:'#67e8f9'}}>Admin</strong> — kelola grup, member, bot, review progress</li>
+                      <li><strong style={{color:'#67e8f9'}}>Member</strong> — submit link posting harian ke grup yang ditugaskan</li>
+                    </ul>
+
+                    <h4 style={{color:'#a5f3fc',marginTop:20,fontSize:14}}>Apa yang kamu perlukan?</h4>
+                    <ul style={{paddingLeft:20}}>
+                      <li>Akun Facebook yang udah gabung ke grup-grup target</li>
+                      <li>Login ke dashboard dengan username + password yang dikasih admin</li>
+                      <li>Konten sepakbola yang mau kamu posting</li>
+                    </ul>
+
+                    <div style={{marginTop:20,padding:12,background:'#064e3b',borderLeft:'3px solid #10b981',borderRadius:4,fontSize:12}}>
+                      💡 <strong>Tip</strong>: Kalau pertama kali pakai, mulai dari section <strong>"🎯 Target & Siklus"</strong> di sebelah kiri untuk paham konsep dasar.
+                    </div>
+                  </div>
+                )}
+
+                {guideSection === 'target' && (
+                  <div>
+                    <h3 style={{color:'#67e8f9',fontSize:18,marginTop:0}}>🎯 Target Harian & Siklus Posting</h3>
+
+                    <h4 style={{color:'#a5f3fc',fontSize:14}}>Apa itu "Siklus"?</h4>
+                    <p>Satu <strong>siklus</strong> = satu ronde posting lengkap di satu grup. Tiap siklus terdiri dari:</p>
+                    <ul style={{paddingLeft:20}}>
+                      <li><strong style={{color:'#6ee7b7'}}>G1</strong> (Gambar 1) — post gambar pertama</li>
+                      <li><strong style={{color:'#6ee7b7'}}>G2</strong> (Gambar 2) — post gambar kedua</li>
+                      <li><strong style={{color:'#c084fc'}}>V</strong> (Video) — post video</li>
+                    </ul>
+
+                    <h4 style={{color:'#a5f3fc',marginTop:16,fontSize:14}}>Target per grup: 4 siklus</h4>
+                    <p>Setiap grup punya <strong>4 siklus</strong> per hari:</p>
+                    <div style={{background:'#0d1117',padding:12,borderRadius:6,border:'1px solid #1f2937',fontSize:12,fontFamily:'monospace'}}>
+                      Siklus 1: G1 + G2 + V<br/>
+                      Siklus 2: G1 + G2 + V<br/>
+                      Siklus 3: G1 + G2 + V<br/>
+                      Siklus 4: G1 + G2 + V<br/>
+                      <strong style={{color:'#fcd34d'}}>Total per grup: 12 post (8 gambar + 4 video)</strong>
+                    </div>
+
+                    <h4 style={{color:'#a5f3fc',marginTop:16,fontSize:14}}>Target harian kamu</h4>
+                    <p>Setiap member dikasih target <strong>jumlah grup</strong> yang harus diselesaikan per hari. Misal target = 5 grup, berarti kamu harus isi 12 post × 5 grup = <strong>60 post</strong> per hari.</p>
+
+                    <div style={{marginTop:16,padding:12,background:'#78350f',borderLeft:'3px solid #f59e0b',borderRadius:4,fontSize:12}}>
+                      ⚠️ Target kamu bisa dilihat di tab <strong>Tracking Postingan</strong>, section "Progress Target Hari Ini".
+                    </div>
+                  </div>
+                )}
+
+                {guideSection === 'submit' && (
+                  <div>
+                    <h3 style={{color:'#67e8f9',fontSize:18,marginTop:0}}>📝 Cara Submit Link Post</h3>
+
+                    <p>Setelah kamu selesai posting ke grup Facebook, <strong>submit link post-nya</strong> ke dashboard biar ke-track.</p>
+
+                    <h4 style={{color:'#a5f3fc',fontSize:14}}>Langkah step-by-step:</h4>
+                    <ol style={{paddingLeft:20,lineHeight:2}}>
+                      <li><strong>Buka tab "Tracking Postingan"</strong> di navigasi atas</li>
+                      <li><strong>Scroll ke section "Submit Postingan"</strong></li>
+                      <li>Pilih <strong>Grup</strong> dari dropdown (grup Facebook yang kamu posting)</li>
+                      <li>Pilih <strong>Siklus ke-</strong> (1, 2, 3, atau 4)</li>
+                      <li>Pilih <strong>Jenis</strong> — Gambar 1, Gambar 2, atau Video</li>
+                      <li>Paste <strong>link post Facebook</strong> di kolom "Link Postingan"
+                        <br/><span style={{fontSize:11,color:'#9ca3af'}}>Format: <code style={{background:'#1f2937',padding:'1px 4px',borderRadius:2}}>https://www.facebook.com/groups/.../posts/...</code></span>
+                      </li>
+                      <li>Klik tombol <strong style={{color:'#6ee7b7'}}>SUBMIT</strong></li>
+                      <li>Kalau sukses, pesan <em>"Link berhasil disimpan!"</em> muncul</li>
+                      <li>Icon di tabel bawah (G1/G2/V) berubah jadi hijau ✅</li>
+                    </ol>
+
+                    <h4 style={{color:'#a5f3fc',marginTop:16,fontSize:14}}>Cara dapat link post Facebook:</h4>
+                    <ol style={{paddingLeft:20}}>
+                      <li>Buka post yang baru kamu posting di Facebook</li>
+                      <li>Klik <strong>timestamp</strong> post (misal "5m", "1j") — biasanya di dekat nama user/grup</li>
+                      <li>Browser akan nampilin URL lengkap post di address bar</li>
+                      <li>Copy URL itu dan paste ke dashboard</li>
+                    </ol>
+
+                    <div style={{marginTop:16,padding:12,background:'#064e3b',borderLeft:'3px solid #10b981',borderRadius:4,fontSize:12}}>
+                      💡 <strong>Tips</strong>: Submit link <strong>segera setelah posting</strong>, jangan ditunda, biar progress harian kamu akurat.
+                    </div>
+                  </div>
+                )}
+
+                {guideSection === 'rules' && (
+                  <div>
+                    <h3 style={{color:'#67e8f9',fontSize:18,marginTop:0}}>✅ Aturan Konten</h3>
+
+                    <h4 style={{color:'#6ee7b7',fontSize:14}}>YANG BOLEH (sepakbola):</h4>
+                    <ul style={{paddingLeft:20,lineHeight:1.8}}>
+                      <li>Post sepakbola (highlight, gol, berita transfer, pemain, klub)</li>
+                      <li>Liga Eropa (EPL, La Liga, Serie A, Bundesliga, Ligue 1)</li>
+                      <li>Liga Indonesia (Liga 1, Liga 2, piala presiden)</li>
+                      <li>Timnas Indonesia / Timnas negara lain</li>
+                      <li>Piala dunia, Euro, Champions League, Europa, AFC</li>
+                      <li>Post berisi gambar pemain, lapangan, stadion, supporter, jersey</li>
+                    </ul>
+
+                    <h4 style={{color:'#fca5a5',marginTop:16,fontSize:14}}>YANG TIDAK BOLEH:</h4>
+                    <ul style={{paddingLeft:20,lineHeight:1.8}}>
+                      <li>Konten non-sepakbola (resep, drakor, politik, pengajian)</li>
+                      <li>Olahraga lain (badminton, basket, voli, F1, MotoGP)</li>
+                      <li>Duplikat konten — link yang udah pernah disubmit oleh kamu atau member lain</li>
+                      <li>Gambar hasil re-upload dari post Facebook grup lain</li>
+                      <li>Spam: pinjol, judi online, investasi bodong</li>
+                    </ul>
+
+                    <div style={{marginTop:16,padding:12,background:'#7f1d1d',borderLeft:'3px solid #ef4444',borderRadius:4,fontSize:12}}>
+                      ⚠️ <strong>Penting</strong>: Kalau kamu submit konten non-sepakbola, link akan ditolak dashboard, dan kalau sering nyoba, admin bisa tahu lewat history.
+                    </div>
+                  </div>
+                )}
+
+                {guideSection === 'dedup' && (
+                  <div>
+                    <h3 style={{color:'#67e8f9',fontSize:18,marginTop:0}}>🔍 Sistem Dedup (Anti-Duplikat)</h3>
+
+                    <p>Dashboard punya <strong>3 lapis proteksi</strong> untuk mencegah duplikat konten. Ini kenapa kadang link kamu <strong>ditolak</strong> walau belum pernah submit.</p>
+
+                    <h4 style={{color:'#a5f3fc',marginTop:16,fontSize:14}}>Lapis 1: URL Exact Match</h4>
+                    <p>Kalau URL yang kamu submit <strong>persis sama</strong> dengan yang udah pernah disubmit (oleh kamu atau member lain), langsung ditolak.</p>
+
+                    <h4 style={{color:'#a5f3fc',marginTop:16,fontSize:14}}>Lapis 2: Fingerprint URL</h4>
+                    <p>Dashboard ekstrak <strong>ID unik</strong> dari URL Facebook (misal fbid, post ID). Kalau ID sama tapi URL-nya beda sedikit (misal ada tambahan parameter), tetap ditolak.</p>
+                    <p style={{fontSize:11,color:'#9ca3af'}}>Contoh yang sama: <code>facebook.com/post/123</code> dan <code>facebook.com/post/123?ref=share</code> dianggap sama.</p>
+
+                    <h4 style={{color:'#a5f3fc',marginTop:16,fontSize:14}}>Lapis 3: Visual Hash (pHash)</h4>
+                    <p>Dashboard ambil <strong>gambar preview</strong> (og:image) dari post Facebook, lalu buat "sidik jari visual" (perceptual hash). Kalau gambar kamu <strong>mirip visualnya</strong> dengan gambar yang udah pernah disubmit, ditolak.</p>
+                    <p style={{fontSize:11,color:'#9ca3af'}}>Ini menangkap kasus: gambar yang sama diposting ulang dengan caption beda, atau hasil re-upload post grup lain.</p>
+
+                    <div style={{marginTop:16,padding:12,background:'#78350f',borderLeft:'3px solid #f59e0b',borderRadius:4,fontSize:12}}>
+                      ⚠️ Kalau link kamu ditolak, <strong>cari konten baru</strong> — bukan edit link yang sama dengan menambah `?` atau parameter, itu tetap ketahuan.
+                    </div>
+                  </div>
+                )}
+
+                {guideSection === 'progress' && (
+                  <div>
+                    <h3 style={{color:'#67e8f9',fontSize:18,marginTop:0}}>📊 Cara Baca Progress</h3>
+
+                    <p>Di tab <strong>Tracking Postingan</strong>, ada tabel "Progress Postingan" yang nampilin status semua grup.</p>
+
+                    <h4 style={{color:'#a5f3fc',marginTop:16,fontSize:14}}>Kolom tabel:</h4>
+                    <ul style={{paddingLeft:20,lineHeight:1.8}}>
+                      <li><strong>Grup</strong> — nama grup Facebook + klub (AC Milan, Liverpool, dll)</li>
+                      <li><strong>Member</strong> — nama member yang ngerjain grup itu</li>
+                      <li><strong>Siklus 1-4</strong> — 4 kolom siklus, masing-masing ada ikon <strong>G1 G2 V</strong></li>
+                      <li><strong>Status</strong> — berapa siklus yang udah selesai (contoh: 2/4)</li>
+                    </ul>
+
+                    <h4 style={{color:'#a5f3fc',marginTop:16,fontSize:14}}>Arti warna ikon:</h4>
+                    <div style={{display:'flex',flexDirection:'column',gap:6,marginTop:8}}>
+                      <div style={{display:'flex',alignItems:'center',gap:10}}>
+                        <span style={{width:22,height:22,borderRadius:4,background:'#1f2937',color:'#374151',display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:700}}>G1</span>
+                        <span>Kosong — belum disubmit</span>
+                      </div>
+                      <div style={{display:'flex',alignItems:'center',gap:10}}>
+                        <span style={{width:22,height:22,borderRadius:4,background:'#065f46',color:'#6ee7b7',display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:700}}>G1</span>
+                        <span>Hijau — udah keisi, klik untuk buka post di Facebook</span>
+                      </div>
+                      <div style={{display:'flex',alignItems:'center',gap:10}}>
+                        <span style={{width:22,height:22,borderRadius:4,background:'#3b0764',color:'#c084fc',display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:700}}>V</span>
+                        <span>Ungu — slot video yang udah keisi</span>
+                      </div>
+                    </div>
+
+                    <h4 style={{color:'#a5f3fc',marginTop:16,fontSize:14}}>Kolom Status (paling kanan):</h4>
+                    <ul style={{paddingLeft:20}}>
+                      <li><strong style={{color:'#374151'}}>0/4</strong> — Belum mulai</li>
+                      <li><strong style={{color:'#60a5fa'}}>1/4</strong> — Baru 1 siklus selesai</li>
+                      <li><strong style={{color:'#f59e0b'}}>2/4</strong> — Separuh</li>
+                      <li><strong style={{color:'#10b981'}}>4/4</strong> — Complete! 🎉</li>
+                    </ul>
+                  </div>
+                )}
+
+                {guideSection === 'faq' && (
+                  <div>
+                    <h3 style={{color:'#67e8f9',fontSize:18,marginTop:0}}>💬 FAQ (Pertanyaan Umum)</h3>
+
+                    <div style={{marginTop:16}}>
+                      <div style={{fontWeight:700,color:'#a5f3fc',marginBottom:4}}>❓ Kenapa link saya ditolak padahal belum pernah submit?</div>
+                      <p style={{marginTop:0,marginBottom:12,color:'#9ca3af'}}>Kemungkinan <strong>member lain udah submit link yang sama</strong>, atau kamu submit gambar yang <strong>visualnya mirip</strong> dengan yang udah ada. Sistem dedup 3 lapis berlaku untuk semua member di semua grup.</p>
+                    </div>
+
+                    <div>
+                      <div style={{fontWeight:700,color:'#a5f3fc',marginBottom:4}}>❓ Salah submit slot (misalnya G1 harusnya G2), gimana cara fix?</div>
+                      <p style={{marginTop:0,marginBottom:12,color:'#9ca3af'}}>Pakai tombol <strong>HAPUS</strong> di form submit. Pilih grup + siklus + jenis yang salah, klik Hapus, lalu submit ulang ke slot yang benar. Member cuma bisa hapus punya sendiri, admin bisa hapus punya siapapun.</p>
+                    </div>
+
+                    <div>
+                      <div style={{fontWeight:700,color:'#a5f3fc',marginBottom:4}}>❓ Kalau saya lupa submit hari ini, bisa submit untuk tanggal kemarin?</div>
+                      <p style={{marginTop:0,marginBottom:12,color:'#9ca3af'}}>Bisa. Di form submit, ada kolom <strong>Tanggal</strong> — pilih tanggal yang kamu mau (bukan hari ini). Tapi hati-hati, jangan backdate terlalu jauh karena merusak statistik.</p>
+                    </div>
+
+                    <div>
+                      <div style={{fontWeight:700,color:'#a5f3fc',marginBottom:4}}>❓ Bagaimana cara ganti password?</div>
+                      <p style={{marginTop:0,marginBottom:12,color:'#9ca3af'}}>Klik <strong>🔑 Password</strong> di pojok kanan atas (di header dashboard). Isi password lama, password baru, konfirmasi, klik Simpan.</p>
+                    </div>
+
+                    <div>
+                      <div style={{fontWeight:700,color:'#a5f3fc',marginBottom:4}}>❓ Dashboard error / blank putih — apa yang harus dilakukan?</div>
+                      <p style={{marginTop:0,marginBottom:12,color:'#9ca3af'}}><strong>Hard refresh</strong> dulu (Ctrl+Shift+R). Kalau masih error, logout dan login ulang. Kalau masih nggak jalan, lapor ke admin.</p>
+                    </div>
+
+                    <div>
+                      <div style={{fontWeight:700,color:'#a5f3fc',marginBottom:4}}>❓ Kenapa saya nggak lihat semua tab yang admin punya?</div>
+                      <p style={{marginTop:0,marginBottom:12,color:'#9ca3af'}}>Member cuma bisa akses: Daftar Grup, Data Mingguan, Tracking Postingan. Tab lain (Overview, Analytics, Kelola User, dll) cuma untuk admin.</p>
+                    </div>
+                  </div>
+                )}
+
+                {guideSection === 'trouble' && (
+                  <div>
+                    <h3 style={{color:'#67e8f9',fontSize:18,marginTop:0}}>🚨 Troubleshooting</h3>
+
+                    <h4 style={{color:'#fcd34d',marginTop:16,fontSize:14}}>🟡 Submit link tapi nggak muncul di tabel</h4>
+                    <ul style={{paddingLeft:20,color:'#9ca3af',fontSize:12}}>
+                      <li>Cek tanggal yang dipilih — apakah sesuai hari ini?</li>
+                      <li>Hard refresh (Ctrl+Shift+R)</li>
+                      <li>Cek apakah pesan error muncul di bawah tombol Submit</li>
+                    </ul>
+
+                    <h4 style={{color:'#fcd34d',marginTop:16,fontSize:14}}>🟡 "Konten ini sudah dipakai oleh..."</h4>
+                    <ul style={{paddingLeft:20,color:'#9ca3af',fontSize:12}}>
+                      <li>Ini karena sistem dedup — link udah dipakai member lain</li>
+                      <li>Cari konten lain yang <strong>beneran baru</strong></li>
+                      <li>Jangan edit link yang sama (tambah `?`, dll) karena tetap ketahuan</li>
+                    </ul>
+
+                    <h4 style={{color:'#fcd34d',marginTop:16,fontSize:14}}>🟡 Login gagal / password salah</h4>
+                    <ul style={{paddingLeft:20,color:'#9ca3af',fontSize:12}}>
+                      <li>Cek Caps Lock</li>
+                      <li>Cek apakah username sudah benar (case-sensitive)</li>
+                      <li>Kalau lupa password, hubungi admin untuk reset</li>
+                    </ul>
+
+                    <h4 style={{color:'#fcd34d',marginTop:16,fontSize:14}}>🟡 Icon post tidak klik-able di tabel</h4>
+                    <ul style={{paddingLeft:20,color:'#9ca3af',fontSize:12}}>
+                      <li>Kalau warnanya abu-abu, berarti kosong — tidak ada link untuk dibuka</li>
+                      <li>Kalau hijau tapi tidak merespon, browser mungkin blokir popup — izinkan popup untuk dashboard</li>
+                    </ul>
+
+                    <div style={{marginTop:20,padding:12,background:'#0c1220',borderLeft:'3px solid #06b6d4',borderRadius:4,fontSize:12}}>
+                      💡 <strong>Masih bingung?</strong> Hubungi admin langsung. Kasih tahu masalah yang kamu alami + screenshot kalau bisa.
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* MODAL GANTI PASSWORD */}
       {pwModal && (
