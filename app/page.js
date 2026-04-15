@@ -362,11 +362,8 @@ export default function Home() {
   const [chatInput, setChatInput] = useState('');
   const [chatDmList, setChatDmList] = useState([]); // list of DM conversations
 
-  // Pengaturan (Item 5)
-  const [botAccounts, setBotAccounts] = useState([]);
+  // Pengaturan (Item 5) — bot accounts pakai state existing (baId, baName, dll)
   const [botAccFilter, setBotAccFilter] = useState('all'); // all | grup | reels | both
-  const [newBotAcc, setNewBotAcc] = useState({ account_id: '', account_name: '', account_type: 'grup' });
-  const [editBotAccId, setEditBotAccId] = useState(null);
   const [systemStats, setSystemStats] = useState(null);
   const [settingsMsg, setSettingsMsg] = useState('');
 
@@ -1180,62 +1177,7 @@ export default function Home() {
     }
   };
 
-  // ========== PENGATURAN (Item 5) ==========
-  const loadBotAccounts = async () => {
-    const { data, error } = await supabase
-      .from('bot_accounts')
-      .select('*')
-      .order('account_type')
-      .order('account_name');
-    if (!error) setBotAccounts(data || []);
-  };
-
-  const addBotAccount = async () => {
-    setSettingsMsg('');
-    if (!newBotAcc.account_id || !newBotAcc.account_name) {
-      setSettingsMsg('ID dan Nama akun wajib diisi');
-      return;
-    }
-    const { error } = await supabase.from('bot_accounts').insert({
-      account_id: newBotAcc.account_id.trim(),
-      account_name: newBotAcc.account_name.trim(),
-      account_type: newBotAcc.account_type,
-      is_active: true,
-    });
-    if (error) { setSettingsMsg('Gagal: ' + error.message); return; }
-    setSettingsMsg('Akun bot ditambahkan');
-    setNewBotAcc({ account_id: '', account_name: '', account_type: 'grup' });
-    loadBotAccounts();
-  };
-
-  const toggleBotAccount = async (id, newActive) => {
-    const { error } = await supabase
-      .from('bot_accounts')
-      .update({ is_active: newActive })
-      .eq('id', id);
-    if (error) { setSettingsMsg('Gagal: ' + error.message); return; }
-    loadBotAccounts();
-  };
-
-  const updateBotAccount = async (id, updates) => {
-    const { error } = await supabase
-      .from('bot_accounts')
-      .update(updates)
-      .eq('id', id);
-    if (error) { setSettingsMsg('Gagal: ' + error.message); return; }
-    setEditBotAccId(null);
-    loadBotAccounts();
-  };
-
-  const deleteBotAccount = async (id, name) => {
-    if (!confirm(`Hapus akun bot "${name}"? Tidak bisa di-undo.`)) return;
-    const { error } = await supabase.from('bot_accounts').delete().eq('id', id);
-    if (error) { setSettingsMsg('Gagal: ' + error.message); return; }
-    setSettingsMsg('Akun bot dihapus');
-    loadBotAccounts();
-  };
-
-  // System Actions
+  // ========== PENGATURAN (Item 5) — System Actions ==========
   const resetWorkerCounters = async () => {
     if (!confirm('Reset counter harian semua worker bot ke 0?')) return;
     try {
@@ -2132,7 +2074,7 @@ export default function Home() {
 
       {/* TABS */}
       <div style={S.tabs}>
-        {tabs.map(t => <div key={t.id} style={S.tab(tab===t.id)} onClick={() => { setTab(t.id); if(t.id==='weekly') loadWeeklyStats(wsYear, wsMonth); if(t.id==='posttrack') loadPostTracker(ptPeriod); if(t.id==='botqueue') loadTaskQueue(); if(t.id==='users') loadAutoBackups(); if(t.id==='settings') { loadBotAccounts(); loadSystemStats(); } }}>{t.label}</div>)}
+        {tabs.map(t => <div key={t.id} style={S.tab(tab===t.id)} onClick={() => { setTab(t.id); if(t.id==='weekly') loadWeeklyStats(wsYear, wsMonth); if(t.id==='posttrack') loadPostTracker(ptPeriod); if(t.id==='botqueue') loadTaskQueue(); if(t.id==='users') loadAutoBackups(); if(t.id==='settings') loadSystemStats(); }}>{t.label}</div>)}
       </div>
 
       <div style={S.main}>
@@ -3533,10 +3475,10 @@ export default function Home() {
           <>
             {settingsMsg && <p style={{fontSize:13,color:settingsMsg.includes('Gagal')||settingsMsg.includes('Error')?'#ef4444':'#10b981',marginBottom:16}}>{settingsMsg}</p>}
 
-            {/* SECTION 1: BOT ACCOUNTS MANAGER */}
+            {/* SECTION 1: BOT ACCOUNTS QUICK VIEW (read-only view + toggle) */}
             <div style={{...S.box,marginBottom:20}}>
-              <h3 style={{color:'#67e8f9',fontSize:15,margin:'0 0 6px 0',fontWeight:800,textTransform:'uppercase',letterSpacing:1}}>🤖 Bot Accounts Manager</h3>
-              <p style={{fontSize:12,color:'#9ca3af',margin:'0 0 16px 0'}}>Kelola akun-akun bot (Facebook / TikTok / IG) yang dipakai oleh bot worker. Toggle aktif/tidak aktif tanpa perlu edit database.</p>
+              <h3 style={{color:'#67e8f9',fontSize:15,margin:'0 0 6px 0',fontWeight:800,textTransform:'uppercase',letterSpacing:1}}>🤖 Bot Accounts Quick View</h3>
+              <p style={{fontSize:12,color:'#9ca3af',margin:'0 0 16px 0'}}>Toggle aktif/inactive akun bot dengan cepat. Untuk CRUD lengkap (tambah/edit/hapus), pakai tab <strong>Jalankan Bot</strong> atau <strong>Reels Bot</strong>.</p>
 
               {/* Filter */}
               <div style={{display:'flex',gap:8,marginBottom:12}}>
@@ -3549,22 +3491,6 @@ export default function Home() {
                     textTransform:'uppercase',letterSpacing:1,
                   }}>{f === 'all' ? 'Semua' : f}</button>
                 ))}
-                <button onClick={loadBotAccounts} style={{...S.btn('#164e63'),padding:'6px 12px',fontSize:11,marginLeft:'auto'}}>🔄 Refresh</button>
-              </div>
-
-              {/* Form tambah akun baru */}
-              <div style={{background:'#0d1117',border:'1px solid #1f2937',borderRadius:6,padding:12,marginBottom:12}}>
-                <div style={{fontSize:11,color:'#67e8f9',fontWeight:700,textTransform:'uppercase',marginBottom:8}}>+ Tambah Akun Baru</div>
-                <div style={{display:'grid',gridTemplateColumns:'2fr 2fr 1fr auto',gap:8}}>
-                  <input style={S.input} placeholder="Account ID (angka FB)" value={newBotAcc.account_id} onChange={e=>setNewBotAcc({...newBotAcc,account_id:e.target.value})}/>
-                  <input style={S.input} placeholder="Nama akun (display name)" value={newBotAcc.account_name} onChange={e=>setNewBotAcc({...newBotAcc,account_name:e.target.value})}/>
-                  <select style={S.input} value={newBotAcc.account_type} onChange={e=>setNewBotAcc({...newBotAcc,account_type:e.target.value})}>
-                    <option value="grup">Grup</option>
-                    <option value="reels">Reels</option>
-                    <option value="both">Both</option>
-                  </select>
-                  <button onClick={addBotAccount} style={{...S.btn('#065f46'),padding:'10px 16px',fontSize:12}}>+ Tambah</button>
-                </div>
               </div>
 
               {/* Tabel bot accounts */}
@@ -3576,7 +3502,6 @@ export default function Home() {
                       <th style={S.th}>Nama</th>
                       <th style={S.th}>Tipe</th>
                       <th style={S.th}>Status</th>
-                      <th style={S.th}>Aksi</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -3584,55 +3509,21 @@ export default function Home() {
                       .filter(acc => botAccFilter === 'all' || acc.account_type === botAccFilter)
                       .map(acc => (
                         <tr key={acc.id}>
-                          {editBotAccId === acc.id ? (
-                            <>
-                              <td style={S.td}><input style={{...S.input,fontSize:11}} defaultValue={acc.account_id} id={`edit-id-${acc.id}`}/></td>
-                              <td style={S.td}><input style={{...S.input,fontSize:11}} defaultValue={acc.account_name} id={`edit-name-${acc.id}`}/></td>
-                              <td style={S.td}>
-                                <select style={{...S.input,fontSize:11}} defaultValue={acc.account_type} id={`edit-type-${acc.id}`}>
-                                  <option value="grup">Grup</option>
-                                  <option value="reels">Reels</option>
-                                  <option value="both">Both</option>
-                                </select>
-                              </td>
-                              <td style={S.td}>
-                                <span style={{fontSize:10,color:acc.is_active?'#10b981':'#ef4444'}}>
-                                  {acc.is_active ? '🟢 Active' : '🔴 Inactive'}
-                                </span>
-                              </td>
-                              <td style={S.td}>
-                                <button onClick={()=>{
-                                  const newId = document.getElementById(`edit-id-${acc.id}`).value;
-                                  const newName = document.getElementById(`edit-name-${acc.id}`).value;
-                                  const newType = document.getElementById(`edit-type-${acc.id}`).value;
-                                  updateBotAccount(acc.id, { account_id: newId, account_name: newName, account_type: newType });
-                                }} style={{...S.btn('#065f46'),padding:'4px 10px',fontSize:10,marginRight:4}}>✓ Save</button>
-                                <button onClick={()=>setEditBotAccId(null)} style={{...S.btn('#374151'),padding:'4px 10px',fontSize:10}}>✕</button>
-                              </td>
-                            </>
-                          ) : (
-                            <>
-                              <td style={{...S.td,fontFamily:'monospace',fontSize:11}}>{acc.account_id}</td>
-                              <td style={{...S.td,fontWeight:600}}>{acc.account_name}</td>
-                              <td style={S.td}>
-                                <span style={{padding:'2px 8px',borderRadius:3,fontSize:9,fontWeight:700,background:'#0c4a6e',color:'#67e8f9',textTransform:'uppercase'}}>{acc.account_type}</span>
-                              </td>
-                              <td style={S.td}>
-                                <label style={{display:'flex',alignItems:'center',gap:6,cursor:'pointer',fontSize:11}}>
-                                  <input type="checkbox" checked={!!acc.is_active} onChange={e=>toggleBotAccount(acc.id, e.target.checked)}/>
-                                  <span style={{color:acc.is_active?'#10b981':'#ef4444'}}>{acc.is_active ? 'Active' : 'Inactive'}</span>
-                                </label>
-                              </td>
-                              <td style={S.td}>
-                                <button onClick={()=>setEditBotAccId(acc.id)} style={{...S.btn('#164e63'),padding:'4px 10px',fontSize:10,marginRight:4}}>✏️ Edit</button>
-                                <button onClick={()=>deleteBotAccount(acc.id, acc.account_name)} style={{...S.btn('#991b1b'),padding:'4px 10px',fontSize:10}}>🗑</button>
-                              </td>
-                            </>
-                          )}
+                          <td style={{...S.td,fontFamily:'monospace',fontSize:11}}>{acc.account_id}</td>
+                          <td style={{...S.td,fontWeight:600}}>{acc.account_name}</td>
+                          <td style={S.td}>
+                            <span style={{padding:'2px 8px',borderRadius:3,fontSize:9,fontWeight:700,background:'#0c4a6e',color:'#67e8f9',textTransform:'uppercase'}}>{acc.account_type}</span>
+                          </td>
+                          <td style={S.td}>
+                            <label style={{display:'flex',alignItems:'center',gap:6,cursor:'pointer',fontSize:11}}>
+                              <input type="checkbox" checked={!!acc.is_active} onChange={()=>toggleBotAccount(acc.id, acc.is_active)}/>
+                              <span style={{color:acc.is_active?'#10b981':'#ef4444'}}>{acc.is_active ? 'Active' : 'Inactive'}</span>
+                            </label>
+                          </td>
                         </tr>
                       ))}
                     {botAccounts.length === 0 && (
-                      <tr><td colSpan={5} style={{...S.td,textAlign:'center',color:'#6b7280',padding:20}}>Belum ada akun bot. Tambah di form atas.</td></tr>
+                      <tr><td colSpan={4} style={{...S.td,textAlign:'center',color:'#6b7280',padding:20}}>Belum ada akun bot.</td></tr>
                     )}
                   </tbody>
                 </table>
