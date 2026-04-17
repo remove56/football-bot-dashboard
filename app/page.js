@@ -1412,6 +1412,12 @@ export default function Home() {
     }
   }, [chatOpen, chatMode]);
 
+  // Update tab title dengan unread count (seperti Discord/WhatsApp Web)
+  useEffect(() => {
+    const total = (notifUnread || 0) + (chatUnread || 0);
+    document.title = total > 0 ? `(${total}) Football Bot Dashboard` : 'Football Bot Dashboard';
+  }, [notifUnread, chatUnread]);
+
   // Keyboard Esc untuk tutup lightbox
   useEffect(() => {
     if (!chatLightbox) return;
