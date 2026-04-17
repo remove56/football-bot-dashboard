@@ -366,6 +366,7 @@ export default function Home() {
   const [chatRecording, setChatRecording] = useState(false);
   const [chatRecordSec, setChatRecordSec] = useState(0);
   const [chatPendingAttachment, setChatPendingAttachment] = useState(null); // { file, previewUrl, type, name, size }
+  const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
   const [chatLightbox, setChatLightbox] = useState(null); // { url, name } — kalau ada, buka lightbox viewer
   const [chatViewOnceMode, setChatViewOnceMode] = useState(false); // toggle 🔥 view once
   const chatLocalViewedRef = useRef(new Map()); // id -> { message, attachment_url, ... } konten lokal sebelum di-clear di DB
@@ -2506,6 +2507,54 @@ export default function Home() {
                     </div>
                   ) : (
                     <div style={{display:'flex',gap:6,alignItems:'center'}}>
+                      {/* Emoji picker */}
+                      <div style={{position:'relative'}}>
+                        <button onClick={()=>setEmojiPickerOpen(!emojiPickerOpen)} style={{padding:'10px 12px',background:emojiPickerOpen?'#0c4a6e':'#164e63',color:'#67e8f9',border:'none',borderRadius:6,fontSize:16,cursor:'pointer'}} title="Emoji">
+                          😀
+                        </button>
+                        {emojiPickerOpen && (
+                          <>
+                            <div onClick={()=>setEmojiPickerOpen(false)} style={{position:'fixed',top:0,left:0,right:0,bottom:0,zIndex:99}}/>
+                            <div style={{position:'absolute',bottom:46,left:0,background:'#0f172a',border:'2px solid #0891b2',borderRadius:10,padding:10,width:320,maxHeight:280,overflow:'auto',zIndex:100,boxShadow:'0 8px 30px rgba(0,0,0,0.7)'}}>
+                              {[
+                                { cat: 'Sering', emojis: '😀😂🤣😍🥰😘😎🤩🥳🤔😅😭🔥❤️👍👏💪🎉⚽🏆' },
+                                { cat: 'Wajah', emojis: '😀😃😄😁😆😅🤣😂🙂😊😇🥰😍🤩😘😋😛🤔🤫🤭😏😌😴😷🤒🤕🤑🤠😈👿' },
+                                { cat: 'Tangan', emojis: '👍👎👊✊🤛🤜👏🙌🤝🙏✌️🤟🤘👌🤏👈👉👆👋🤚✋🖐️' },
+                                { cat: 'Hati', emojis: '❤️🧡💛💚💙💜🖤🤍🤎💔❣️💕💞💓💗💖💘💝💟' },
+                                { cat: 'Bola', emojis: '⚽🏆🥇🥈🥉🏅🎖️🏟️🥅👟🦶💪🎯🔥✨🎉🎊🏃‍♂️🧤🦁🐐' },
+                                { cat: 'Objek', emojis: '🎵🎶📸📹💻📱⏰🔔📢📌📍🗓️📊💰💎🎁🎂🍕🍔☕🍺' },
+                                { cat: 'Simbol', emojis: '✅❌⭐💯🔴🟢🟡🔵⚡☀️🌙🌟💡🚀✈️🏠🚗💤👀🫡' },
+                              ].map(group => (
+                                <div key={group.cat}>
+                                  <div style={{fontSize:9,color:'#6b7280',textTransform:'uppercase',letterSpacing:1,padding:'6px 2px 3px',borderBottom:'1px solid #1f2937',marginBottom:4}}>{group.cat}</div>
+                                  <div style={{display:'flex',flexWrap:'wrap',gap:2,marginBottom:6}}>
+                                    {[...group.emojis].filter(c => c.trim()).reduce((acc, char) => {
+                                      // Handle multi-codepoint emojis
+                                      const last = acc[acc.length - 1];
+                                      if (last && /[\uD800-\uDBFF]/.test(last) && /[\uDC00-\uDFFF]/.test(char)) {
+                                        acc[acc.length - 1] = last + char;
+                                      } else if (last && char === '\uFE0F') {
+                                        acc[acc.length - 1] = last + char;
+                                      } else if (last && char === '\u200D') {
+                                        acc[acc.length - 1] = last + char;
+                                      } else if (last && last.endsWith('\u200D')) {
+                                        acc[acc.length - 1] = last + char;
+                                      } else {
+                                        acc.push(char);
+                                      }
+                                      return acc;
+                                    }, []).map((emoji, i) => (
+                                      <button key={i} onClick={()=>{setChatInput(prev=>prev+emoji);setEmojiPickerOpen(false);}} style={{width:32,height:32,border:'none',background:'transparent',borderRadius:4,fontSize:18,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}} title={emoji}>
+                                        {emoji}
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </>
+                        )}
+                      </div>
                       {/* Image upload */}
                       <label style={{cursor:(chatUploading||chatPendingAttachment)?'not-allowed':'pointer',padding:'10px 12px',background:'#164e63',borderRadius:6,fontSize:16,opacity:(chatUploading||chatPendingAttachment)?0.5:1}} title="Kirim foto">
                         {chatUploading ? '⏳' : '📷'}
