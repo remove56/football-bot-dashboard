@@ -386,6 +386,12 @@ export default function Home() {
   // Activity log filter
   const [activityFilter, setActivityFilter] = useState('all'); // all | member | bot
 
+  // Search/filter untuk tabel
+  const [searchTracking, setSearchTracking] = useState('');
+  const [searchActivity, setSearchActivity] = useState('');
+  const [searchGrup, setSearchGrup] = useState('');
+  const [filterLeague, setFilterLeague] = useState('');
+
   // Posting tracker
   const [postTracker, setPostTracker] = useState([]);
   const [postTrackerHistory, setPostTrackerHistory] = useState([]); // last 30 days
@@ -3118,6 +3124,48 @@ export default function Home() {
               </div>
             </div>
 
+            {/* BAR CHART — Top 10 klub by total konten */}
+            {clubStats.length > 0 && (
+              <div style={{...S.box,marginBottom:20}}>
+                <h3 style={{color:'#FFD700',marginBottom:4,fontSize:16}}>Grafik Performa Klub</h3>
+                <p style={{color:'#9ca3af',fontSize:11,margin:'0 0 16px 0'}}>Top 10 klub berdasarkan total konten (member + bot). 30 hari terakhir.</p>
+                <div style={{display:'flex',gap:6,alignItems:'flex-end',height:200,padding:'0 4px'}}>
+                  {clubStats.slice(0, 10).map((c, i) => {
+                    const maxVal = Math.max(...clubStats.slice(0, 10).map(x => x.total)) || 1;
+                    const heightPct = (c.total / maxVal) * 100;
+                    const completeRate = c.trackerCycles > 0 ? Math.round(c.trackerCompleted / c.trackerCycles * 100) : 0;
+                    const barColor = completeRate >= 80 ? '#10b981' : completeRate >= 50 ? '#f59e0b' : completeRate > 0 ? '#ef4444' : '#374151';
+                    return (
+                      <div key={c.club} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:4}}>
+                        <span style={{fontSize:10,color:'#e0f2fe',fontWeight:700}}>{c.total}</span>
+                        <div
+                          title={`${c.club}: ${c.memberPosts} member + ${c.botPosts} bot = ${c.total} total | Complete: ${completeRate}%`}
+                          style={{
+                            width:'100%',
+                            height:`${Math.max(4, heightPct)}%`,
+                            background:`linear-gradient(180deg, ${barColor} 0%, ${barColor}88 100%)`,
+                            borderRadius:'4px 4px 0 0',
+                            cursor:'pointer',
+                            transition:'all 0.3s',
+                            minHeight:4,
+                            border:'1px solid ' + barColor,
+                          }}
+                        />
+                        <span style={{fontSize:9,color:'#9ca3af',textAlign:'center',lineHeight:1.2,maxWidth:80,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}} title={c.club}>
+                          {c.club.length > 10 ? c.club.substring(0, 10) + '...' : c.club}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div style={{display:'flex',justifyContent:'center',gap:16,marginTop:12,fontSize:10,color:'#9ca3af'}}>
+                  <span><span style={{display:'inline-block',width:10,height:10,background:'#10b981',borderRadius:2,marginRight:4}}/>Complete ≥80%</span>
+                  <span><span style={{display:'inline-block',width:10,height:10,background:'#f59e0b',borderRadius:2,marginRight:4}}/>Complete 50-79%</span>
+                  <span><span style={{display:'inline-block',width:10,height:10,background:'#ef4444',borderRadius:2,marginRight:4}}/>Complete {'<'}50%</span>
+                </div>
+              </div>
+            )}
+
             <div style={S.box}>
               <h3 style={{color:'#FFD700',marginBottom:4,fontSize:16}}>Performa Per Klub</h3>
               <p style={{color:'#9ca3af',fontSize:11,margin:'0 0 16px 0'}}>
@@ -3620,7 +3668,10 @@ export default function Home() {
             {/* Tabel tracking per grup */}
             <div style={{...S.box,padding:0,overflow:'auto'}}>
               <div style={{padding:'16px 20px',borderBottom:'1px solid #1f2937'}}>
-                <h3 style={{color:'#FFD700',fontSize:16,margin:0}}>Progress Postingan — {new Date(ptPeriod).toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</h3>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:10}}>
+                  <h3 style={{color:'#FFD700',fontSize:16,margin:0}}>Progress Postingan — {new Date(ptPeriod).toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</h3>
+                  <input style={{...S.input,width:220,fontSize:11}} placeholder="🔍 Cari grup / member..." value={searchTracking} onChange={e=>setSearchTracking(e.target.value)}/>
+                </div>
               </div>
               <table style={{width:'100%',borderCollapse:'collapse',minWidth:900}}>
                 <thead>
@@ -3636,7 +3687,12 @@ export default function Home() {
                   </tr>
                 </thead>
                 <tbody>
-                  {groups.map((g, idx) => {
+                  {groups.filter(g => {
+                    if (!searchTracking) return true;
+                    const q = searchTracking.toLowerCase();
+                    const memberName = postTracker.find(p => p.group_id === g.id)?.user_name || '';
+                    return g.name.toLowerCase().includes(q) || g.club.toLowerCase().includes(q) || memberName.toLowerCase().includes(q);
+                  }).map((g, idx) => {
                     const gEntries = postTracker.filter(p => p.group_id === g.id);
                     const completeCycles = gEntries.filter(p => p.is_complete).length;
                     const memberName = gEntries.length > 0 ? gEntries[0].user_name : '-';
@@ -4447,14 +4503,19 @@ export default function Home() {
             .filter(e => e.timestamp)
             .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
 
-          const filtered = activityFilter === 'all'
-            ? allEntries
-            : allEntries.filter(e => e.type === activityFilter);
+          const filtered = allEntries
+            .filter(e => activityFilter === 'all' || e.type === activityFilter)
+            .filter(e => {
+              if (!searchActivity) return true;
+              const q = searchActivity.toLowerCase();
+              return e.title.toLowerCase().includes(q) || e.subtitle.toLowerCase().includes(q);
+            });
 
           return (
             <>
               {/* Filter + stats */}
               <div style={{display:'flex',gap:10,marginBottom:16,flexWrap:'wrap',alignItems:'center'}}>
+                <input style={{...S.input,width:220,fontSize:11}} placeholder="🔍 Cari member / grup..." value={searchActivity} onChange={e=>setSearchActivity(e.target.value)}/>
                 <div style={{display:'flex',gap:6}}>
                   {[
                     { id: 'all', label: `Semua (${allEntries.length})` },

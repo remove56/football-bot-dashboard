@@ -4,6 +4,10 @@
     {
       "path": "/api/cron/backup",
       "schedule": "0 19 * * *"
+    },
+    {
+      "path": "/api/cron/notify-targets",
+      "schedule": "0 5,11,14 * * *"
     }
   ]
 }
