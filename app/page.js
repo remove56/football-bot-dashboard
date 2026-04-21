@@ -6,33 +6,34 @@ import { supabase } from '../lib/supabase';
 // STYLES
 // ============================================================
 // DARK CRYSTAL ICE STRONG THEME — obsidian black dengan aksen kristal es biru
+// THEME: Stadium Night — dark green grass + stadium light yellow accents
 const S = {
-  nav: { background:'linear-gradient(180deg,#020617 0%,#0f172a 100%)',borderBottom:'2px solid #0891b2',padding:'12px 24px',display:'flex',justifyContent:'space-between',alignItems:'center',position:'sticky',top:0,zIndex:100,boxShadow:'0 2px 20px rgba(6,182,212,0.3)' },
-  h1: { fontSize:20,background:'linear-gradient(135deg,#67e8f9 0%,#22d3ee 30%,#06b6d4 70%,#0891b2 100%)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',fontWeight:900,textShadow:'0 0 30px rgba(34,211,238,0.4)',letterSpacing:0.5 },
-  tabs: { display:'flex',gap:8,padding:'14px 24px',background:'linear-gradient(180deg,#0f172a 0%,#020617 100%)',borderBottom:'1px solid #164e63',flexWrap:'wrap' },
-  tab: (a) => ({ padding:'8px 16px',borderRadius:6,cursor:'pointer',fontSize:13,fontWeight:700,color:a?'#22d3ee':'#64748b',background:a?'linear-gradient(135deg,#164e63 0%,#0e7490 100%)':'#0f172a',border:`2px solid ${a?'#06b6d4':'#1e293b'}`,boxShadow:a?'0 0 20px rgba(6,182,212,0.5), inset 0 1px 0 rgba(103,232,249,0.3)':'none',transition:'all 0.2s',textTransform:'uppercase',letterSpacing:0.5 }),
+  nav: { background:'linear-gradient(180deg,#052e16 0%,#14532d 100%)',borderBottom:'2px solid #fbbf24',padding:'12px 24px',display:'flex',justifyContent:'space-between',alignItems:'center',position:'sticky',top:0,zIndex:100,boxShadow:'0 2px 20px rgba(251,191,36,0.25)' },
+  h1: { fontSize:20,background:'linear-gradient(135deg,#fef08a 0%,#fde047 30%,#fbbf24 70%,#f59e0b 100%)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',fontWeight:900,textShadow:'0 0 30px rgba(251,191,36,0.4)',letterSpacing:0.5 },
+  tabs: { display:'flex',gap:8,padding:'14px 24px',background:'linear-gradient(180deg,#14532d 0%,#052e16 100%)',borderBottom:'1px solid #166534',flexWrap:'wrap' },
+  tab: (a) => ({ padding:'8px 16px',borderRadius:6,cursor:'pointer',fontSize:13,fontWeight:700,color:a?'#fde047':'#a3a39d',background:a?'linear-gradient(135deg,#166534 0%,#15803d 100%)':'#052e16',border:`2px solid ${a?'#fbbf24':'#14532d'}`,boxShadow:a?'0 0 20px rgba(251,191,36,0.45), inset 0 1px 0 rgba(254,240,138,0.3)':'none',transition:'all 0.2s',textTransform:'uppercase',letterSpacing:0.5 }),
   main: { padding:24,maxWidth:1400,margin:'0 auto' },
-  box: { background:'linear-gradient(135deg,#0f172a 0%,#020617 100%)',border:'1px solid #164e63',borderRadius:8,padding:24,marginBottom:24,boxShadow:'0 4px 24px rgba(0,0,0,0.6), 0 0 0 1px rgba(6,182,212,0.1), inset 0 1px 0 rgba(103,232,249,0.05)' },
-  stat: { background:'linear-gradient(135deg,#0f172a 0%,#020617 100%)',border:'1px solid #164e63',borderRadius:6,padding:18,boxShadow:'0 0 15px rgba(6,182,212,0.2), inset 0 1px 0 rgba(103,232,249,0.08)' },
-  num: { fontSize:28,fontWeight:900,background:'linear-gradient(135deg,#e0f2fe 0%,#67e8f9 50%,#06b6d4 100%)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',textShadow:'0 0 20px rgba(103,232,249,0.3)' },
-  label: { fontSize:12,color:'#64748b',marginTop:4,fontWeight:600,textTransform:'uppercase',letterSpacing:0.5 },
-  input: { width:'100%',padding:'10px 14px',background:'#020617',border:'1px solid #1e293b',borderRadius:6,color:'#e0f2fe',fontSize:14,outline:'none',fontWeight:500 },
-  btn: (c) => ({ padding:'10px 16px',border:`1px solid ${c||'#0e7490'}`,borderRadius:6,background:c?`linear-gradient(135deg,${c} 0%,${c}dd 100%)`:'linear-gradient(135deg,#0e7490 0%,#164e63 100%)',color:'#e0f2fe',fontSize:13,fontWeight:800,cursor:'pointer',boxShadow:'0 2px 12px rgba(6,182,212,0.3)',transition:'all 0.2s',textTransform:'uppercase',letterSpacing:0.5 }),
+  box: { background:'linear-gradient(135deg,#14532d 0%,#052e16 100%)',border:'1px solid #166534',borderRadius:8,padding:24,marginBottom:24,boxShadow:'0 4px 24px rgba(0,0,0,0.6), 0 0 0 1px rgba(251,191,36,0.08), inset 0 1px 0 rgba(254,240,138,0.05)' },
+  stat: { background:'linear-gradient(135deg,#14532d 0%,#052e16 100%)',border:'1px solid #166534',borderRadius:6,padding:18,boxShadow:'0 0 15px rgba(251,191,36,0.15), inset 0 1px 0 rgba(254,240,138,0.08)' },
+  num: { fontSize:28,fontWeight:900,background:'linear-gradient(135deg,#fefce8 0%,#fef08a 50%,#fbbf24 100%)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',textShadow:'0 0 20px rgba(254,240,138,0.3)' },
+  label: { fontSize:12,color:'#a3a39d',marginTop:4,fontWeight:600,textTransform:'uppercase',letterSpacing:0.5 },
+  input: { width:'100%',padding:'10px 14px',background:'#052e16',border:'1px solid #14532d',borderRadius:6,color:'#fefce8',fontSize:14,outline:'none',fontWeight:500 },
+  btn: (c) => ({ padding:'10px 16px',border:`1px solid ${c||'#15803d'}`,borderRadius:6,background:c?`linear-gradient(135deg,${c} 0%,${c}dd 100%)`:'linear-gradient(135deg,#15803d 0%,#166534 100%)',color:'#fefce8',fontSize:13,fontWeight:800,cursor:'pointer',boxShadow:'0 2px 12px rgba(251,191,36,0.25)',transition:'all 0.2s',textTransform:'uppercase',letterSpacing:0.5 }),
   badge: (c) => ({ padding:'2px 8px',borderRadius:3,fontSize:11,fontWeight:800,textTransform:'uppercase',letterSpacing:0.5,...({
     ok:{background:'linear-gradient(135deg,#064e3b 0%,#047857 100%)',color:'#6ee7b7',border:'1px solid #10b981'},
     fail:{background:'linear-gradient(135deg,#7f1d1d 0%,#991b1b 100%)',color:'#fca5a5',border:'1px solid #ef4444'},
-    pending:{background:'linear-gradient(135deg,#1e3a8a 0%,#1e40af 100%)',color:'#93c5fd',border:'1px solid #3b82f6'},
+    pending:{background:'linear-gradient(135deg,#78350f 0%,#92400e 100%)',color:'#fde047',border:'1px solid #fbbf24'},
     approved:{background:'linear-gradient(135deg,#064e3b 0%,#047857 100%)',color:'#6ee7b7',border:'1px solid #10b981'},
     rejected:{background:'linear-gradient(135deg,#7f1d1d 0%,#991b1b 100%)',color:'#fca5a5',border:'1px solid #ef4444'},
-    admin:{background:'linear-gradient(135deg,#581c87 0%,#6b21a8 100%)',color:'#d8b4fe',border:'1px solid #a855f7'},
-    member:{background:'linear-gradient(135deg,#164e63 0%,#0e7490 100%)',color:'#67e8f9',border:'1px solid #06b6d4'}
-  }[c]||{background:'#0f172a',color:'#94a3b8',border:'1px solid #1e293b'}) }),
-  th: { background:'linear-gradient(135deg,#0f172a 0%,#020617 100%)',padding:'10px 14px',textAlign:'left',fontSize:12,color:'#22d3ee',fontWeight:800,borderBottom:'2px solid #164e63',textTransform:'uppercase',letterSpacing:0.5 },
-  td: { padding:'10px 14px',borderTop:'1px solid #0f172a',fontSize:13,color:'#cbd5e1' },
-  link: { color:'#67e8f9',textDecoration:'none',fontWeight:700 },
+    admin:{background:'linear-gradient(135deg,#78350f 0%,#92400e 100%)',color:'#fef08a',border:'1px solid #fbbf24'},
+    member:{background:'linear-gradient(135deg,#14532d 0%,#166534 100%)',color:'#86efac',border:'1px solid #22c55e'}
+  }[c]||{background:'#14532d',color:'#a3a39d',border:'1px solid #166534'}) }),
+  th: { background:'linear-gradient(135deg,#14532d 0%,#052e16 100%)',padding:'10px 14px',textAlign:'left',fontSize:12,color:'#fde047',fontWeight:800,borderBottom:'2px solid #166534',textTransform:'uppercase',letterSpacing:0.5 },
+  td: { padding:'10px 14px',borderTop:'1px solid #14532d',fontSize:13,color:'#fef3c7' },
+  link: { color:'#fde047',textDecoration:'none',fontWeight:700 },
 };
 
-const LEAGUE_COLORS = {'La Liga':'#22d3ee','Premier League':'#60a5fa','Serie A':'#67e8f9','Bundesliga':'#06b6d4','Ligue 1':'#38bdf8','Liga 1':'#7dd3fc','Timnas':'#0ea5e9','Pemain':'#a5f3fc'};
+const LEAGUE_COLORS = {'La Liga':'#dc2626','Premier League':'#6366f1','Serie A':'#16a34a','Bundesliga':'#f59e0b','Ligue 1':'#0ea5e9','Liga 1':'#ef4444','Timnas':'#dc2626','Pemain':'#ec4899'};
 
 // ============================================================
 // CONTENT DEDUP — Normalisasi URL untuk deteksi duplikat
@@ -216,31 +217,31 @@ function LoginScreen({ onLogin }) {
   return (
     <div style={{display:'flex',justifyContent:'center',alignItems:'center',minHeight:'100vh',position:'relative'}}>
       <div style={{
-        background:'linear-gradient(135deg,#0f172a 0%,#020617 100%)',
-        border:'2px solid #164e63',
+        background:'linear-gradient(135deg,#14532d 0%,#052e16 100%)',
+        border:'2px solid #166534',
         borderRadius:8,padding:48,width:400,
-        boxShadow:'0 0 40px rgba(6,182,212,0.3), 0 0 80px rgba(8,145,178,0.15), inset 0 1px 0 rgba(103,232,249,0.1), 0 20px 50px rgba(0,0,0,0.5)',
+        boxShadow:'0 0 40px rgba(251,191,36,0.3), 0 0 80px rgba(8,145,178,0.15), inset 0 1px 0 rgba(254,240,138,0.1), 0 20px 50px rgba(0,0,0,0.5)',
         position:'relative',
       }}>
         {/* Crystal edge decoration */}
-        <div style={{position:'absolute',top:-2,left:-2,right:-2,height:3,background:'linear-gradient(90deg,transparent,#22d3ee,transparent)',borderRadius:'8px 8px 0 0',boxShadow:'0 0 20px rgba(34,211,238,0.6)'}} />
-        <div style={{textAlign:'center',fontSize:40,marginBottom:12,filter:'drop-shadow(0 0 10px rgba(103,232,249,0.5))'}}>❄⚽❄</div>
+        <div style={{position:'absolute',top:-2,left:-2,right:-2,height:3,background:'linear-gradient(90deg,transparent,#fde047,transparent)',borderRadius:'8px 8px 0 0',boxShadow:'0 0 20px rgba(253,224,71,0.6)'}} />
+        <div style={{textAlign:'center',fontSize:40,marginBottom:12,filter:'drop-shadow(0 0 10px rgba(254,240,138,0.5))'}}>❄⚽❄</div>
         <h1 style={{...S.h1,fontSize:28,textAlign:'center',marginBottom:8,letterSpacing:1}}>Football Bot Dashboard</h1>
-        <p style={{color:'#64748b',fontSize:12,textAlign:'center',marginBottom:32,textTransform:'uppercase',letterSpacing:2,fontWeight:700}}>ACCESS TERMINAL</p>
+        <p style={{color:'#a3a39d',fontSize:12,textAlign:'center',marginBottom:32,textTransform:'uppercase',letterSpacing:2,fontWeight:700}}>ACCESS TERMINAL</p>
         {err && <div style={{background:'linear-gradient(135deg,#7f1d1d 0%,#991b1b 100%)',color:'#fca5a5',padding:10,borderRadius:4,textAlign:'center',marginBottom:16,fontSize:13,border:'1px solid #ef4444',textTransform:'uppercase',letterSpacing:0.5,fontWeight:700}}>{err}</div>}
         <div style={{marginBottom:20}}>
-          <label style={{display:'block',fontSize:11,color:'#22d3ee',marginBottom:6,fontWeight:800,textTransform:'uppercase',letterSpacing:1.5}}>Username</label>
+          <label style={{display:'block',fontSize:11,color:'#fde047',marginBottom:6,fontWeight:800,textTransform:'uppercase',letterSpacing:1.5}}>Username</label>
           <input style={S.input} value={u} onChange={e=>setU(e.target.value)} onKeyDown={e=>e.key==='Enter'&&login()} />
         </div>
         <div style={{marginBottom:28}}>
-          <label style={{display:'block',fontSize:11,color:'#22d3ee',marginBottom:6,fontWeight:800,textTransform:'uppercase',letterSpacing:1.5}}>Password</label>
+          <label style={{display:'block',fontSize:11,color:'#fde047',marginBottom:6,fontWeight:800,textTransform:'uppercase',letterSpacing:1.5}}>Password</label>
           <input style={S.input} type="password" value={p} onChange={e=>setP(e.target.value)} onKeyDown={e=>e.key==='Enter'&&login()} />
         </div>
         <button onClick={login} style={{
           width:'100%',padding:14,
-          background:'linear-gradient(135deg,#22d3ee 0%,#06b6d4 30%,#0891b2 70%,#164e63 100%)',
-          border:'1px solid #67e8f9',borderRadius:4,color:'#020617',fontSize:15,fontWeight:900,cursor:'pointer',
-          boxShadow:'0 4px 24px rgba(6,182,212,0.5), inset 0 1px 0 rgba(207,250,254,0.4)',textTransform:'uppercase',letterSpacing:3,
+          background:'linear-gradient(135deg,#fde047 0%,#fbbf24 30%,#f59e0b 70%,#166534 100%)',
+          border:'1px solid #fef08a',borderRadius:4,color:'#052e16',fontSize:15,fontWeight:900,cursor:'pointer',
+          boxShadow:'0 4px 24px rgba(251,191,36,0.5), inset 0 1px 0 rgba(207,250,254,0.4)',textTransform:'uppercase',letterSpacing:3,
         }}>❄ ENTER ❄</button>
       </div>
     </div>
@@ -1431,12 +1432,12 @@ export default function Home() {
     const ctx = canvas.getContext('2d');
 
     // Base: bola sepak dengan background cyan (match theme Dark Crystal Ice)
-    ctx.fillStyle = '#06b6d4';
+    ctx.fillStyle = '#fbbf24';
     ctx.beginPath();
     ctx.arc(32, 32, 30, 0, 2 * Math.PI);
     ctx.fill();
     // Pattern bola (segi enam hitam)
-    ctx.fillStyle = '#020617';
+    ctx.fillStyle = '#052e16';
     ctx.font = 'bold 36px sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -2110,7 +2111,7 @@ export default function Home() {
             {soundEnabled ? '🔊' : '🔇'}
           </a>
           <a onClick={()=>setGuideOpen(true)} style={{color:'#a5f3fc',cursor:'pointer',fontSize:12}} title="Panduan Pemakaian">❓</a>
-          <a onClick={()=>setPwModal(true)} style={{color:'#67e8f9',cursor:'pointer',fontSize:12}} title="Ganti Password">🔑</a>
+          <a onClick={()=>setPwModal(true)} style={{color:'#fef08a',cursor:'pointer',fontSize:12}} title="Ganti Password">🔑</a>
           <a onClick={logout} style={{color:'#ef4444',cursor:'pointer'}}>Logout</a>
         </div>
       </div>
@@ -2119,10 +2120,10 @@ export default function Home() {
       {notifOpen && (
         <>
           <div onClick={()=>setNotifOpen(false)} style={{position:'fixed',top:0,left:0,right:0,bottom:0,zIndex:998}}/>
-          <div style={{position:'fixed',top:56,right:20,width:380,maxHeight:'70vh',background:'linear-gradient(180deg,#0f172a 0%,#020617 100%)',border:'2px solid #0891b2',borderRadius:10,boxShadow:'0 8px 40px rgba(6,182,212,0.4)',zIndex:999,display:'flex',flexDirection:'column',overflow:'hidden'}}>
+          <div style={{position:'fixed',top:56,right:20,width:380,maxHeight:'70vh',background:'linear-gradient(180deg,#14532d 0%,#052e16 100%)',border:'2px solid #f59e0b',borderRadius:10,boxShadow:'0 8px 40px rgba(251,191,36,0.4)',zIndex:999,display:'flex',flexDirection:'column',overflow:'hidden'}}>
             <div style={{padding:'12px 16px',borderBottom:'1px solid #1f2937',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
               <div>
-                <div style={{fontSize:13,color:'#67e8f9',fontWeight:800,textTransform:'uppercase',letterSpacing:1}}>🔔 Notifikasi</div>
+                <div style={{fontSize:13,color:'#fef08a',fontWeight:800,textTransform:'uppercase',letterSpacing:1}}>🔔 Notifikasi</div>
                 <div style={{fontSize:10,color:'#9ca3af'}}>{notifUnread} belum dibaca</div>
               </div>
               <div style={{display:'flex',gap:6}}>
@@ -2130,7 +2131,7 @@ export default function Home() {
                   <button onClick={()=>{setBroadcastOpen(true);setNotifOpen(false);}} style={{...S.btn('#065f46'),padding:'6px 10px',fontSize:10}}>+ Kirim</button>
                 )}
                 {notifUnread > 0 && (
-                  <button onClick={markAllNotificationsRead} style={{...S.btn('#164e63'),padding:'6px 10px',fontSize:10}}>Tandai Baca</button>
+                  <button onClick={markAllNotificationsRead} style={{...S.btn('#166534'),padding:'6px 10px',fontSize:10}}>Tandai Baca</button>
                 )}
               </div>
             </div>
@@ -2140,13 +2141,13 @@ export default function Home() {
               )}
               {notifications.map(n => {
                 const typeColors = {
-                  info: '#67e8f9', warning: '#f59e0b', success: '#10b981',
+                  info: '#fef08a', warning: '#f59e0b', success: '#10b981',
                   error: '#ef4444', announce: '#c084fc',
                 };
                 const typeIcons = {
                   info: 'ℹ️', warning: '⚠️', success: '✅', error: '❌', announce: '📢',
                 };
-                const color = typeColors[n.type] || '#67e8f9';
+                const color = typeColors[n.type] || '#fef08a';
                 const icon = typeIcons[n.type] || 'ℹ️';
                 const isUnread = !n.read_at;
                 return (
@@ -2176,10 +2177,10 @@ export default function Home() {
       {/* MODAL ADMIN BROADCAST */}
       {broadcastOpen && (
         <div onClick={()=>setBroadcastOpen(false)} className="responsive-modal-backdrop" style={{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(2,6,23,0.85)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
-          <div onClick={e=>e.stopPropagation()} style={{background:'linear-gradient(180deg,#0f172a 0%,#020617 100%)',border:'2px solid #0891b2',borderRadius:10,width:'100%',maxWidth:500,padding:24}}>
-            <h3 style={{color:'#67e8f9',margin:'0 0 16px 0',fontSize:15,fontWeight:900,textTransform:'uppercase',letterSpacing:1}}>📢 Kirim Notifikasi</h3>
+          <div onClick={e=>e.stopPropagation()} style={{background:'linear-gradient(180deg,#14532d 0%,#052e16 100%)',border:'2px solid #f59e0b',borderRadius:10,width:'100%',maxWidth:500,padding:24}}>
+            <h3 style={{color:'#fef08a',margin:'0 0 16px 0',fontSize:15,fontWeight:900,textTransform:'uppercase',letterSpacing:1}}>📢 Kirim Notifikasi</h3>
             <div style={{display:'flex',flexDirection:'column',gap:12}}>
-              <div><label style={{display:'block',fontSize:11,color:'#67e8f9',marginBottom:4,fontWeight:700,textTransform:'uppercase'}}>Target</label>
+              <div><label style={{display:'block',fontSize:11,color:'#fef08a',marginBottom:4,fontWeight:700,textTransform:'uppercase'}}>Target</label>
                 <select style={S.input} value={broadcastTarget} onChange={e=>setBroadcastTarget(e.target.value)}>
                   <option value="all">📢 Semua User (Broadcast)</option>
                   {users.filter(u => u.role === 'member').map(u => (
@@ -2187,7 +2188,7 @@ export default function Home() {
                   ))}
                 </select>
               </div>
-              <div><label style={{display:'block',fontSize:11,color:'#67e8f9',marginBottom:4,fontWeight:700,textTransform:'uppercase'}}>Tipe</label>
+              <div><label style={{display:'block',fontSize:11,color:'#fef08a',marginBottom:4,fontWeight:700,textTransform:'uppercase'}}>Tipe</label>
                 <select style={S.input} value={broadcastType} onChange={e=>setBroadcastType(e.target.value)}>
                   <option value="info">ℹ️ Info</option>
                   <option value="warning">⚠️ Warning</option>
@@ -2196,9 +2197,9 @@ export default function Home() {
                   <option value="announce">📢 Announcement</option>
                 </select>
               </div>
-              <div><label style={{display:'block',fontSize:11,color:'#67e8f9',marginBottom:4,fontWeight:700,textTransform:'uppercase'}}>Judul</label>
+              <div><label style={{display:'block',fontSize:11,color:'#fef08a',marginBottom:4,fontWeight:700,textTransform:'uppercase'}}>Judul</label>
                 <input style={S.input} value={broadcastTitle} onChange={e=>setBroadcastTitle(e.target.value)} placeholder="Judul singkat..." maxLength={100}/></div>
-              <div><label style={{display:'block',fontSize:11,color:'#67e8f9',marginBottom:4,fontWeight:700,textTransform:'uppercase'}}>Pesan</label>
+              <div><label style={{display:'block',fontSize:11,color:'#fef08a',marginBottom:4,fontWeight:700,textTransform:'uppercase'}}>Pesan</label>
                 <textarea style={{...S.input,minHeight:100,resize:'vertical',fontFamily:'inherit'}} value={broadcastMessage} onChange={e=>setBroadcastMessage(e.target.value)} placeholder="Isi pesan..." maxLength={1000}/></div>
               {broadcastMsg && <p style={{fontSize:12,color:broadcastMsg.includes('berhasil')?'#10b981':'#ef4444',margin:0}}>{broadcastMsg}</p>}
               <div style={{display:'flex',gap:8}}>
@@ -2258,10 +2259,10 @@ export default function Home() {
           {/* Info nama file */}
           <div style={{
             position:'absolute',top:20,left:20,
-            color:'#e0f2fe',fontSize:12,
-            background:'rgba(6,182,212,0.2)',
+            color:'#fefce8',fontSize:12,
+            background:'rgba(251,191,36,0.2)',
             padding:'8px 14px',borderRadius:6,
-            border:'1px solid #0891b2',
+            border:'1px solid #f59e0b',
             maxWidth:'60%',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',
             zIndex:2001,
           }}>
@@ -2298,17 +2299,17 @@ export default function Home() {
 
       {chatOpen && (
         <div onClick={()=>setChatOpen(false)} className="responsive-modal-backdrop" style={{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(2,6,23,0.9)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
-          <div onClick={e=>e.stopPropagation()} className="responsive-modal-content" style={{background:'linear-gradient(180deg,#0f172a 0%,#020617 100%)',border:'2px solid #0891b2',borderRadius:12,width:'100%',maxWidth:900,height:'85vh',display:'flex',flexDirection:'column',overflow:'hidden',boxShadow:'0 8px 40px rgba(6,182,212,0.3)'}}>
+          <div onClick={e=>e.stopPropagation()} className="responsive-modal-content" style={{background:'linear-gradient(180deg,#14532d 0%,#052e16 100%)',border:'2px solid #f59e0b',borderRadius:12,width:'100%',maxWidth:900,height:'85vh',display:'flex',flexDirection:'column',overflow:'hidden',boxShadow:'0 8px 40px rgba(251,191,36,0.3)'}}>
             {/* Header */}
-            <div style={{padding:'14px 20px',borderBottom:'2px solid #0891b2',display:'flex',justifyContent:'space-between',alignItems:'center',background:'linear-gradient(90deg,#0c1220 0%,#020617 100%)'}}>
+            <div style={{padding:'14px 20px',borderBottom:'2px solid #f59e0b',display:'flex',justifyContent:'space-between',alignItems:'center',background:'linear-gradient(90deg,#0c1220 0%,#052e16 100%)'}}>
               <div>
-                <h2 style={{margin:0,color:'#67e8f9',fontSize:16,fontWeight:900,textTransform:'uppercase',letterSpacing:1}}>💬 Chat</h2>
+                <h2 style={{margin:0,color:'#fef08a',fontSize:16,fontWeight:900,textTransform:'uppercase',letterSpacing:1}}>💬 Chat</h2>
                 <div style={{fontSize:10,color:'#9ca3af',marginTop:2,display:'flex',alignItems:'center',gap:6,flexWrap:'wrap'}}>
                   {chatMode === 'global' ? (
                     <span>Global — semua member bisa baca</span>
                   ) : (
                     <>
-                      <span>DM dengan <strong style={{color:'#e0f2fe'}}>{chatDmPartner?.name || '-'}</strong></span>
+                      <span>DM dengan <strong style={{color:'#fefce8'}}>{chatDmPartner?.name || '-'}</strong></span>
                       {chatDmPartner && (
                         isUserOnline(chatDmPartner.id) ? (
                           <span style={{color:'#10b981',fontWeight:700,display:'inline-flex',alignItems:'center',gap:3}}>
@@ -2330,16 +2331,16 @@ export default function Home() {
 
             <div className="chat-body-flex" style={{flex:1,display:'flex',overflow:'hidden'}}>
               {/* Sidebar: global + DM list */}
-              <div className="chat-sidebar" style={{width:220,borderRight:'1px solid #1f2937',background:'#020617',overflow:'auto',display:'flex',flexDirection:'column'}}>
+              <div className="chat-sidebar" style={{width:220,borderRight:'1px solid #1f2937',background:'#052e16',overflow:'auto',display:'flex',flexDirection:'column'}}>
                 <div
                   onClick={()=>{setChatMode('global');setChatDmPartner(null);}}
                   style={{
                     padding:'12px 16px',
                     fontSize:12,
                     cursor:'pointer',
-                    color: chatMode === 'global' ? '#67e8f9' : '#9ca3af',
+                    color: chatMode === 'global' ? '#fef08a' : '#9ca3af',
                     background: chatMode === 'global' ? '#0c1220' : 'transparent',
-                    borderLeft: chatMode === 'global' ? '3px solid #06b6d4' : '3px solid transparent',
+                    borderLeft: chatMode === 'global' ? '3px solid #fbbf24' : '3px solid transparent',
                     fontWeight: chatMode === 'global' ? 700 : 400,
                     borderBottom:'1px solid #1f2937',
                   }}
@@ -2358,9 +2359,9 @@ export default function Home() {
                         padding:'10px 16px',
                         fontSize:11,
                         cursor:'pointer',
-                        color: chatMode === 'dm' && chatDmPartner?.id === conv.partner_id ? '#67e8f9' : '#9ca3af',
+                        color: chatMode === 'dm' && chatDmPartner?.id === conv.partner_id ? '#fef08a' : '#9ca3af',
                         background: chatMode === 'dm' && chatDmPartner?.id === conv.partner_id ? '#0c1220' : 'transparent',
-                        borderLeft: chatMode === 'dm' && chatDmPartner?.id === conv.partner_id ? '3px solid #06b6d4' : '3px solid transparent',
+                        borderLeft: chatMode === 'dm' && chatDmPartner?.id === conv.partner_id ? '3px solid #fbbf24' : '3px solid transparent',
                         borderBottom:'1px solid #1f2937',
                       }}
                     >
@@ -2403,7 +2404,7 @@ export default function Home() {
                   )}
                   {chatMessages.map(m => {
                     const isMe = m.from_user_id === user.id;
-                    const roleColor = m.from_user_role === 'admin' ? '#c084fc' : '#67e8f9';
+                    const roleColor = m.from_user_role === 'admin' ? '#c084fc' : '#fef08a';
                     const isDeleted = m.deleted;
                     // Read receipt logic: untuk DM, cek read_at. Global nggak ada read tracking per user.
                     const isRead = m.to_user_id && m.read_at;
@@ -2506,7 +2507,7 @@ export default function Home() {
 
                               {/* TEXT MESSAGE (skip kalau cuma placeholder untuk attachment) */}
                               {displayMessage && displayMessage !== '📷 Foto' && displayMessage !== '🎤 Pesan suara' && displayMessage !== '[🔥 pesan sekali lihat]' && (
-                                <div style={{fontSize:12,color:'#e0f2fe',whiteSpace:'pre-wrap',wordBreak:'break-word'}}>{displayMessage}</div>
+                                <div style={{fontSize:12,color:'#fefce8',whiteSpace:'pre-wrap',wordBreak:'break-word'}}>{displayMessage}</div>
                               )}
 
                               {/* View once: sender liat status */}
@@ -2536,15 +2537,15 @@ export default function Home() {
                 </div>
 
                 {/* Input toolbar */}
-                <div style={{padding:12,borderTop:'1px solid #1f2937',background:'#020617'}}>
+                <div style={{padding:12,borderTop:'1px solid #1f2937',background:'#052e16'}}>
                   {/* PREVIEW ATTACHMENT (kalau ada pending) */}
                   {chatPendingAttachment && (
-                    <div style={{marginBottom:10,padding:10,background:'#0d1117',border:'1px solid #0891b2',borderRadius:6,display:'flex',gap:12,alignItems:'center'}}>
+                    <div style={{marginBottom:10,padding:10,background:'#0d1117',border:'1px solid #f59e0b',borderRadius:6,display:'flex',gap:12,alignItems:'center'}}>
                       {chatPendingAttachment.type === 'image' && (
                         <img src={chatPendingAttachment.previewUrl} alt="preview" style={{maxHeight:80,maxWidth:120,borderRadius:4,objectFit:'cover'}}/>
                       )}
                       <div style={{flex:1,minWidth:0}}>
-                        <div style={{fontSize:11,color:'#67e8f9',fontWeight:700}}>📷 Gambar siap dikirim</div>
+                        <div style={{fontSize:11,color:'#fef08a',fontWeight:700}}>📷 Gambar siap dikirim</div>
                         <div style={{fontSize:10,color:'#9ca3af',marginTop:2,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{chatPendingAttachment.name}</div>
                         <div style={{fontSize:10,color:'#6b7280',marginTop:2}}>{(chatPendingAttachment.size / 1024).toFixed(1)} KB · Tekan Kirim untuk upload, atau tambahkan caption di bawah</div>
                       </div>
@@ -2564,13 +2565,13 @@ export default function Home() {
                     <div style={{display:'flex',gap:6,alignItems:'center'}}>
                       {/* Emoji picker */}
                       <div style={{position:'relative'}}>
-                        <button onClick={()=>setEmojiPickerOpen(!emojiPickerOpen)} style={{padding:'10px 12px',background:emojiPickerOpen?'#0c4a6e':'#164e63',color:'#67e8f9',border:'none',borderRadius:6,fontSize:16,cursor:'pointer'}} title="Emoji">
+                        <button onClick={()=>setEmojiPickerOpen(!emojiPickerOpen)} style={{padding:'10px 12px',background:emojiPickerOpen?'#0c4a6e':'#166534',color:'#fef08a',border:'none',borderRadius:6,fontSize:16,cursor:'pointer'}} title="Emoji">
                           😀
                         </button>
                         {emojiPickerOpen && (
                           <>
                             <div onClick={()=>setEmojiPickerOpen(false)} style={{position:'fixed',top:0,left:0,right:0,bottom:0,zIndex:99}}/>
-                            <div style={{position:'absolute',bottom:46,left:0,background:'#0f172a',border:'2px solid #0891b2',borderRadius:10,padding:10,width:320,maxHeight:280,overflow:'auto',zIndex:100,boxShadow:'0 8px 30px rgba(0,0,0,0.7)'}}>
+                            <div style={{position:'absolute',bottom:46,left:0,background:'#14532d',border:'2px solid #f59e0b',borderRadius:10,padding:10,width:320,maxHeight:280,overflow:'auto',zIndex:100,boxShadow:'0 8px 30px rgba(0,0,0,0.7)'}}>
                               {[
                                 { cat: 'Sering', emojis: '😀😂🤣😍🥰😘😎🤩🥳🤔😅😭🔥❤️👍👏💪🎉⚽🏆' },
                                 { cat: 'Wajah', emojis: '😀😃😄😁😆😅🤣😂🙂😊😇🥰😍🤩😘😋😛🤔🤫🤭😏😌😴😷🤒🤕🤑🤠😈👿' },
@@ -2611,12 +2612,12 @@ export default function Home() {
                         )}
                       </div>
                       {/* Image upload */}
-                      <label style={{cursor:(chatUploading||chatPendingAttachment)?'not-allowed':'pointer',padding:'10px 12px',background:'#164e63',borderRadius:6,fontSize:16,opacity:(chatUploading||chatPendingAttachment)?0.5:1}} title="Kirim foto">
+                      <label style={{cursor:(chatUploading||chatPendingAttachment)?'not-allowed':'pointer',padding:'10px 12px',background:'#166534',borderRadius:6,fontSize:16,opacity:(chatUploading||chatPendingAttachment)?0.5:1}} title="Kirim foto">
                         {chatUploading ? '⏳' : '📷'}
                         <input type="file" accept="image/*" style={{display:'none'}} disabled={chatUploading||!!chatPendingAttachment} onChange={onChatImageSelect}/>
                       </label>
                       {/* Voice record */}
-                      <button onClick={startVoiceRecord} disabled={chatUploading||!!chatPendingAttachment} style={{padding:'10px 12px',background:'#164e63',color:'#67e8f9',border:'none',borderRadius:6,fontSize:16,cursor:(chatUploading||chatPendingAttachment)?'not-allowed':'pointer',opacity:(chatUploading||chatPendingAttachment)?0.5:1}} title="Rekam pesan suara">
+                      <button onClick={startVoiceRecord} disabled={chatUploading||!!chatPendingAttachment} style={{padding:'10px 12px',background:'#166534',color:'#fef08a',border:'none',borderRadius:6,fontSize:16,cursor:(chatUploading||chatPendingAttachment)?'not-allowed':'pointer',opacity:(chatUploading||chatPendingAttachment)?0.5:1}} title="Rekam pesan suara">
                         🎤
                       </button>
                       {/* View once toggle — hanya aktif di DM mode */}
@@ -2627,8 +2628,8 @@ export default function Home() {
                           title={chatViewOnceMode ? 'View Once ON — pesan akan hilang setelah dilihat' : 'Toggle View Once (🔥 pesan sekali lihat)'}
                           style={{
                             padding:'10px 12px',
-                            background: chatViewOnceMode ? '#7c2d12' : '#164e63',
-                            color: chatViewOnceMode ? '#fb923c' : '#67e8f9',
+                            background: chatViewOnceMode ? '#7c2d12' : '#166534',
+                            color: chatViewOnceMode ? '#fb923c' : '#fef08a',
                             border: chatViewOnceMode ? '2px solid #fb923c' : 'none',
                             borderRadius:6,
                             fontSize:16,
@@ -2674,11 +2675,11 @@ export default function Home() {
       {/* MODAL PANDUAN MEMBER */}
       {guideOpen && (
         <div onClick={()=>setGuideOpen(false)} className="responsive-modal-backdrop" style={{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(2,6,23,0.9)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
-          <div onClick={e=>e.stopPropagation()} className="responsive-modal-content" style={{background:'linear-gradient(180deg,#0f172a 0%,#020617 100%)',border:'2px solid #0891b2',borderRadius:12,width:'100%',maxWidth:900,maxHeight:'90vh',display:'flex',flexDirection:'column',overflow:'hidden',boxShadow:'0 8px 40px rgba(6,182,212,0.3)'}}>
+          <div onClick={e=>e.stopPropagation()} className="responsive-modal-content" style={{background:'linear-gradient(180deg,#14532d 0%,#052e16 100%)',border:'2px solid #f59e0b',borderRadius:12,width:'100%',maxWidth:900,maxHeight:'90vh',display:'flex',flexDirection:'column',overflow:'hidden',boxShadow:'0 8px 40px rgba(251,191,36,0.3)'}}>
             {/* Header */}
-            <div style={{padding:'16px 24px',borderBottom:'2px solid #0891b2',display:'flex',justifyContent:'space-between',alignItems:'center',background:'linear-gradient(90deg,#0c1220 0%,#020617 100%)'}}>
+            <div style={{padding:'16px 24px',borderBottom:'2px solid #f59e0b',display:'flex',justifyContent:'space-between',alignItems:'center',background:'linear-gradient(90deg,#0c1220 0%,#052e16 100%)'}}>
               <div>
-                <h2 style={{margin:0,color:'#67e8f9',fontSize:18,fontWeight:900,textTransform:'uppercase',letterSpacing:1.5}}>❓ Panduan Pemakaian</h2>
+                <h2 style={{margin:0,color:'#fef08a',fontSize:18,fontWeight:900,textTransform:'uppercase',letterSpacing:1.5}}>❓ Panduan Pemakaian</h2>
                 <div style={{fontSize:11,color:'#9ca3af',marginTop:2}}>Football Bot Dashboard — untuk member & admin</div>
               </div>
               <button onClick={()=>setGuideOpen(false)} style={{background:'#991b1b',color:'#fff',border:'none',borderRadius:6,padding:'8px 14px',fontSize:13,fontWeight:700,cursor:'pointer'}}>✕ Tutup</button>
@@ -2687,7 +2688,7 @@ export default function Home() {
             {/* Body: sidebar + content */}
             <div style={{flex:1,display:'flex',overflow:'hidden'}}>
               {/* Sidebar sections */}
-              <div style={{width:220,borderRight:'1px solid #1f2937',background:'#020617',overflow:'auto',padding:'12px 0'}}>
+              <div style={{width:220,borderRight:'1px solid #1f2937',background:'#052e16',overflow:'auto',padding:'12px 0'}}>
                 {[
                   { id: 'welcome',    label: '👋 Selamat Datang' },
                   { id: 'target',     label: '🎯 Target & Siklus' },
@@ -2702,9 +2703,9 @@ export default function Home() {
                     padding:'10px 16px',
                     fontSize:12,
                     cursor:'pointer',
-                    color: guideSection === s.id ? '#67e8f9' : '#9ca3af',
+                    color: guideSection === s.id ? '#fef08a' : '#9ca3af',
                     background: guideSection === s.id ? '#0c1220' : 'transparent',
-                    borderLeft: guideSection === s.id ? '3px solid #06b6d4' : '3px solid transparent',
+                    borderLeft: guideSection === s.id ? '3px solid #fbbf24' : '3px solid transparent',
                     fontWeight: guideSection === s.id ? 700 : 400,
                   }}>
                     {s.label}
@@ -2713,16 +2714,16 @@ export default function Home() {
               </div>
 
               {/* Content area */}
-              <div style={{flex:1,padding:'20px 28px',overflow:'auto',fontSize:13,lineHeight:1.7,color:'#e0f2fe'}}>
+              <div style={{flex:1,padding:'20px 28px',overflow:'auto',fontSize:13,lineHeight:1.7,color:'#fefce8'}}>
                 {guideSection === 'welcome' && (
                   <div>
-                    <h3 style={{color:'#67e8f9',fontSize:18,marginTop:0}}>👋 Selamat Datang di Football Bot Dashboard</h3>
+                    <h3 style={{color:'#fef08a',fontSize:18,marginTop:0}}>👋 Selamat Datang di Football Bot Dashboard</h3>
                     <p>Dashboard ini adalah pusat kendali untuk tim posting konten sepakbola ke grup Facebook. Dashboard bantu kamu tracking progress harian, submit link postingan, dan kelola target.</p>
 
                     <h4 style={{color:'#a5f3fc',marginTop:20,fontSize:14}}>Siapa yang pakai?</h4>
                     <ul style={{paddingLeft:20}}>
-                      <li><strong style={{color:'#67e8f9'}}>Admin</strong> — kelola grup, member, bot, review progress</li>
-                      <li><strong style={{color:'#67e8f9'}}>Member</strong> — submit link posting harian ke grup yang ditugaskan</li>
+                      <li><strong style={{color:'#fef08a'}}>Admin</strong> — kelola grup, member, bot, review progress</li>
+                      <li><strong style={{color:'#fef08a'}}>Member</strong> — submit link posting harian ke grup yang ditugaskan</li>
                     </ul>
 
                     <h4 style={{color:'#a5f3fc',marginTop:20,fontSize:14}}>Apa yang kamu perlukan?</h4>
@@ -2740,7 +2741,7 @@ export default function Home() {
 
                 {guideSection === 'target' && (
                   <div>
-                    <h3 style={{color:'#67e8f9',fontSize:18,marginTop:0}}>🎯 Target Harian & Siklus Posting</h3>
+                    <h3 style={{color:'#fef08a',fontSize:18,marginTop:0}}>🎯 Target Harian & Siklus Posting</h3>
 
                     <h4 style={{color:'#a5f3fc',fontSize:14}}>Apa itu "Siklus"?</h4>
                     <p>Satu <strong>siklus</strong> = satu ronde posting lengkap di satu grup. Tiap siklus terdiri dari:</p>
@@ -2771,7 +2772,7 @@ export default function Home() {
 
                 {guideSection === 'submit' && (
                   <div>
-                    <h3 style={{color:'#67e8f9',fontSize:18,marginTop:0}}>📝 Cara Submit Link Post</h3>
+                    <h3 style={{color:'#fef08a',fontSize:18,marginTop:0}}>📝 Cara Submit Link Post</h3>
 
                     <p>Setelah kamu selesai posting ke grup Facebook, <strong>submit link post-nya</strong> ke dashboard biar ke-track.</p>
 
@@ -2806,7 +2807,7 @@ export default function Home() {
 
                 {guideSection === 'rules' && (
                   <div>
-                    <h3 style={{color:'#67e8f9',fontSize:18,marginTop:0}}>✅ Aturan Konten</h3>
+                    <h3 style={{color:'#fef08a',fontSize:18,marginTop:0}}>✅ Aturan Konten</h3>
 
                     <h4 style={{color:'#6ee7b7',fontSize:14}}>YANG BOLEH (sepakbola):</h4>
                     <ul style={{paddingLeft:20,lineHeight:1.8}}>
@@ -2835,7 +2836,7 @@ export default function Home() {
 
                 {guideSection === 'dedup' && (
                   <div>
-                    <h3 style={{color:'#67e8f9',fontSize:18,marginTop:0}}>🔍 Sistem Dedup (Anti-Duplikat)</h3>
+                    <h3 style={{color:'#fef08a',fontSize:18,marginTop:0}}>🔍 Sistem Dedup (Anti-Duplikat)</h3>
 
                     <p>Dashboard punya <strong>3 lapis proteksi</strong> untuk mencegah duplikat konten. Ini kenapa kadang link kamu <strong>ditolak</strong> walau belum pernah submit.</p>
 
@@ -2858,7 +2859,7 @@ export default function Home() {
 
                 {guideSection === 'progress' && (
                   <div>
-                    <h3 style={{color:'#67e8f9',fontSize:18,marginTop:0}}>📊 Cara Baca Progress</h3>
+                    <h3 style={{color:'#fef08a',fontSize:18,marginTop:0}}>📊 Cara Baca Progress</h3>
 
                     <p>Di tab <strong>Tracking Postingan</strong>, ada tabel "Progress Postingan" yang nampilin status semua grup.</p>
 
@@ -2898,7 +2899,7 @@ export default function Home() {
 
                 {guideSection === 'faq' && (
                   <div>
-                    <h3 style={{color:'#67e8f9',fontSize:18,marginTop:0}}>💬 FAQ (Pertanyaan Umum)</h3>
+                    <h3 style={{color:'#fef08a',fontSize:18,marginTop:0}}>💬 FAQ (Pertanyaan Umum)</h3>
 
                     <div style={{marginTop:16}}>
                       <div style={{fontWeight:700,color:'#a5f3fc',marginBottom:4}}>❓ Kenapa link saya ditolak padahal belum pernah submit?</div>
@@ -2934,7 +2935,7 @@ export default function Home() {
 
                 {guideSection === 'trouble' && (
                   <div>
-                    <h3 style={{color:'#67e8f9',fontSize:18,marginTop:0}}>🚨 Troubleshooting</h3>
+                    <h3 style={{color:'#fef08a',fontSize:18,marginTop:0}}>🚨 Troubleshooting</h3>
 
                     <h4 style={{color:'#fcd34d',marginTop:16,fontSize:14}}>🟡 Submit link tapi nggak muncul di tabel</h4>
                     <ul style={{paddingLeft:20,color:'#9ca3af',fontSize:12}}>
@@ -2963,7 +2964,7 @@ export default function Home() {
                       <li>Kalau hijau tapi tidak merespon, browser mungkin blokir popup — izinkan popup untuk dashboard</li>
                     </ul>
 
-                    <div style={{marginTop:20,padding:12,background:'#0c1220',borderLeft:'3px solid #06b6d4',borderRadius:4,fontSize:12}}>
+                    <div style={{marginTop:20,padding:12,background:'#0c1220',borderLeft:'3px solid #fbbf24',borderRadius:4,fontSize:12}}>
                       💡 <strong>Masih bingung?</strong> Hubungi admin langsung. Kasih tahu masalah yang kamu alami + screenshot kalau bisa.
                     </div>
                   </div>
@@ -2977,15 +2978,15 @@ export default function Home() {
       {/* MODAL GANTI PASSWORD */}
       {pwModal && (
         <div onClick={()=>setPwModal(false)} style={{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(2,6,23,0.85)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center'}}>
-          <div onClick={e=>e.stopPropagation()} style={{background:'linear-gradient(180deg,#0f172a 0%,#020617 100%)',border:'2px solid #0891b2',borderRadius:8,padding:24,maxWidth:400,width:'90%',boxShadow:'0 8px 40px rgba(6,182,212,0.3)'}}>
-            <h3 style={{color:'#67e8f9',margin:'0 0 16px 0',fontSize:16,fontWeight:900,textTransform:'uppercase',letterSpacing:1}}>Ganti Password</h3>
-            <p style={{color:'#9ca3af',fontSize:12,margin:'0 0 16px 0'}}>Akun: <strong style={{color:'#e0f2fe'}}>{user.name}</strong> ({user.role})</p>
+          <div onClick={e=>e.stopPropagation()} style={{background:'linear-gradient(180deg,#14532d 0%,#052e16 100%)',border:'2px solid #f59e0b',borderRadius:8,padding:24,maxWidth:400,width:'90%',boxShadow:'0 8px 40px rgba(251,191,36,0.3)'}}>
+            <h3 style={{color:'#fef08a',margin:'0 0 16px 0',fontSize:16,fontWeight:900,textTransform:'uppercase',letterSpacing:1}}>Ganti Password</h3>
+            <p style={{color:'#9ca3af',fontSize:12,margin:'0 0 16px 0'}}>Akun: <strong style={{color:'#fefce8'}}>{user.name}</strong> ({user.role})</p>
             <div style={{display:'flex',flexDirection:'column',gap:12}}>
-              <div><label style={{display:'block',fontSize:11,color:'#67e8f9',marginBottom:4,fontWeight:700,textTransform:'uppercase',letterSpacing:1}}>Password Lama</label>
+              <div><label style={{display:'block',fontSize:11,color:'#fef08a',marginBottom:4,fontWeight:700,textTransform:'uppercase',letterSpacing:1}}>Password Lama</label>
                 <input type="password" style={S.input} value={pwOld} onChange={e=>setPwOld(e.target.value)} /></div>
-              <div><label style={{display:'block',fontSize:11,color:'#67e8f9',marginBottom:4,fontWeight:700,textTransform:'uppercase',letterSpacing:1}}>Password Baru</label>
+              <div><label style={{display:'block',fontSize:11,color:'#fef08a',marginBottom:4,fontWeight:700,textTransform:'uppercase',letterSpacing:1}}>Password Baru</label>
                 <input type="password" style={S.input} value={pwNew} onChange={e=>setPwNew(e.target.value)} /></div>
-              <div><label style={{display:'block',fontSize:11,color:'#67e8f9',marginBottom:4,fontWeight:700,textTransform:'uppercase',letterSpacing:1}}>Konfirmasi Password Baru</label>
+              <div><label style={{display:'block',fontSize:11,color:'#fef08a',marginBottom:4,fontWeight:700,textTransform:'uppercase',letterSpacing:1}}>Konfirmasi Password Baru</label>
                 <input type="password" style={S.input} value={pwConfirm} onChange={e=>setPwConfirm(e.target.value)} onKeyDown={e=>e.key==='Enter'&&changePassword()} /></div>
               {pwMsg && <p style={{fontSize:12,color:pwMsg.includes('berhasil')?'#10b981':'#ef4444',margin:'4px 0'}}>{pwMsg}</p>}
               <div style={{display:'flex',gap:8,marginTop:8}}>
@@ -3048,19 +3049,19 @@ export default function Home() {
         {tab === 'overview' && isAdmin && (
           <>
             {/* BOT HEALTH MONITOR */}
-            <div style={{...S.box,marginBottom:24,padding:'16px 20px',border:'1px solid #0891b2'}}>
+            <div style={{...S.box,marginBottom:24,padding:'16px 20px',border:'1px solid #f59e0b'}}>
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12,flexWrap:'wrap',gap:8}}>
                 <div>
-                  <div style={{fontSize:13,color:'#67e8f9',fontWeight:800,textTransform:'uppercase',letterSpacing:1}}>🤖 Bot Health Monitor</div>
+                  <div style={{fontSize:13,color:'#fef08a',fontWeight:800,textTransform:'uppercase',letterSpacing:1}}>🤖 Bot Health Monitor</div>
                   <div style={{fontSize:11,color:'#9ca3af',marginTop:4}}>Status worker bot yang jalan di komputer lokal. Auto-refresh tiap 30 detik.</div>
                 </div>
-                <button onClick={loadBotHealth} disabled={botHealthLoading} style={{...S.btn('#164e63'),padding:'8px 14px',fontSize:11}}>
+                <button onClick={loadBotHealth} disabled={botHealthLoading} style={{...S.btn('#166534'),padding:'8px 14px',fontSize:11}}>
                   {botHealthLoading ? '⏳' : '🔄'} Refresh
                 </button>
               </div>
 
               {botHealth.length === 0 && !botHealthLoading && (
-                <div style={{padding:'20px',textAlign:'center',background:'#020617',borderRadius:6,border:'1px dashed #1f2937'}}>
+                <div style={{padding:'20px',textAlign:'center',background:'#052e16',borderRadius:6,border:'1px dashed #1f2937'}}>
                   <div style={{fontSize:13,color:'#9ca3af'}}>Belum ada bot worker yang mengirim heartbeat.</div>
                   <div style={{fontSize:11,color:'#6b7280',marginTop:6}}>Restart bot worker di komputer lokal (bot-worker.js / reels-worker.js) untuk mulai monitoring.</div>
                 </div>
@@ -3094,7 +3095,7 @@ export default function Home() {
                       <div key={w.worker_id} style={{background:'#0d1117',border:'1px solid '+statusColor,borderRadius:8,padding:14}}>
                         <div style={{display:'flex',justifyContent:'space-between',alignItems:'flex-start',marginBottom:10}}>
                           <div>
-                            <div style={{fontSize:13,fontWeight:800,color:'#e0f2fe'}}>{w.worker_name}</div>
+                            <div style={{fontSize:13,fontWeight:800,color:'#fefce8'}}>{w.worker_name}</div>
                             <div style={{fontSize:10,color:'#6b7280',marginTop:2}}>ID: {w.worker_id}</div>
                           </div>
                           <span style={{padding:'4px 10px',borderRadius:4,fontSize:10,fontWeight:900,background:statusBg,color:statusColor,border:'1px solid '+statusColor}}>
@@ -3103,11 +3104,11 @@ export default function Home() {
                         </div>
                         <div style={{fontSize:11,color:'#9ca3af',lineHeight:1.6}}>
                           <div><span style={{color:'#6b7280'}}>Heartbeat:</span> <strong style={{color:statusColor}}>{ageText}</strong></div>
-                          {w.current_task && <div><span style={{color:'#6b7280'}}>Sedang:</span> <span style={{color:'#67e8f9'}}>{w.current_task}</span></div>}
+                          {w.current_task && <div><span style={{color:'#6b7280'}}>Sedang:</span> <span style={{color:'#fef08a'}}>{w.current_task}</span></div>}
                           {!w.current_task && w.status === 'active' && <div style={{color:'#6b7280',fontStyle:'italic'}}>Idle (menunggu task)</div>}
                           {w.last_task_info && <div><span style={{color:'#6b7280'}}>Task terakhir:</span> {w.last_task_info}</div>}
                           <div style={{display:'flex',gap:14,marginTop:6,paddingTop:6,borderTop:'1px solid #1f2937'}}>
-                            <span><span style={{color:'#6b7280'}}>Total:</span> <strong style={{color:'#e0f2fe'}}>{w.total_tasks_today || 0}</strong></span>
+                            <span><span style={{color:'#6b7280'}}>Total:</span> <strong style={{color:'#fefce8'}}>{w.total_tasks_today || 0}</strong></span>
                             <span style={{color:'#10b981'}}>✓ {w.total_success_today || 0}</span>
                             <span style={{color:'#ef4444'}}>✗ {w.total_failed_today || 0}</span>
                           </div>
@@ -3186,7 +3187,7 @@ export default function Home() {
                     const barColor = completeRate >= 80 ? '#10b981' : completeRate >= 50 ? '#f59e0b' : completeRate > 0 ? '#ef4444' : '#374151';
                     return (
                       <div key={c.club} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:4}}>
-                        <span style={{fontSize:10,color:'#e0f2fe',fontWeight:700}}>{c.total}</span>
+                        <span style={{fontSize:10,color:'#fefce8',fontWeight:700}}>{c.total}</span>
                         <div
                           title={`${c.club}: ${c.memberPosts} member + ${c.botPosts} bot = ${c.total} total | Complete: ${completeRate}%`}
                           style={{
@@ -3240,12 +3241,12 @@ export default function Home() {
                       const completeRate = c.trackerCycles > 0 ? Math.round(c.trackerCompleted/c.trackerCycles*100) : 0;
                       return (
                         <tr key={c.club}>
-                          <td style={S.td}><strong style={{color:'#e0f2fe'}}>{c.club}</strong></td>
+                          <td style={S.td}><strong style={{color:'#fefce8'}}>{c.club}</strong></td>
                           <td style={{...S.td,textAlign:'center'}}>{c.groups}</td>
                           <td style={{...S.td,textAlign:'center',color:'#9ca3af'}}>{c.trackerCycles}</td>
                           <td style={{...S.td,textAlign:'center',color:c.trackerCompleted>0?'#10b981':'#6b7280',fontWeight:700}}>{c.trackerCompleted}</td>
                           <td style={{...S.td,textAlign:'center',color:c.botPosts>0?'#60a5fa':'#6b7280'}}>{c.botPosts}</td>
-                          <td style={{...S.td,textAlign:'center',color:c.memberPosts>0?'#67e8f9':'#6b7280',fontWeight:600}}>{c.memberPosts}</td>
+                          <td style={{...S.td,textAlign:'center',color:c.memberPosts>0?'#fef08a':'#6b7280',fontWeight:600}}>{c.memberPosts}</td>
                           <td style={{...S.td,textAlign:'center',fontWeight:700,color:'#FFD700'}}>{c.total}</td>
                           <td style={S.td}>
                             <div style={{display:'flex',alignItems:'center',gap:6}}>
@@ -4433,14 +4434,14 @@ export default function Home() {
               )}
 
               {/* AUTO BACKUP HISTORY (Vercel Cron) */}
-              <div style={{marginTop:20,padding:16,background:'#0d1117',border:'1px solid #0891b2',borderRadius:8}}>
+              <div style={{marginTop:20,padding:16,background:'#0d1117',border:'1px solid #f59e0b',borderRadius:8}}>
                 <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12,flexWrap:'wrap',gap:8}}>
                   <div>
-                    <h4 style={{color:'#67e8f9',fontSize:14,margin:0,fontWeight:800,textTransform:'uppercase',letterSpacing:1}}>⏰ Auto Backup Harian</h4>
+                    <h4 style={{color:'#fef08a',fontSize:14,margin:0,fontWeight:800,textTransform:'uppercase',letterSpacing:1}}>⏰ Auto Backup Harian</h4>
                     <p style={{fontSize:11,color:'#9ca3af',margin:'4px 0 0 0'}}>Vercel Cron otomatis backup ke tabel backups_log setiap 02:00 WIB. Disimpan 30 backup terakhir.</p>
                   </div>
                   <div style={{display:'flex',gap:8}}>
-                    <button onClick={loadAutoBackups} disabled={autoBackupsLoading} style={{...S.btn('#164e63'),padding:'8px 14px',fontSize:11}}>
+                    <button onClick={loadAutoBackups} disabled={autoBackupsLoading} style={{...S.btn('#166534'),padding:'8px 14px',fontSize:11}}>
                       {autoBackupsLoading ? '⏳ Loading...' : '🔄 Refresh'}
                     </button>
                     <button onClick={triggerManualBackup} style={{...S.btn('#065f46'),padding:'8px 14px',fontSize:11}}>
@@ -4476,11 +4477,11 @@ export default function Home() {
                             <tr key={b.id}>
                               <td style={{...S.td,fontSize:11}}>{new Date(b.created_at).toLocaleString('id-ID')}</td>
                               <td style={{...S.td,fontSize:11}}>
-                                <span style={{padding:'2px 6px',borderRadius:3,fontSize:9,fontWeight:700,background:b.trigger_type==='auto'?'#164e63':'#7c2d12',color:b.trigger_type==='auto'?'#67e8f9':'#fb923c'}}>
+                                <span style={{padding:'2px 6px',borderRadius:3,fontSize:9,fontWeight:700,background:b.trigger_type==='auto'?'#166534':'#7c2d12',color:b.trigger_type==='auto'?'#fef08a':'#fb923c'}}>
                                   {(b.trigger_type || 'auto').toUpperCase()}
                                 </span>
                               </td>
-                              <td style={{...S.td,fontSize:11,textAlign:'right',color:'#e0f2fe'}}>{totalRows.toLocaleString('id-ID')}</td>
+                              <td style={{...S.td,fontSize:11,textAlign:'right',color:'#fefce8'}}>{totalRows.toLocaleString('id-ID')}</td>
                               <td style={{...S.td,fontSize:11,textAlign:'right',color:'#9ca3af'}}>{sizeKB} KB</td>
                               <td style={{...S.td,fontSize:10}}>
                                 {b.error ? <span style={{color:'#ef4444'}} title={b.error}>⚠ Error</span> : <span style={{color:'#10b981'}}>✓ OK</span>}
@@ -4496,8 +4497,8 @@ export default function Home() {
                   </div>
                 )}
 
-                <div style={{marginTop:12,padding:10,background:'#020617',border:'1px solid #1f2937',borderRadius:6,fontSize:10,color:'#6b7280'}}>
-                  <strong style={{color:'#67e8f9'}}>Setup yang diperlukan:</strong>
+                <div style={{marginTop:12,padding:10,background:'#052e16',border:'1px solid #1f2937',borderRadius:6,fontSize:10,color:'#6b7280'}}>
+                  <strong style={{color:'#fef08a'}}>Setup yang diperlukan:</strong>
                   <ol style={{margin:'4px 0 0 16px',padding:0}}>
                     <li>Jalankan SQL <code style={{background:'#1f2937',padding:'0 3px',borderRadius:2}}>003_backups_log.sql</code> di Supabase SQL Editor</li>
                     <li>Tambah env var <code style={{background:'#1f2937',padding:'0 3px',borderRadius:2}}>CRON_SECRET</code> di Vercel (opsional, untuk manual trigger)</li>
@@ -4594,7 +4595,7 @@ export default function Home() {
                     <button key={f.id} onClick={()=>setActivityFilter(f.id)} style={{
                       padding:'8px 14px',fontSize:11,borderRadius:4,border:'1px solid #1f2937',cursor:'pointer',
                       background: activityFilter === f.id ? '#0c4a6e' : '#111827',
-                      color: activityFilter === f.id ? '#67e8f9' : '#9ca3af',
+                      color: activityFilter === f.id ? '#fef08a' : '#9ca3af',
                       fontWeight: activityFilter === f.id ? 700 : 400,
                     }}>{f.label}</button>
                   ))}
@@ -4620,7 +4621,7 @@ export default function Home() {
                         }}>{e.type === 'bot' ? 'BOT' : 'MEMBER'}</span>
                         {e.action && <span style={{fontSize:9,color:'#6b7280'}}>{e.action}</span>}
                       </div>
-                      <div style={{fontSize:13,color:'#e0f2fe',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{e.title}</div>
+                      <div style={{fontSize:13,color:'#fefce8',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{e.title}</div>
                       {e.subtitle && <div style={{fontSize:10,color:'#6b7280',marginTop:2}}>{e.subtitle}</div>}
                     </div>
                     <div style={{textAlign:'right',fontSize:10,color:'#6b7280',minWidth:140,flexShrink:0}}>
@@ -4631,7 +4632,7 @@ export default function Home() {
                       )}
                       <br/>
                       <span>{new Date(e.timestamp).toLocaleString('id-ID',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</span>
-                      {e.link && <> · <a href={e.link} target="_blank" rel="noreferrer" style={{color:'#67e8f9',textDecoration:'none'}}>lihat</a></>}
+                      {e.link && <> · <a href={e.link} target="_blank" rel="noreferrer" style={{color:'#fef08a',textDecoration:'none'}}>lihat</a></>}
                     </div>
                   </div>
                 ))}
@@ -4648,7 +4649,7 @@ export default function Home() {
 
             {/* SECTION 1: BOT ACCOUNTS QUICK VIEW (read-only view + toggle) */}
             <div style={{...S.box,marginBottom:20}}>
-              <h3 style={{color:'#67e8f9',fontSize:15,margin:'0 0 6px 0',fontWeight:800,textTransform:'uppercase',letterSpacing:1}}>🤖 Bot Accounts Quick View</h3>
+              <h3 style={{color:'#fef08a',fontSize:15,margin:'0 0 6px 0',fontWeight:800,textTransform:'uppercase',letterSpacing:1}}>🤖 Bot Accounts Quick View</h3>
               <p style={{fontSize:12,color:'#9ca3af',margin:'0 0 16px 0'}}>Toggle aktif/inactive akun bot dengan cepat. Untuk CRUD lengkap (tambah/edit/hapus), pakai tab <strong>Jalankan Bot</strong> atau <strong>Reels Bot</strong>.</p>
 
               {/* Filter */}
@@ -4657,7 +4658,7 @@ export default function Home() {
                   <button key={f} onClick={()=>setBotAccFilter(f)} style={{
                     padding:'6px 12px',fontSize:11,borderRadius:4,border:'1px solid #1f2937',cursor:'pointer',
                     background: botAccFilter === f ? '#0c4a6e' : '#111827',
-                    color: botAccFilter === f ? '#67e8f9' : '#9ca3af',
+                    color: botAccFilter === f ? '#fef08a' : '#9ca3af',
                     fontWeight: botAccFilter === f ? 700 : 400,
                     textTransform:'uppercase',letterSpacing:1,
                   }}>{f === 'all' ? 'Semua' : f}</button>
@@ -4683,7 +4684,7 @@ export default function Home() {
                           <td style={{...S.td,fontFamily:'monospace',fontSize:11}}>{acc.account_id}</td>
                           <td style={{...S.td,fontWeight:600}}>{acc.account_name}</td>
                           <td style={S.td}>
-                            <span style={{padding:'2px 8px',borderRadius:3,fontSize:9,fontWeight:700,background:'#0c4a6e',color:'#67e8f9',textTransform:'uppercase'}}>{acc.account_type}</span>
+                            <span style={{padding:'2px 8px',borderRadius:3,fontSize:9,fontWeight:700,background:'#0c4a6e',color:'#fef08a',textTransform:'uppercase'}}>{acc.account_type}</span>
                           </td>
                           <td style={S.td}>
                             <label style={{display:'flex',alignItems:'center',gap:6,cursor:'pointer',fontSize:11}}>
@@ -4703,30 +4704,30 @@ export default function Home() {
 
             {/* SECTION 2: SYSTEM ACTIONS */}
             <div style={{...S.box,marginBottom:20}}>
-              <h3 style={{color:'#67e8f9',fontSize:15,margin:'0 0 6px 0',fontWeight:800,textTransform:'uppercase',letterSpacing:1}}>⚡ System Actions</h3>
+              <h3 style={{color:'#fef08a',fontSize:15,margin:'0 0 6px 0',fontWeight:800,textTransform:'uppercase',letterSpacing:1}}>⚡ System Actions</h3>
               <p style={{fontSize:12,color:'#9ca3af',margin:'0 0 16px 0'}}>Tombol-tombol admin untuk maintenance database.</p>
 
               <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(280px,1fr))',gap:12}}>
                 <div style={{background:'#0d1117',border:'1px solid #1f2937',borderRadius:6,padding:14}}>
-                  <div style={{fontSize:12,color:'#67e8f9',fontWeight:700,marginBottom:4}}>🔄 Reset Worker Counters</div>
+                  <div style={{fontSize:12,color:'#fef08a',fontWeight:700,marginBottom:4}}>🔄 Reset Worker Counters</div>
                   <p style={{fontSize:10,color:'#9ca3af',margin:'0 0 10px 0'}}>Reset counter harian (total/success/failed) untuk semua bot worker ke 0.</p>
-                  <button onClick={resetWorkerCounters} style={{...S.btn('#164e63'),padding:'8px 14px',fontSize:11,width:'100%'}}>Reset Sekarang</button>
+                  <button onClick={resetWorkerCounters} style={{...S.btn('#166534'),padding:'8px 14px',fontSize:11,width:'100%'}}>Reset Sekarang</button>
                 </div>
 
                 <div style={{background:'#0d1117',border:'1px solid #1f2937',borderRadius:6,padding:14}}>
-                  <div style={{fontSize:12,color:'#67e8f9',fontWeight:700,marginBottom:4}}>🗑 Cleanup Chat Lama</div>
+                  <div style={{fontSize:12,color:'#fef08a',fontWeight:700,marginBottom:4}}>🗑 Cleanup Chat Lama</div>
                   <p style={{fontSize:10,color:'#9ca3af',margin:'0 0 10px 0'}}>Hapus pesan chat yang umurnya lebih dari 30 hari.</p>
                   <button onClick={cleanupOldChat} style={{...S.btn('#7c2d12'),padding:'8px 14px',fontSize:11,width:'100%'}}>Cleanup</button>
                 </div>
 
                 <div style={{background:'#0d1117',border:'1px solid #1f2937',borderRadius:6,padding:14}}>
-                  <div style={{fontSize:12,color:'#67e8f9',fontWeight:700,marginBottom:4}}>🗑 Cleanup Backup Lama</div>
+                  <div style={{fontSize:12,color:'#fef08a',fontWeight:700,marginBottom:4}}>🗑 Cleanup Backup Lama</div>
                   <p style={{fontSize:10,color:'#9ca3af',margin:'0 0 10px 0'}}>Hapus backup lebih lama dari 30 terbaru (otomatis juga jalan harian).</p>
                   <button onClick={cleanupOldBackups} style={{...S.btn('#7c2d12'),padding:'8px 14px',fontSize:11,width:'100%'}}>Cleanup</button>
                 </div>
 
                 <div style={{background:'#0d1117',border:'1px solid #1f2937',borderRadius:6,padding:14}}>
-                  <div style={{fontSize:12,color:'#67e8f9',fontWeight:700,marginBottom:4}}>⚡ Backup Sekarang</div>
+                  <div style={{fontSize:12,color:'#fef08a',fontWeight:700,marginBottom:4}}>⚡ Backup Sekarang</div>
                   <p style={{fontSize:10,color:'#9ca3af',margin:'0 0 10px 0'}}>Trigger backup manual sekarang (buka tab Kelola User untuk lihat hasilnya).</p>
                   <button onClick={triggerManualBackup} style={{...S.btn('#065f46'),padding:'8px 14px',fontSize:11,width:'100%'}}>Backup Now</button>
                 </div>
@@ -4737,10 +4738,10 @@ export default function Home() {
             <div style={{...S.box,marginBottom:20}}>
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
                 <div>
-                  <h3 style={{color:'#67e8f9',fontSize:15,margin:'0 0 4px 0',fontWeight:800,textTransform:'uppercase',letterSpacing:1}}>📊 Database Statistics</h3>
+                  <h3 style={{color:'#fef08a',fontSize:15,margin:'0 0 4px 0',fontWeight:800,textTransform:'uppercase',letterSpacing:1}}>📊 Database Statistics</h3>
                   <p style={{fontSize:12,color:'#9ca3af',margin:0}}>Statistik total row per tabel.</p>
                 </div>
-                <button onClick={loadSystemStats} style={{...S.btn('#164e63'),padding:'8px 14px',fontSize:11}}>🔄 Refresh</button>
+                <button onClick={loadSystemStats} style={{...S.btn('#166534'),padding:'8px 14px',fontSize:11}}>🔄 Refresh</button>
               </div>
               {!systemStats && <p style={{fontSize:12,color:'#6b7280'}}>Memuat statistik...</p>}
               {systemStats && (
@@ -4757,12 +4758,12 @@ export default function Home() {
                   ].map(s => (
                     <div key={s.key} style={{background:'#0d1117',border:'1px solid #1f2937',borderRadius:6,padding:12}}>
                       <div style={{fontSize:11,color:'#9ca3af'}}>{s.label}</div>
-                      <div style={{fontSize:20,fontWeight:900,color:'#67e8f9',marginTop:4}}>{(systemStats[s.key] || 0).toLocaleString('id-ID')}</div>
+                      <div style={{fontSize:20,fontWeight:900,color:'#fef08a',marginTop:4}}>{(systemStats[s.key] || 0).toLocaleString('id-ID')}</div>
                     </div>
                   ))}
-                  <div style={{background:'#0d1117',border:'1px solid #0891b2',borderRadius:6,padding:12}}>
+                  <div style={{background:'#0d1117',border:'1px solid #f59e0b',borderRadius:6,padding:12}}>
                     <div style={{fontSize:11,color:'#9ca3af'}}>💾 Total Backup Size</div>
-                    <div style={{fontSize:20,fontWeight:900,color:'#67e8f9',marginTop:4}}>{systemStats.backups_size_kb?.toLocaleString('id-ID') || 0} KB</div>
+                    <div style={{fontSize:20,fontWeight:900,color:'#fef08a',marginTop:4}}>{systemStats.backups_size_kb?.toLocaleString('id-ID') || 0} KB</div>
                   </div>
                 </div>
               )}
@@ -4770,7 +4771,7 @@ export default function Home() {
 
             {/* Info box */}
             <div style={{padding:14,background:'#0d1117',border:'1px solid #1f2937',borderRadius:8,fontSize:11,color:'#6b7280'}}>
-              <strong style={{color:'#67e8f9'}}>💡 Tips admin:</strong>
+              <strong style={{color:'#fef08a'}}>💡 Tips admin:</strong>
               <ul style={{margin:'6px 0 0 20px',padding:0}}>
                 <li>Matikan akun bot yang lagi bermasalah daripada hapus — biar history tetap terjaga</li>
                 <li>Cleanup chat + backup lama sebulan sekali untuk hemat storage Supabase</li>
