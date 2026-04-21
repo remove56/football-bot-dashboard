@@ -1419,10 +1419,56 @@ export default function Home() {
     }
   }, [chatOpen, chatMode]);
 
-  // Update tab title dengan unread count (seperti Discord/WhatsApp Web)
+  // Update tab title + favicon badge dengan unread count (seperti Discord/WhatsApp Web)
   useEffect(() => {
     const total = (notifUnread || 0) + (chatUnread || 0);
     document.title = total > 0 ? `(${total}) Football Bot Dashboard` : 'Football Bot Dashboard';
+
+    // Draw favicon dinamis dengan badge angka
+    const canvas = document.createElement('canvas');
+    canvas.width = 64;
+    canvas.height = 64;
+    const ctx = canvas.getContext('2d');
+
+    // Base: bola sepak dengan background cyan (match theme Dark Crystal Ice)
+    ctx.fillStyle = '#06b6d4';
+    ctx.beginPath();
+    ctx.arc(32, 32, 30, 0, 2 * Math.PI);
+    ctx.fill();
+    // Pattern bola (segi enam hitam)
+    ctx.fillStyle = '#020617';
+    ctx.font = 'bold 36px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('⚽', 32, 32);
+
+    // Badge angka kalau ada unread
+    if (total > 0) {
+      const displayNum = total > 99 ? '99+' : String(total);
+      // Red circle di pojok kanan atas
+      ctx.fillStyle = '#ef4444';
+      ctx.beginPath();
+      ctx.arc(48, 16, 16, 0, 2 * Math.PI);
+      ctx.fill();
+      // White border
+      ctx.strokeStyle = '#ffffff';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+      // Angka putih
+      ctx.fillStyle = '#ffffff';
+      ctx.font = displayNum.length > 2 ? 'bold 14px sans-serif' : 'bold 20px sans-serif';
+      ctx.fillText(displayNum, 48, 17);
+    }
+
+    // Set favicon
+    const dataUrl = canvas.toDataURL('image/png');
+    let link = document.querySelector("link[rel*='icon']");
+    if (!link) {
+      link = document.createElement('link');
+      link.rel = 'icon';
+      document.head.appendChild(link);
+    }
+    link.href = dataUrl;
   }, [notifUnread, chatUnread]);
 
   // Keyboard Esc untuk tutup lightbox
