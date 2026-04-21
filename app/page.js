@@ -4181,10 +4181,10 @@ export default function Home() {
                     <label key={p.key} onClick={()=>setReelsPlatforms(prev=>({...prev,[p.key]:!prev[p.key]}))}
                       style={{display:'flex',alignItems:'center',gap:8,cursor:'pointer',padding:'8px 16px',borderRadius:8,
                         background:reelsPlatforms[p.key]?'#1a1a2e':'#0d1117',
-                        border:`2px solid ${reelsPlatforms[p.key]?p.color:'#374151'}`,opacity:p.key==='instagram'?0.5:1}}>
+                        border:`2px solid ${reelsPlatforms[p.key]?p.color:'#374151'}`}}>
                       <span style={{fontSize:16}}>{p.icon}</span>
                       <span style={{fontSize:13,fontWeight:600,color:reelsPlatforms[p.key]?p.color:'#6b7280'}}>{p.label}</span>
-                      {p.key==='instagram' && <span style={{fontSize:9,color:'#6b7280'}}>(segera)</span>}
+                      {p.key==='instagram' && <span style={{fontSize:9,color:'#10b981'}}>(auto-chain)</span>}
                     </label>
                   ))}
                 </div>
