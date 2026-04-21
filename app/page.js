@@ -1460,15 +1460,18 @@ export default function Home() {
       ctx.fillText(displayNum, 48, 17);
     }
 
-    // Set favicon
+    // Set favicon — hapus semua existing icon link, buat yang baru
     const dataUrl = canvas.toDataURL('image/png');
-    let link = document.querySelector("link[rel*='icon']");
-    if (!link) {
-      link = document.createElement('link');
-      link.rel = 'icon';
+    // Hapus semua link icon yang ada
+    document.querySelectorAll("link[rel*='icon'], link[rel='shortcut icon']").forEach(el => el.remove());
+    // Buat link baru dengan multiple rel untuk kompatibilitas semua browser
+    ['icon', 'shortcut icon'].forEach(rel => {
+      const link = document.createElement('link');
+      link.rel = rel;
+      link.type = 'image/png';
+      link.href = dataUrl;
       document.head.appendChild(link);
-    }
-    link.href = dataUrl;
+    });
   }, [notifUnread, chatUnread]);
 
   // Keyboard Esc untuk tutup lightbox
