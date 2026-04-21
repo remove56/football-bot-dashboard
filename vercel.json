@@ -8,7 +8,7 @@
     },
     {
       "path": "/api/cron/notify-targets",
-      "schedule": "0 5,11,14 * * *"
+      "schedule": "0 5 * * *"
     }
   ]
 }
