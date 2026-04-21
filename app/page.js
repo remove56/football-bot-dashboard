@@ -269,6 +269,19 @@ export default function Home() {
   const [baMsg, setBaMsg] = useState('');
   const [baEditing, setBaEditing] = useState(null);
 
+  // IG Bot state
+  const [igTasks, setIgTasks] = useState([]);
+  const [igLatestVideo, setIgLatestVideo] = useState(null);
+  const [igSettings, setIgSettings] = useState({});
+  const [igMsg, setIgMsg] = useState('');
+  const [igAcc1, setIgAcc1] = useState(true);    // artezi9090 checked
+  const [igAcc2, setIgAcc2] = useState(true);    // artezi9191 checked
+  const [igDelay1, setIgDelay1] = useState(0);   // default langsung
+  const [igDelay2, setIgDelay2] = useState(30);  // default 30 min setelah akun 1
+  const [igCaption, setIgCaption] = useState(
+    'Highlight sepak bola hari ini ⚽️🔥\n\n#sepakbola #football #reels #viral #bola\n#soccer #footballreels #goal #skill\n#highlights #trending #fyp #reelsinstagram'
+  );
+
   // Link form
   const [linkGroup, setLinkGroup] = useState('');
   const [linkUrl, setLinkUrl] = useState('');
@@ -445,6 +458,82 @@ export default function Home() {
     // Load history (semua role)
     loadPostTrackerHistory();
     loadTargetNotes();
+
+    // Load IG bot data (admin only)
+    if (user.role === 'admin') loadIgData();
+  };
+
+  const loadIgData = async () => {
+    try {
+      const [tr, lv, st] = await Promise.all([
+        fetch('/api/ig/tasks?limit=50').then(r => r.json()),
+        fetch('/api/ig/latest-video').then(r => r.json()),
+        fetch('/api/ig/settings').then(r => r.json()),
+      ]);
+      setIgTasks(tr.tasks || []);
+      setIgLatestVideo(lv.latest || null);
+      setIgSettings(st.settings || {});
+    } catch (e) {
+      console.warn('Load IG data failed:', e);
+    }
+  };
+
+  const runIgBot = async () => {
+    setIgMsg('');
+    const accounts = [];
+    const delays = {};
+    if (igAcc1) { accounts.push('artezi9090'); delays['artezi9090'] = Number(igDelay1) || 0; }
+    if (igAcc2) { accounts.push('artezi9191'); delays['artezi9191'] = Number(igDelay2) || 0; }
+    if (accounts.length === 0) { setIgMsg('Pilih minimal 1 akun IG!'); return; }
+    if (!igCaption.trim()) { setIgMsg('Caption wajib diisi!'); return; }
+
+    try {
+      const res = await fetch('/api/ig/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          accounts,
+          caption: igCaption,
+          source_video_path: igLatestVideo?.video_path || '__AUTO__',
+          source_tiktok_task_id: igLatestVideo?.id || null,
+          delay_minutes: delays,
+          triggered_by: 'manual',
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setIgMsg(`${data.tasks.length} task IG dibuat (akun: ${accounts.join(', ')})`);
+        loadIgData();
+      } else {
+        setIgMsg('Error: ' + (data.error || 'unknown'));
+      }
+    } catch (e) {
+      setIgMsg('Error: ' + e.message);
+    }
+  };
+
+  const retryIgTask = async (id) => {
+    await fetch(`/api/ig/tasks/${id}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'retry' }),
+    });
+    loadIgData();
+  };
+
+  const deleteIgTask = async (id) => {
+    if (!confirm('Hapus task ini?')) return;
+    await fetch(`/api/ig/tasks/${id}`, { method: 'DELETE' });
+    loadIgData();
+  };
+
+  const saveIgSettings = async (next) => {
+    await fetch('/api/ig/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(next),
+    });
+    loadIgData();
   };
 
   const submitLink = async () => {
@@ -2008,6 +2097,7 @@ export default function Home() {
     { id: 'posttrack', label: 'Tracking Postingan' },
     { id: 'botqueue', label: 'Jalankan Bot' },
     { id: 'reelsbot', label: 'Reels Bot' },
+    { id: 'igbot', label: '📸 Instagram Bot' },
     { id: 'groups', label: `Grup (${groups.length})` },
     { id: 'users', label: 'Kelola User' },
     { id: 'activity', label: 'Activity Log' },
@@ -4177,6 +4267,154 @@ export default function Home() {
                   </tbody>
                 </table>
               )}
+            </div>
+          </>
+        )}
+
+        {/* INSTAGRAM BOT — admin only */}
+        {tab === 'igbot' && isAdmin && (
+          <>
+            {/* Info Video Terakhir */}
+            <div style={S.box}>
+              <h3 style={{color:'#FFD700',marginBottom:8,fontSize:16}}>📸 Instagram Bot — Auto Upload Reels</h3>
+              <p style={{color:'#9ca3af',fontSize:12,marginBottom:16}}>
+                Ambil video terakhir yang sudah di-upload ke TikTok, lalu upload ulang ke Instagram Reels (2 akun).
+                Kalau belum ada video TikTok, bot cari video .mp4 terbaru di folder output.
+              </p>
+
+              <div style={{padding:12,background:'#0f1a2e',borderRadius:8,marginBottom:16,border:'1px solid #1e3a5f'}}>
+                <div style={{fontSize:12,color:'#9ca3af',marginBottom:4}}>Video Sumber (TikTok terakhir)</div>
+                {igLatestVideo ? (
+                  <div>
+                    <div style={{fontSize:14,color:'#e5e7eb',fontWeight:600}}>
+                      {igLatestVideo.video_title || 'Untitled'}
+                    </div>
+                    <div style={{fontSize:11,color:'#6b7280',marginTop:4}}>
+                      File: {igLatestVideo.video_path?.split(/[\\/]/).pop()}
+                    </div>
+                    <div style={{fontSize:11,color:'#6b7280'}}>
+                      Keyword: {igLatestVideo.keyword || '-'} • Account: {igLatestVideo.account_name || '-'} • Selesai: {igLatestVideo.completed_at ? new Date(igLatestVideo.completed_at).toLocaleString('id-ID') : '-'}
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{fontSize:13,color:'#ef4444'}}>Belum ada video TikTok. Bot akan cari video .mp4 terbaru di folder atau skip task.</div>
+                )}
+              </div>
+
+              {/* Akun + Delay */}
+              <div style={{marginBottom:16}}>
+                <div style={{fontSize:13,color:'#FFD700',marginBottom:8,fontWeight:600}}>Pilih Akun & Delay</div>
+
+                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:10,marginBottom:8}}>
+                  <div style={{padding:10,background:'#0f1a2e',borderRadius:6,border:`1px solid ${igAcc1?'#06b6d4':'#1e3a5f'}`}}>
+                    <label style={{display:'flex',alignItems:'center',gap:8,cursor:'pointer'}}>
+                      <input type="checkbox" checked={igAcc1} onChange={e=>setIgAcc1(e.target.checked)} />
+                      <span style={{fontWeight:600}}>artezi9090</span>
+                    </label>
+                    <div style={{marginTop:8,fontSize:12,color:'#9ca3af'}}>Delay (menit):</div>
+                    <input type="number" min="0" step="1" style={{...S.input,marginTop:4}} value={igDelay1} onChange={e=>setIgDelay1(e.target.value)} disabled={!igAcc1} />
+                    <div style={{fontSize:11,color:'#6b7280',marginTop:4}}>0 = langsung jalan</div>
+                  </div>
+
+                  <div style={{padding:10,background:'#0f1a2e',borderRadius:6,border:`1px solid ${igAcc2?'#06b6d4':'#1e3a5f'}`}}>
+                    <label style={{display:'flex',alignItems:'center',gap:8,cursor:'pointer'}}>
+                      <input type="checkbox" checked={igAcc2} onChange={e=>setIgAcc2(e.target.checked)} />
+                      <span style={{fontWeight:600}}>artezi9191</span>
+                    </label>
+                    <div style={{marginTop:8,fontSize:12,color:'#9ca3af'}}>Delay (menit):</div>
+                    <input type="number" min="0" step="1" style={{...S.input,marginTop:4}} value={igDelay2} onChange={e=>setIgDelay2(e.target.value)} disabled={!igAcc2} />
+                    <div style={{fontSize:11,color:'#6b7280',marginTop:4}}>Rekomendasi: 30+ menit setelah akun 1 biar ga duplikat</div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Caption */}
+              <div style={{marginBottom:16}}>
+                <div style={{fontSize:13,color:'#FFD700',marginBottom:6,fontWeight:600}}>Caption (dengan hashtag)</div>
+                <textarea style={{...S.input,minHeight:100,fontFamily:'inherit',resize:'vertical'}} value={igCaption} onChange={e=>setIgCaption(e.target.value)} />
+              </div>
+
+              {/* Submit */}
+              <div style={{display:'flex',gap:10,alignItems:'center'}}>
+                <button onClick={runIgBot} style={{...S.btn('#9333ea'),padding:'12px 24px',fontSize:14}}>🚀 Run IG Bot Sekarang</button>
+                <button onClick={loadIgData} style={{...S.btn('#374151'),padding:'12px 16px',fontSize:13}}>Refresh</button>
+                {igMsg && <span style={{fontSize:13,color:igMsg.includes('Error')?'#ef4444':'#10b981'}}>{igMsg}</span>}
+              </div>
+            </div>
+
+            {/* Settings Auto-Chain */}
+            <div style={S.box}>
+              <h3 style={{color:'#FFD700',marginBottom:8,fontSize:16}}>⚙️ Auto-Chain Settings</h3>
+              <p style={{color:'#9ca3af',fontSize:12,marginBottom:16}}>Kalau aktif, setiap TikTok task selesai akan otomatis buat IG task dengan delay default.</p>
+
+              <div style={{display:'flex',gap:16,alignItems:'center',marginBottom:12}}>
+                <label style={{display:'flex',alignItems:'center',gap:8,cursor:'pointer'}}>
+                  <input type="checkbox" checked={igSettings.auto_chain_enabled === 'true'} onChange={e=>saveIgSettings({auto_chain_enabled: e.target.checked ? 'true' : 'false'})} />
+                  <span>Auto-Chain setelah TikTok selesai</span>
+                </label>
+              </div>
+
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:10}}>
+                <div>
+                  <label style={{display:'block',fontSize:12,color:'#9ca3af',marginBottom:4}}>Delay akun 1 dari TikTok (menit)</label>
+                  <input type="number" style={S.input} value={igSettings.delay_account_1_minutes || '60'} onChange={e=>setIgSettings({...igSettings, delay_account_1_minutes: e.target.value})} onBlur={e=>saveIgSettings({delay_account_1_minutes: e.target.value})} />
+                </div>
+                <div>
+                  <label style={{display:'block',fontSize:12,color:'#9ca3af',marginBottom:4}}>Delay akun 2 dari TikTok (menit)</label>
+                  <input type="number" style={S.input} value={igSettings.delay_account_2_minutes || '180'} onChange={e=>setIgSettings({...igSettings, delay_account_2_minutes: e.target.value})} onBlur={e=>saveIgSettings({delay_account_2_minutes: e.target.value})} />
+                </div>
+                <div>
+                  <label style={{display:'block',fontSize:12,color:'#9ca3af',marginBottom:4}}>Max post per akun / hari</label>
+                  <input type="number" style={S.input} value={igSettings.max_posts_per_account_per_day || '2'} onChange={e=>setIgSettings({...igSettings, max_posts_per_account_per_day: e.target.value})} onBlur={e=>saveIgSettings({max_posts_per_account_per_day: e.target.value})} />
+                </div>
+              </div>
+            </div>
+
+            {/* Task History */}
+            <div style={S.box}>
+              <h3 style={{color:'#FFD700',marginBottom:8,fontSize:16}}>IG Task History ({igTasks.length})</h3>
+              <table style={{width:'100%',borderCollapse:'collapse'}}>
+                <thead>
+                  <tr>
+                    <th style={S.th}>ID</th>
+                    <th style={S.th}>Akun</th>
+                    <th style={S.th}>Status</th>
+                    <th style={S.th}>Scheduled</th>
+                    <th style={S.th}>Video</th>
+                    <th style={S.th}>Retry</th>
+                    <th style={S.th}>Error / URL</th>
+                    <th style={S.th}>Aksi</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {igTasks.map(t => (
+                    <tr key={t.id}>
+                      <td style={{...S.td,fontSize:11}}>{t.id}</td>
+                      <td style={{...S.td,fontWeight:600}}>{t.account_id}</td>
+                      <td style={S.td}>
+                        <span style={{padding:'2px 8px',borderRadius:4,fontSize:11,fontWeight:600,
+                          background: t.status==='completed'?'#065f46':t.status==='failed'?'#7f1d1d':t.status==='running'?'#1e3a5f':'#374151',
+                          color: t.status==='completed'?'#6ee7b7':t.status==='failed'?'#fca5a5':t.status==='running'?'#93c5fd':'#d1d5db'}}>
+                          {t.status}
+                        </span>
+                      </td>
+                      <td style={{...S.td,fontSize:11}}>{t.scheduled_at ? new Date(t.scheduled_at).toLocaleString('id-ID') : '-'}</td>
+                      <td style={{...S.td,fontSize:11,color:'#6b7280'}}>{(t.source_video_path||'-').split(/[\\/]/).pop().substring(0,30)}</td>
+                      <td style={{...S.td,fontSize:11,textAlign:'center'}}>{t.retry_count || 0}</td>
+                      <td style={{...S.td,fontSize:11,maxWidth:200,overflow:'hidden',textOverflow:'ellipsis'}}>
+                        {t.post_url ? <a href={t.post_url} target="_blank" rel="noreferrer" style={{color:'#10b981'}}>Lihat Post</a> : (t.error_message || '-')}
+                      </td>
+                      <td style={S.td}>
+                        <div style={{display:'flex',gap:4}}>
+                          {t.status === 'failed' && <button onClick={()=>retryIgTask(t.id)} style={{...S.btn('#1e3a5f'),fontSize:11,padding:'4px 8px'}}>Retry</button>}
+                          <button onClick={()=>deleteIgTask(t.id)} style={{...S.btn('#7f1d1d'),fontSize:11,padding:'4px 8px'}}>Hapus</button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                  {igTasks.length === 0 && <tr><td colSpan={8} style={{...S.td,textAlign:'center',color:'#6b7280'}}>Belum ada task IG. Klik "Run IG Bot Sekarang" di atas.</td></tr>}
+                </tbody>
+              </table>
             </div>
           </>
         )}
