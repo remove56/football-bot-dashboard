@@ -3990,67 +3990,87 @@ export default function Home() {
         {/* REELS BOT — admin only */}
         {tab === 'reelsbot' && isAdmin && (
           <>
-            {/* Kelola Akun Bot REELS */}
+            {/* Kelola Akun Bot — per Platform (FB Reels / TikTok / IG) */}
             <div style={S.box}>
-              <h3 style={{color:'#FFD700',marginBottom:8,fontSize:16}}>Kelola Akun Bot Reels</h3>
-              <p style={{color:'#9ca3af',fontSize:12,marginBottom:16}}>Tambah, edit, atau hapus akun Facebook untuk bot reels (posting ke beranda). Akun bot grup dikelola di tab "Jalankan Bot".</p>
+              <h3 style={{color:'#FFD700',marginBottom:8,fontSize:16}}>Kelola Akun Bot — Per Platform</h3>
+              <p style={{color:'#9ca3af',fontSize:12,marginBottom:16}}>Tambah akun untuk platform spesifik. Akun FB Reels = post ke beranda FB. TikTok = upload ke TikTok. Instagram = upload ke IG Reels.</p>
 
-              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr auto',gap:10,marginBottom:10,alignItems:'end'}}>
-                <div><label style={{display:'block',fontSize:12,color:'#9ca3af',marginBottom:4}}>ID Akun (nomor HP/email)</label>
-                  <input style={S.input} placeholder="89654516608" value={baId} onChange={e=>setBaId(e.target.value)} /></div>
+              {/* Form tambah/edit */}
+              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:10,marginBottom:10,alignItems:'end'}}>
+                <div><label style={{display:'block',fontSize:12,color:'#9ca3af',marginBottom:4}}>Platform</label>
+                  <select style={S.input} value={baType} onChange={e=>setBaType(e.target.value)}>
+                    <option value="reels">📘 Facebook Reels</option>
+                    <option value="tiktok">🎵 TikTok</option>
+                    <option value="ig">📷 Instagram</option>
+                  </select>
+                </div>
+                <div><label style={{display:'block',fontSize:12,color:'#9ca3af',marginBottom:4}}>ID Akun</label>
+                  <input style={S.input} placeholder={baType==='reels'?'89654516608':baType==='tiktok'?'artezi9090@gmail.com':'artezi9090'} value={baId} onChange={e=>setBaId(e.target.value)} /></div>
                 <div><label style={{display:'block',fontSize:12,color:'#9ca3af',marginBottom:4}}>Nama Profil</label>
                   <input style={S.input} placeholder="Bima Pratama" value={baName} onChange={e=>setBaName(e.target.value)} /></div>
+              </div>
+              <div style={{display:'grid',gridTemplateColumns:'1fr auto',gap:10,marginBottom:10,alignItems:'end'}}>
+                <input style={S.input} placeholder="Catatan (opsional)" value={baNotes} onChange={e=>setBaNotes(e.target.value)} />
                 {baEditing ? (
                   <div style={{display:'flex',gap:6}}>
-                    <button onClick={()=>{setBaType('reels');updateBotAccount();}} style={{...S.btn('#065f46'),padding:'10px 14px'}}>Simpan</button>
+                    <button onClick={updateBotAccount} style={{...S.btn('#065f46'),padding:'10px 14px'}}>Simpan</button>
                     <button onClick={()=>{setBaEditing(null);setBaId('');setBaName('');setBaNotes('');}} style={{...S.btn('#374151'),padding:'10px 14px'}}>Batal</button>
                   </div>
                 ) : (
-                  <button onClick={()=>{setBaType('reels');addBotAccount();}} style={{...S.btn('#065f46'),padding:'10px 18px'}}>Tambah</button>
+                  <button onClick={addBotAccount} style={{...S.btn('#065f46'),padding:'10px 18px'}}>+ Tambah</button>
                 )}
-              </div>
-              <div style={{marginBottom:10}}>
-                <input style={S.input} placeholder="Catatan (opsional)" value={baNotes} onChange={e=>setBaNotes(e.target.value)} />
               </div>
               {baMsg && <p style={{fontSize:13,color:baMsg.includes('Error')?'#ef4444':'#10b981'}}>{baMsg}</p>}
 
-              {/* Tabel akun — HANYA AKUN REELS */}
-              <table style={{width:'100%',borderCollapse:'collapse',marginTop:16}}>
-                <thead>
-                  <tr>
-                    <th style={S.th}>#</th>
-                    <th style={S.th}>Nama</th>
-                    <th style={S.th}>ID Akun</th>
-                    <th style={S.th}>Status</th>
-                    <th style={S.th}>Total Post</th>
-                    <th style={S.th}>Catatan</th>
-                    <th style={S.th}>Aksi</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {botAccounts.filter(a => a.account_type === 'reels' || a.account_type === 'both').map((a, i) => (
-                    <tr key={a.id}>
-                      <td style={S.td}>{i+1}</td>
-                      <td style={{...S.td,fontWeight:600}}>{a.account_name}</td>
-                      <td style={{...S.td,fontSize:12,color:'#9ca3af'}}>{a.account_id}</td>
-                      <td style={S.td}>
-                        <span onClick={()=>toggleBotAccount(a.id,a.is_active)} style={{cursor:'pointer',padding:'2px 8px',borderRadius:4,fontSize:11,fontWeight:600,background:a.is_active?'#065f46':'#7f1d1d',color:a.is_active?'#6ee7b7':'#fca5a5'}}>
-                          {a.is_active ? 'Aktif' : 'Nonaktif'}
-                        </span>
-                      </td>
-                      <td style={{...S.td,textAlign:'center'}}>{a.total_posts || 0}</td>
-                      <td style={{...S.td,fontSize:12,color:'#6b7280'}}>{a.notes || '-'}</td>
-                      <td style={S.td}>
-                        <div style={{display:'flex',gap:4}}>
-                          <button onClick={()=>startEditAccount(a)} style={{...S.btn('#1e3a5f'),fontSize:11,padding:'4px 8px'}}>Edit</button>
-                          <button onClick={()=>deleteBotAccount(a.id)} style={{...S.btn('#7f1d1d'),fontSize:11,padding:'4px 8px'}}>Hapus</button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                  {botAccounts.filter(a => a.account_type === 'reels' || a.account_type === 'both').length === 0 && <tr><td colSpan={7} style={{...S.td,textAlign:'center',color:'#6b7280'}}>Belum ada akun reels. Tambahkan di atas.</td></tr>}
-                </tbody>
-              </table>
+              {/* 3 Tabel per platform */}
+              {[
+                { type:'reels', label:'📘 Facebook Reels', color:'#1877F2', filter:a=>a.account_type==='reels'||a.account_type==='both' },
+                { type:'tiktok', label:'🎵 TikTok', color:'#00f2ea', filter:a=>a.account_type==='tiktok' },
+                { type:'ig', label:'📷 Instagram', color:'#E4405F', filter:a=>a.account_type==='ig' },
+              ].map(section => {
+                const accs = botAccounts.filter(section.filter);
+                return (
+                  <div key={section.type} style={{marginTop:20,border:`1px solid ${section.color}33`,borderRadius:8,padding:12,background:'#0d1117'}}>
+                    <h4 style={{color:section.color,fontSize:14,marginBottom:10}}>{section.label} ({accs.length} akun)</h4>
+                    <table style={{width:'100%',borderCollapse:'collapse'}}>
+                      <thead>
+                        <tr>
+                          <th style={S.th}>#</th>
+                          <th style={S.th}>Nama</th>
+                          <th style={S.th}>ID Akun</th>
+                          <th style={S.th}>Status</th>
+                          <th style={S.th}>Total Post</th>
+                          <th style={S.th}>Catatan</th>
+                          <th style={S.th}>Aksi</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {accs.map((a, i) => (
+                          <tr key={a.id}>
+                            <td style={S.td}>{i+1}</td>
+                            <td style={{...S.td,fontWeight:600}}>{a.account_name}</td>
+                            <td style={{...S.td,fontSize:12,color:'#9ca3af'}}>{a.account_id}</td>
+                            <td style={S.td}>
+                              <span onClick={()=>toggleBotAccount(a.id,a.is_active)} style={{cursor:'pointer',padding:'2px 8px',borderRadius:4,fontSize:11,fontWeight:600,background:a.is_active?'#065f46':'#7f1d1d',color:a.is_active?'#6ee7b7':'#fca5a5'}}>
+                                {a.is_active ? 'Aktif' : 'Nonaktif'}
+                              </span>
+                            </td>
+                            <td style={{...S.td,textAlign:'center'}}>{a.total_posts || 0}</td>
+                            <td style={{...S.td,fontSize:12,color:'#6b7280'}}>{a.notes || '-'}</td>
+                            <td style={S.td}>
+                              <div style={{display:'flex',gap:4}}>
+                                <button onClick={()=>startEditAccount(a)} style={{...S.btn('#1e3a5f'),fontSize:11,padding:'4px 8px'}}>Edit</button>
+                                <button onClick={()=>deleteBotAccount(a.id)} style={{...S.btn('#7f1d1d'),fontSize:11,padding:'4px 8px'}}>Hapus</button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                        {accs.length === 0 && <tr><td colSpan={7} style={{...S.td,textAlign:'center',color:'#6b7280',fontSize:12}}>Belum ada akun {section.label.replace(/[📘🎵📷]/g,'').trim()}. Pilih platform di atas → tambah akun.</td></tr>}
+                      </tbody>
+                    </table>
+                  </div>
+                );
+              })}
             </div>
 
             {/* Buat Tugas Reels */}
