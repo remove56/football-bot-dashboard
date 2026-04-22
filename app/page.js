@@ -2570,7 +2570,7 @@ export default function Home() {
                         {emojiPickerOpen && (
                           <>
                             <div onClick={()=>setEmojiPickerOpen(false)} style={{position:'fixed',top:0,left:0,right:0,bottom:0,zIndex:99}}/>
-                            <div style={{position:'absolute',bottom:46,left:0,background:'#0f172a',border:'2px solid #0891b2',borderRadius:10,padding:10,width:320,maxHeight:280,overflow:'auto',zIndex:100,boxShadow:'0 8px 30px rgba(0,0,0,0.7)'}}>
+                            <div style={{position:'absolute',bottom:46,left:0,background:'#0f172a',border:'2px solid #0891b2',borderRadius:10,padding:10,width:320,maxHeight:280,overflow:'auto',zIndex:100,boxShadow:'0 8px 30px rgba(0,0,0,0.7)',userSelect:'none',WebkitUserSelect:'none'}}>
                               {[
                                 { cat: 'Sering', emojis: '😀😂🤣😍🥰😘😎🤩🥳🤔😅😭🔥❤️👍👏💪🎉⚽🏆' },
                                 { cat: 'Wajah', emojis: '😀😃😄😁😆😅🤣😂🙂😊😇🥰😍🤩😘😋😛🤔🤫🤭😏😌😴😷🤒🤕🤑🤠😈👿' },
@@ -2599,7 +2599,7 @@ export default function Home() {
                                       }
                                       return acc;
                                     }, []).map((emoji, i) => (
-                                      <button key={i} onClick={()=>setChatInput(prev=>prev+emoji)} style={{width:32,height:32,border:'none',background:'transparent',borderRadius:4,fontSize:18,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}} title={emoji}>
+                                      <button key={i} type="button" onMouseDown={(e)=>{e.preventDefault();e.stopPropagation();setChatInput(prev=>prev+emoji);}} style={{width:32,height:32,border:'none',background:'transparent',borderRadius:4,fontSize:18,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',touchAction:'manipulation',userSelect:'none'}} title={emoji}>
                                         {emoji}
                                       </button>
                                     ))}
