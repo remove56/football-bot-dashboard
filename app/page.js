@@ -2599,7 +2599,7 @@ export default function Home() {
                                       }
                                       return acc;
                                     }, []).map((emoji, i) => (
-                                      <button key={i} onClick={()=>{setChatInput(prev=>prev+emoji);setEmojiPickerOpen(false);}} style={{width:32,height:32,border:'none',background:'transparent',borderRadius:4,fontSize:18,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}} title={emoji}>
+                                      <button key={i} onClick={()=>setChatInput(prev=>prev+emoji)} style={{width:32,height:32,border:'none',background:'transparent',borderRadius:4,fontSize:18,cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center'}} title={emoji}>
                                         {emoji}
                                       </button>
                                     ))}
