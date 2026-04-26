@@ -278,6 +278,7 @@ export default function Home() {
   const [baName, setBaName] = useState('');
   const [baType, setBaType] = useState('reels');
   const [baNotes, setBaNotes] = useState('');
+  const [baPartner, setBaPartner] = useState('');
   const [baMsg, setBaMsg] = useState('');
   const [baEditing, setBaEditing] = useState(null);
 
@@ -1974,8 +1975,21 @@ export default function Home() {
     await supabase.from('bot_accounts').update({
       account_id: baId.trim(), account_name: baName.trim(),
       account_type: baType, notes: baNotes.trim() || null,
+      partner_account_id: baPartner.trim() || null,
     }).eq('id', baEditing);
-    setBaEditing(null); setBaId(''); setBaName(''); setBaNotes(''); setBaMsg('Akun diupdate!'); loadData();
+    setBaEditing(null); setBaId(''); setBaName(''); setBaNotes(''); setBaPartner(''); setBaMsg('Akun diupdate!'); loadData();
+  };
+
+  // Set pasangan akun bot (dua-arah otomatis)
+  const setAccountPartner = async (accountId, partnerId) => {
+    if (!accountId) return;
+    // Set akun A → partner = akun B
+    await supabase.from('bot_accounts').update({ partner_account_id: partnerId || null }).eq('account_id', accountId);
+    // Set akun B → partner = akun A (timbal balik)
+    if (partnerId) {
+      await supabase.from('bot_accounts').update({ partner_account_id: accountId }).eq('account_id', partnerId);
+    }
+    loadData();
   };
 
   const toggleBotAccount = async (id, isActive) => {
@@ -1990,7 +2004,7 @@ export default function Home() {
   };
 
   const startEditAccount = (a) => {
-    setBaEditing(a.id); setBaId(a.account_id); setBaName(a.account_name); setBaType(a.account_type); setBaNotes(a.notes || '');
+    setBaEditing(a.id); setBaId(a.account_id); setBaName(a.account_name); setBaType(a.account_type); setBaNotes(a.notes || ''); setBaPartner(a.partner_account_id || '');
   };
 
   // Reels Bot state
@@ -3886,6 +3900,7 @@ export default function Home() {
                     <th style={S.th}>#</th>
                     <th style={S.th}>Nama</th>
                     <th style={S.th}>ID Akun</th>
+                    <th style={S.th}>🔗 Partner (cycle 3-4)</th>
                     <th style={S.th}>Status</th>
                     <th style={S.th}>Total Post</th>
                     <th style={S.th}>Catatan</th>
@@ -3893,11 +3908,25 @@ export default function Home() {
                   </tr>
                 </thead>
                 <tbody>
-                  {botAccounts.filter(a => a.account_type === 'grup' || a.account_type === 'both').map((a, i) => (
+                  {botAccounts.filter(a => a.account_type === 'grup' || a.account_type === 'both').map((a, i) => {
+                    const grupAccs = botAccounts.filter(x => (x.account_type === 'grup' || x.account_type === 'both') && x.account_id !== a.account_id);
+                    const partner = a.partner_account_id ? botAccounts.find(x => x.account_id === a.partner_account_id) : null;
+                    return (
                     <tr key={a.id}>
                       <td style={S.td}>{i+1}</td>
                       <td style={{...S.td,fontWeight:600}}>{a.account_name}</td>
                       <td style={{...S.td,fontSize:12,color:'#9ca3af'}}>{a.account_id}</td>
+                      <td style={{...S.td,fontSize:12}}>
+                        <select
+                          value={a.partner_account_id || ''}
+                          onChange={e => setAccountPartner(a.account_id, e.target.value)}
+                          style={{background:partner?'#1e3a8a':'#0d1117',border:`1px solid ${partner?'#60a5fa':'#1e293b'}`,borderRadius:4,padding:'3px 6px',fontSize:11,color:partner?'#dbeafe':'#9ca3af',cursor:'pointer',width:'100%'}}>
+                          <option value="">— Tidak Ada —</option>
+                          {grupAccs.map(x => (
+                            <option key={x.id} value={x.account_id}>🔗 {x.account_name}</option>
+                          ))}
+                        </select>
+                      </td>
                       <td style={S.td}>
                         <span onClick={()=>toggleBotAccount(a.id,a.is_active)} style={{cursor:'pointer',padding:'2px 8px',borderRadius:4,fontSize:11,fontWeight:600,background:a.is_active?'#065f46':'#7f1d1d',color:a.is_active?'#6ee7b7':'#fca5a5'}}>
                           {a.is_active ? 'Aktif' : 'Nonaktif'}
@@ -3912,8 +3941,9 @@ export default function Home() {
                         </div>
                       </td>
                     </tr>
-                  ))}
-                  {botAccounts.filter(a => a.account_type === 'grup' || a.account_type === 'both').length === 0 && <tr><td colSpan={7} style={{...S.td,textAlign:'center',color:'#6b7280'}}>Belum ada akun grup. Tambahkan di atas.</td></tr>}
+                    );
+                  })}
+                  {botAccounts.filter(a => a.account_type === 'grup' || a.account_type === 'both').length === 0 && <tr><td colSpan={8} style={{...S.td,textAlign:'center',color:'#6b7280'}}>Belum ada akun grup. Tambahkan di atas.</td></tr>}
                 </tbody>
               </table>
             </div>
@@ -3930,13 +3960,23 @@ export default function Home() {
                 </p>
               ) : (
                 <div style={{display:'grid',gridTemplateColumns:`repeat(auto-fill, minmax(220px, 1fr))`,gap:10,marginBottom:16}}>
-                  {grupAccounts.map(acc => (
-                    <div key={acc.id} onClick={()=>selectGrupAccount(acc.account_id)} style={{cursor:'pointer',background:tqAccountId===acc.account_id?'#1e3a5f':'#1a1a2e',border:`2px solid ${tqAccountId===acc.account_id?'#60a5fa':'#2d2d5e'}`,borderRadius:10,padding:12}}>
-                      <div style={{fontSize:14,fontWeight:700,color:tqAccountId===acc.account_id?'#60a5fa':'#e5e7eb'}}>{acc.account_name}</div>
-                      <div style={{fontSize:11,color:'#6b7280'}}>ID: {acc.account_id}</div>
-                      <div style={{fontSize:10,color:'#6b7280'}}>Total: {acc.total_posts || 0} posting</div>
-                    </div>
-                  ))}
+                  {grupAccounts.map(acc => {
+                    const partner = acc.partner_account_id
+                      ? grupAccounts.find(a => a.account_id === acc.partner_account_id)
+                      : null;
+                    return (
+                      <div key={acc.id} onClick={()=>selectGrupAccount(acc.account_id)} style={{cursor:'pointer',background:tqAccountId===acc.account_id?'#1e3a5f':'#1a1a2e',border:`2px solid ${tqAccountId===acc.account_id?'#60a5fa':'#2d2d5e'}`,borderRadius:10,padding:12,position:'relative'}}>
+                        <div style={{fontSize:14,fontWeight:700,color:tqAccountId===acc.account_id?'#60a5fa':'#e5e7eb'}}>{acc.account_name}</div>
+                        <div style={{fontSize:11,color:'#6b7280'}}>ID: {acc.account_id}</div>
+                        <div style={{fontSize:10,color:'#6b7280'}}>Total: {acc.total_posts || 0} posting</div>
+                        {partner && (
+                          <div style={{marginTop:6,padding:'3px 8px',background:'#1e3a8a',border:'1px solid #60a5fa',borderRadius:6,fontSize:10,color:'#dbeafe',fontWeight:600,display:'inline-block'}}>
+                            🔗 Partner: {partner.account_name}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
               )}
 
