@@ -313,6 +313,8 @@ export default function Home() {
   const [tqMember, setTqMember] = useState('');
   const [tqGroups, setTqGroups] = useState([]);
   const [tqType, setTqType] = useState('full');
+  const [tqCycle, setTqCycle] = useState('auto'); // 'auto' | 1 | 2 | 3 | 4
+  const [tqCycleStatus, setTqCycleStatus] = useState({}); // { groupId: {1: {g1,g2,v}, 2: ..., 3: ..., 4: ...} }
   const [tqMsg, setTqMsg] = useState('');
   const [tqSelectAll, setTqSelectAll] = useState(false);
   const [tqAccountId, setTqAccountId] = useState(''); // Akun bot grup yang dipilih
@@ -425,6 +427,11 @@ export default function Home() {
   }, []);
 
   useEffect(() => { if (user) loadData(); }, [user]);
+  useEffect(() => {
+    // Saat user pilih grup di "Buat Tugas Posting", auto-load cycle status hari ini
+    if (user?.role === 'admin' && tqGroups.length > 0) loadCycleStatus(tqGroups);
+    else setTqCycleStatus({});
+  }, [tqGroups, user]);
 
   const login = (u) => { setUser(u); localStorage.setItem('fb-dash-user', JSON.stringify(u)); setTab(u.role === 'admin' ? 'overview' : 'groups'); };
   const logout = () => { setUser(null); localStorage.removeItem('fb-dash-user'); };
@@ -622,6 +629,29 @@ export default function Home() {
 
   const MONTH_NAMES = ['','Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
 
+  // Load status cycle posting_tracker untuk grup tertentu (hari ini)
+  // Return: { 1: {g1, g2, v}, 2: ..., 3: ..., 4: ... }
+  const loadCycleStatus = async (groupIds) => {
+    if (!groupIds || groupIds.length === 0) { setTqCycleStatus({}); return; }
+    const today = localDateString();
+    const { data } = await supabase
+      .from('posting_tracker')
+      .select('group_id, cycle, gambar1_link, gambar2_link, video_link, is_complete')
+      .in('group_id', groupIds)
+      .eq('period', today);
+    const map = {};
+    for (const gid of groupIds) {
+      map[gid] = { 1:{g1:false,g2:false,v:false}, 2:{g1:false,g2:false,v:false}, 3:{g1:false,g2:false,v:false}, 4:{g1:false,g2:false,v:false} };
+    }
+    for (const r of data || []) {
+      if (!map[r.group_id] || !map[r.group_id][r.cycle]) continue;
+      map[r.group_id][r.cycle].g1 = !!r.gambar1_link;
+      map[r.group_id][r.cycle].g2 = !!r.gambar2_link;
+      map[r.group_id][r.cycle].v  = !!r.video_link;
+    }
+    setTqCycleStatus(map);
+  };
+
   // Task queue functions (admin only)
   const loadTaskQueue = async () => {
     const { data } = await supabase.from('task_queue').select('*').order('created_at', { ascending: false }).limit(200);
@@ -635,6 +665,7 @@ export default function Home() {
 
     const selectedAcc = botAccounts.find(a => a.account_id === tqAccountId);
 
+    const targetCycleVal = tqCycle === 'auto' ? null : Number(tqCycle);
     const tasks = tqGroups.map(gid => {
       const grp = groups.find(g => g.id === gid);
       return {
@@ -647,6 +678,7 @@ export default function Home() {
         status: 'pending',
         account_id: tqAccountId,
         account_name: selectedAcc?.account_name || '',
+        target_cycle: targetCycleVal,
       };
     });
 
@@ -3926,6 +3958,21 @@ export default function Home() {
                 </div>
               </div>
 
+              {/* Pilih Siklus (target_cycle) */}
+              <div style={{marginBottom:12}}>
+                <label style={{display:'block',fontSize:12,color:'#9ca3af',marginBottom:4}}>Siklus Target</label>
+                <select style={S.input} value={tqCycle} onChange={e=>setTqCycle(e.target.value)}>
+                  <option value="auto">Auto (bot pilih siklus berikutnya yang belum selesai)</option>
+                  <option value="1">Siklus 1 — paksa post ke cycle 1</option>
+                  <option value="2">Siklus 2 — paksa post ke cycle 2</option>
+                  <option value="3">Siklus 3 — paksa post ke cycle 3</option>
+                  <option value="4">Siklus 4 — paksa post ke cycle 4</option>
+                </select>
+                <p style={{fontSize:11,color:'#6b7280',marginTop:4}}>
+                  💡 Auto = bot otomatis isi slot kosong di cycle terdekat. Manual = override ke cycle spesifik (override slot di cycle itu kalau sudah ada).
+                </p>
+              </div>
+
               <label style={{display:'block',fontSize:12,color:'#9ca3af',marginBottom:8}}>Pilih Grup ({tqGroups.length} dipilih)</label>
               <div style={{marginBottom:10}}>
                 <label style={{display:'flex',alignItems:'center',gap:6,cursor:'pointer',fontSize:13,color:'#FFD700',marginBottom:8}}>
@@ -3942,8 +3989,37 @@ export default function Home() {
                 ))}
               </div>
 
+              {/* Status Siklus Hari Ini (untuk grup yang dipilih) */}
+              {tqGroups.length > 0 && Object.keys(tqCycleStatus).length > 0 && (
+                <div style={{marginTop:14,padding:10,background:'#0d1117',borderRadius:8,border:'1px solid #1f2937'}}>
+                  <div style={{fontSize:12,color:'#FFD700',marginBottom:8,fontWeight:600}}>📊 Status Siklus Hari Ini ({localDateString()})</div>
+                  <div style={{maxHeight:200,overflowY:'auto'}}>
+                    {tqGroups.map(gid => {
+                      const grp = groups.find(g => g.id === gid);
+                      const stat = tqCycleStatus[gid] || {};
+                      return (
+                        <div key={gid} style={{display:'flex',alignItems:'center',gap:8,padding:'4px 0',fontSize:12,borderBottom:'1px solid #1f2937'}}>
+                          <span style={{flex:'0 0 180px',color:'#9ca3af',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{grp?.name || gid}</span>
+                          {[1,2,3,4].map(c => {
+                            const s = stat[c] || {g1:false,g2:false,v:false};
+                            const filled = (s.g1?1:0) + (s.g2?1:0) + (s.v?1:0);
+                            const color = filled === 3 ? '#10b981' : filled > 0 ? '#f59e0b' : '#374151';
+                            return (
+                              <span key={c} title={`Cycle ${c}: G1=${s.g1?'✓':'✗'} G2=${s.g2?'✓':'✗'} V=${s.v?'✓':'✗'}`}
+                                style={{flex:'0 0 auto',padding:'2px 8px',borderRadius:4,background:`${color}22`,border:`1px solid ${color}`,color,fontSize:11,fontWeight:600}}>
+                                C{c} {filled}/3
+                              </span>
+                            );
+                          })}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               <div style={{display:'flex',gap:10,marginTop:16}}>
-                <button onClick={createTasks} style={{...S.btn('#065f46'),padding:'12px 32px',fontSize:14}}>Buat {tqGroups.length} Tugas</button>
+                <button onClick={createTasks} style={{...S.btn('#065f46'),padding:'12px 32px',fontSize:14}}>Buat {tqGroups.length} Tugas {tqCycle !== 'auto' ? `(→ Cycle ${tqCycle})` : ''}</button>
               </div>
               {tqMsg && <p style={{marginTop:10,fontSize:13,color:tqMsg.includes('Error')?'#ef4444':'#10b981'}}>{tqMsg}</p>}
             </div>
