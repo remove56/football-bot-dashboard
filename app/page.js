@@ -39,6 +39,18 @@ const LEAGUE_COLORS = {'La Liga':'#22d3ee','Premier League':'#60a5fa','Serie A':
 // Mengekstrak "fingerprint" konten dari URL apapun
 // Bahkan jika URL di-edit, potong parameter, ganti query string
 // ============================================================
+// Resolve link bot lama (format `bot:groupId:timestamp`) → URL grup FB asli
+// Data baru sudah pakai URL FB, jadi function ini cuma transform legacy data
+function resolveBotLink(link) {
+  if (!link) return '';
+  if (link.startsWith('bot:')) {
+    const parts = link.split(':');
+    const groupId = parts[1] || '';
+    return groupId ? `https://www.facebook.com/groups/${groupId}/?bot=1&legacy=1` : '';
+  }
+  return link;
+}
+
 function normalizeContentUrl(url) {
   if (!url) return '';
   try {
@@ -3758,9 +3770,9 @@ export default function Home() {
                           return (
                             <td key={cycle} style={{...S.td,textAlign:'center',padding:6}}>
                               <div style={{display:'flex',gap:4,justifyContent:'center'}}>
-                                <span title={g1||'Belum'} style={{width:22,height:22,borderRadius:4,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:700,background:g1?'#065f46':'#1f2937',color:g1?'#6ee7b7':'#374151',cursor:g1?'pointer':'default'}} onClick={()=>g1&&window.open(g1,'_blank')}>G1</span>
-                                <span title={g2||'Belum'} style={{width:22,height:22,borderRadius:4,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:700,background:g2?'#065f46':'#1f2937',color:g2?'#6ee7b7':'#374151',cursor:g2?'pointer':'default'}} onClick={()=>g2&&window.open(g2,'_blank')}>G2</span>
-                                <span title={v||'Belum'} style={{width:22,height:22,borderRadius:4,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:700,background:v?'#3b0764':'#1f2937',color:v?'#c084fc':'#374151',cursor:v?'pointer':'default'}} onClick={()=>v&&window.open(v,'_blank')}>V</span>
+                                <span title={resolveBotLink(g1)||'Belum'} style={{width:22,height:22,borderRadius:4,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:700,background:g1?'#065f46':'#1f2937',color:g1?'#6ee7b7':'#374151',cursor:g1?'pointer':'default'}} onClick={()=>g1&&window.open(resolveBotLink(g1),'_blank')}>G1</span>
+                                <span title={resolveBotLink(g2)||'Belum'} style={{width:22,height:22,borderRadius:4,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:700,background:g2?'#065f46':'#1f2937',color:g2?'#6ee7b7':'#374151',cursor:g2?'pointer':'default'}} onClick={()=>g2&&window.open(resolveBotLink(g2),'_blank')}>G2</span>
+                                <span title={resolveBotLink(v)||'Belum'} style={{width:22,height:22,borderRadius:4,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:700,background:v?'#3b0764':'#1f2937',color:v?'#c084fc':'#374151',cursor:v?'pointer':'default'}} onClick={()=>v&&window.open(resolveBotLink(v),'_blank')}>V</span>
                               </div>
                             </td>
                           );
