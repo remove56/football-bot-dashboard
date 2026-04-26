@@ -19,17 +19,22 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 
+// Wajib fresh setiap request — bukan module-level client (Next.js cache fetch)
 export const dynamic = 'force-dynamic';
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-);
+export const revalidate = 0;
+export const fetchCache = 'force-no-store';
 
 // Threshold: kalau bot worker terakhir heartbeat > 10 menit lalu = stale
 const BOT_STALE_THRESHOLD_MS = 10 * 60 * 1000;
 
 export async function GET() {
+  // Create per-request — module-level client di Next.js App Router bisa
+  // pegang fetch cache yang bikin query DB returning stale data
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    { global: { fetch: (url, opts) => fetch(url, { ...opts, cache: 'no-store' }) } }
+  );
   const startTime = Date.now();
   const checks = {
     dashboard: { ok: true, message: 'Dashboard render OK' },
