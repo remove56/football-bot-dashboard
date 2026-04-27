@@ -319,6 +319,9 @@ export default function Home() {
   const [tqMsg, setTqMsg] = useState('');
   const [tqSelectAll, setTqSelectAll] = useState(false);
   const [tqAccountId, setTqAccountId] = useState(''); // Akun bot grup yang dipilih
+  // Bulk Generate state — preview { tasks, skipped, unmapped } sebelum commit
+  const [tqBulkPreview, setTqBulkPreview] = useState(null);
+  const [tqBulkBusy, setTqBulkBusy] = useState(false);
 
   // Form tambah akun grup (di tab Jalankan Bot)
   const [bgId, setBgId] = useState('');
@@ -574,6 +577,14 @@ export default function Home() {
     loadData();
   };
 
+  // Quick-set primary_account_id untuk grup (dipakai Bulk Task Creator)
+  const setGroupPrimaryAccount = async (groupId, accountId) => {
+    await supabase.from('groups').update({
+      primary_account_id: accountId || null,
+    }).eq('id', groupId);
+    loadData();
+  };
+
   // Weekly stats functions
   const loadWeeklyStats = async (y, m) => {
     const { data } = await supabase.from('weekly_stats').select('*').eq('year', y).eq('month', m);
@@ -690,6 +701,87 @@ export default function Home() {
       setTqGroups([]); setTqSelectAll(false);
       loadTaskQueue();
     }
+  };
+
+  // ============================================================
+  // BULK GENERATE TODAY'S TASKS — auto-distribute pair (cycle 1+2 / 3+4)
+  // 1 klik bikin 4 cycle × N grup ter-mapping. Skip yang udah ada hari ini.
+  // ============================================================
+  const previewBulkTasks = async () => {
+    if (!tqMember.trim()) { setTqMsg('Pilih member dulu sebelum Bulk Generate!'); return; }
+    setTqBulkBusy(true);
+    try {
+      // 1. Existing tasks hari ini — skip biar gak duplikat
+      const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+      const { data: existingTasks, error: errEx } = await supabase
+        .from('task_queue')
+        .select('group_id, target_cycle, status')
+        .gte('created_at', todayStart.toISOString());
+      if (errEx) throw errEx;
+      const existingSet = new Set(
+        (existingTasks || [])
+          .filter(t => t.status !== 'failed')
+          .map(t => `${t.group_id}|${t.target_cycle}`)
+      );
+
+      const accMap = Object.fromEntries(botAccounts.map(a => [a.account_id, a]));
+      const tasks = [];
+      const skipped = []; // sudah ada hari ini
+      const unmapped = []; // grup belum ada primary_account_id
+
+      for (const grp of groups) {
+        if (!grp.primary_account_id) {
+          unmapped.push({ id: grp.id, name: grp.name, reason: 'belum di-setup primary account' });
+          continue;
+        }
+        const primary = accMap[grp.primary_account_id];
+        if (!primary) {
+          unmapped.push({ id: grp.id, name: grp.name, reason: `account_id ${grp.primary_account_id} tidak ada di bot_accounts` });
+          continue;
+        }
+        const partner = primary.partner_account_id ? accMap[primary.partner_account_id] : null;
+
+        for (let cycle = 1; cycle <= 4; cycle++) {
+          const key = `${grp.id}|${cycle}`;
+          if (existingSet.has(key)) {
+            skipped.push({ groupName: grp.name, cycle });
+            continue;
+          }
+          const useAcc = (cycle <= 2 || !partner) ? primary : partner;
+          tasks.push({
+            member_name: tqMember.trim(),
+            group_id: grp.id,
+            group_name: grp.name,
+            group_url: grp.url,
+            club: grp.club,
+            task_type: tqType,
+            status: 'pending',
+            account_id: useAcc.account_id,
+            account_name: useAcc.account_name,
+            target_cycle: cycle,
+          });
+        }
+      }
+
+      setTqBulkPreview({ tasks, skipped, unmapped });
+    } catch (e) {
+      setTqMsg('Bulk preview error: ' + (e.message || e));
+    }
+    setTqBulkBusy(false);
+  };
+
+  const confirmBulkTasks = async () => {
+    if (!tqBulkPreview || tqBulkPreview.tasks.length === 0) return;
+    setTqBulkBusy(true);
+    const { error } = await supabase.from('task_queue').insert(tqBulkPreview.tasks);
+    if (error) {
+      setTqMsg('Bulk insert error: ' + error.message);
+    } else {
+      setTqMsg(`✅ Bulk: ${tqBulkPreview.tasks.length} tugas dibuat (skip ${tqBulkPreview.skipped.length} existing, ${tqBulkPreview.unmapped.length} grup belum di-setup)`);
+      setTqBulkPreview(null);
+      loadTaskQueue();
+    }
+    setTqBulkBusy(false);
   };
 
   const deleteTask = async (id) => {
@@ -4058,11 +4150,107 @@ export default function Home() {
                 </div>
               )}
 
-              <div style={{display:'flex',gap:10,marginTop:16}}>
+              <div style={{display:'flex',gap:10,marginTop:16,flexWrap:'wrap',alignItems:'center'}}>
                 <button onClick={createTasks} style={{...S.btn('#065f46'),padding:'12px 32px',fontSize:14}}>Buat {tqGroups.length} Tugas {tqCycle !== 'auto' ? `(→ Cycle ${tqCycle})` : ''}</button>
+                <span style={{color:'#6b7280',fontSize:12}}>atau</span>
+                <button
+                  onClick={previewBulkTasks}
+                  disabled={tqBulkBusy}
+                  title="1 klik bikin 4 cycle × semua grup yang udah di-setup primary_account, auto-distribute pair (cycle 1+2 ke akun A, 3+4 ke partner)"
+                  style={{...S.btn('#7c3aed'),padding:'12px 24px',fontSize:14,opacity:tqBulkBusy?0.6:1}}
+                >
+                  {tqBulkBusy ? '⏳ Memproses...' : '🚀 Bulk Generate Today'}
+                </button>
               </div>
+              <p style={{marginTop:8,fontSize:11,color:'#6b7280'}}>
+                💡 <b>Bulk Generate</b> pakai member <code style={{color:'#a78bfa'}}>{tqMember || '(belum dipilih)'}</code> &amp; tipe <code style={{color:'#a78bfa'}}>{tqType}</code>. Auto-distribute: cycle 1+2 ke primary, cycle 3+4 ke partner. Grup tanpa primary akun otomatis di-skip.
+              </p>
               {tqMsg && <p style={{marginTop:10,fontSize:13,color:tqMsg.includes('Error')?'#ef4444':'#10b981'}}>{tqMsg}</p>}
             </div>
+
+            {/* MODAL: Bulk Generate Preview */}
+            {tqBulkPreview && (
+              <div onClick={()=>setTqBulkPreview(null)} style={{position:'fixed',inset:0,background:'rgba(0,0,0,0.7)',display:'flex',alignItems:'center',justifyContent:'center',zIndex:1000,padding:20}}>
+                <div onClick={e=>e.stopPropagation()} style={{background:'#0f172a',border:'2px solid #7c3aed',borderRadius:12,padding:24,maxWidth:720,width:'100%',maxHeight:'85vh',overflow:'auto'}}>
+                  <h3 style={{color:'#a78bfa',marginTop:0,marginBottom:8,fontSize:18}}>🚀 Bulk Generate Preview</h3>
+                  <p style={{color:'#9ca3af',fontSize:13,marginTop:0,marginBottom:16}}>
+                    Member: <b style={{color:'#e5e7eb'}}>{tqMember}</b> · Tipe: <b style={{color:'#e5e7eb'}}>{tqType}</b>
+                  </p>
+
+                  {/* Summary stats */}
+                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:10,marginBottom:16}}>
+                    <div style={{background:'#064e3b',padding:12,borderRadius:8,textAlign:'center'}}>
+                      <div style={{fontSize:24,fontWeight:700,color:'#10b981'}}>{tqBulkPreview.tasks.length}</div>
+                      <div style={{fontSize:11,color:'#a7f3d0'}}>Tugas akan dibuat</div>
+                    </div>
+                    <div style={{background:'#422006',padding:12,borderRadius:8,textAlign:'center'}}>
+                      <div style={{fontSize:24,fontWeight:700,color:'#f59e0b'}}>{tqBulkPreview.skipped.length}</div>
+                      <div style={{fontSize:11,color:'#fde68a'}}>Skip (sudah ada hari ini)</div>
+                    </div>
+                    <div style={{background:'#3f1d1d',padding:12,borderRadius:8,textAlign:'center'}}>
+                      <div style={{fontSize:24,fontWeight:700,color:'#ef4444'}}>{tqBulkPreview.unmapped.length}</div>
+                      <div style={{fontSize:11,color:'#fca5a5'}}>Grup belum di-setup</div>
+                    </div>
+                  </div>
+
+                  {/* Distribution per pair */}
+                  {tqBulkPreview.tasks.length > 0 && (
+                    <div style={{marginBottom:16}}>
+                      <div style={{fontSize:12,color:'#9ca3af',marginBottom:8,fontWeight:600}}>Distribusi per akun:</div>
+                      <div style={{background:'#1f2937',padding:10,borderRadius:8,fontSize:12,color:'#e5e7eb'}}>
+                        {Object.entries(
+                          tqBulkPreview.tasks.reduce((m, t) => { m[t.account_name] = (m[t.account_name] || 0) + 1; return m; }, {})
+                        ).map(([name, count]) => (
+                          <div key={name} style={{display:'flex',justifyContent:'space-between',padding:'3px 0'}}>
+                            <span>👤 {name}</span>
+                            <span style={{color:'#a78bfa',fontWeight:600}}>{count} tugas</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Unmapped warning */}
+                  {tqBulkPreview.unmapped.length > 0 && (
+                    <div style={{marginBottom:16,padding:10,background:'#3f1d1d',borderRadius:8,fontSize:12,color:'#fca5a5'}}>
+                      <div style={{fontWeight:600,marginBottom:6}}>⚠️ {tqBulkPreview.unmapped.length} grup di-skip — belum di-setup primary_account_id:</div>
+                      <div style={{maxHeight:100,overflow:'auto'}}>
+                        {tqBulkPreview.unmapped.slice(0, 10).map((u, i) => (
+                          <div key={i} style={{padding:'2px 0'}}>• {u.name} <span style={{color:'#7f1d1d',fontSize:11}}>({u.reason})</span></div>
+                        ))}
+                        {tqBulkPreview.unmapped.length > 10 && <div style={{color:'#7f1d1d',fontStyle:'italic'}}>...dan {tqBulkPreview.unmapped.length - 10} grup lain</div>}
+                      </div>
+                      <div style={{marginTop:6,fontSize:11,fontStyle:'italic',color:'#fde68a'}}>💡 Setup primary akun grup di tab "Daftar Grup" → kolom "Akun Bot Utama"</div>
+                    </div>
+                  )}
+
+                  {/* Skipped existing */}
+                  {tqBulkPreview.skipped.length > 0 && (
+                    <div style={{marginBottom:16,padding:10,background:'#422006',borderRadius:8,fontSize:12,color:'#fde68a'}}>
+                      <div style={{fontWeight:600,marginBottom:6}}>⏭️ {tqBulkPreview.skipped.length} cycle udah ada task hari ini (skip):</div>
+                      <div style={{maxHeight:80,overflow:'auto',fontSize:11}}>
+                        {tqBulkPreview.skipped.slice(0, 12).map((s, i) => (
+                          <span key={i} style={{display:'inline-block',background:'#78350f',padding:'2px 6px',borderRadius:4,marginRight:4,marginBottom:4}}>{s.groupName} C{s.cycle}</span>
+                        ))}
+                        {tqBulkPreview.skipped.length > 12 && <span style={{color:'#fbbf24',fontStyle:'italic'}}>...+{tqBulkPreview.skipped.length - 12}</span>}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Action buttons */}
+                  <div style={{display:'flex',gap:10,justifyContent:'flex-end',marginTop:16,paddingTop:16,borderTop:'1px solid #1f2937'}}>
+                    <button onClick={()=>setTqBulkPreview(null)} disabled={tqBulkBusy} style={{...S.btn('#374151'),padding:'10px 20px',fontSize:13}}>Batal</button>
+                    <button
+                      onClick={confirmBulkTasks}
+                      disabled={tqBulkBusy || tqBulkPreview.tasks.length === 0}
+                      style={{...S.btn('#7c3aed'),padding:'10px 24px',fontSize:13,opacity:(tqBulkBusy || tqBulkPreview.tasks.length === 0)?0.5:1}}
+                    >
+                      {tqBulkBusy ? '⏳ Inserting...' : `✅ Konfirmasi & Buat ${tqBulkPreview.tasks.length} Tugas`}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Daftar tugas */}
             <div style={S.box}>
@@ -4363,7 +4551,7 @@ export default function Home() {
               <span style={{fontSize:12,color:'#6b7280',alignSelf:'center'}}>{filteredGroups.length} grup</span>
             </div>
             <table style={{width:'100%',borderCollapse:'collapse',background:'#111827',borderRadius:12,overflow:'hidden',border:'1px solid #1f2937'}}>
-              <thead><tr><th style={S.th}>#</th><th style={S.th}>Nama Grup</th><th style={S.th}>Klub</th><th style={S.th}>Liga</th>{isAdmin && <th style={S.th}>Aksi</th>}</tr></thead>
+              <thead><tr><th style={S.th}>#</th><th style={S.th}>Nama Grup</th><th style={S.th}>Klub</th><th style={S.th}>Liga</th>{isAdmin && <th style={S.th} title="Akun bot A (admin/moderator) untuk Bulk Task Generate. Cycle 3+4 otomatis ke partner-nya.">Akun Bot Utama</th>}{isAdmin && <th style={S.th}>Aksi</th>}</tr></thead>
               <tbody>
                 {filteredGroups.map((g, i) => (
                   <tr key={g.id}>
@@ -4378,6 +4566,20 @@ export default function Home() {
                           </select>
                         </td>
                         {isAdmin && <td style={S.td}>
+                          <select
+                            style={{...S.input,padding:'4px 8px',fontSize:11}}
+                            value={g.primary_account_id || ''}
+                            onChange={e => setGroupPrimaryAccount(g.id, e.target.value)}
+                          >
+                            <option value="">— Belum di-set —</option>
+                            {botAccounts.map(a => (
+                              <option key={a.account_id} value={a.account_id}>
+                                {a.account_name}{a.partner_account_id ? ' (pair)' : ''}
+                              </option>
+                            ))}
+                          </select>
+                        </td>}
+                        {isAdmin && <td style={S.td}>
                           <button onClick={saveEditGroup} style={{...S.btn('#065f46'),padding:'3px 8px',fontSize:11,marginRight:4}}>Simpan</button>
                           <button onClick={()=>setEditingGroup(null)} style={{...S.btn('#374151'),padding:'3px 8px',fontSize:11}}>Batal</button>
                         </td>}
@@ -4388,6 +4590,21 @@ export default function Home() {
                         <td style={S.td}><a href={g.url} target="_blank" style={S.link}>{g.name}</a></td>
                         <td style={S.td}>{g.club}</td>
                         <td style={S.td}><span style={{...S.badge('ok'),background:LEAGUE_COLORS[g.league]?'#1e3a5f':'#1f2937'}}>{g.league}</span></td>
+                        {isAdmin && <td style={S.td}>
+                          <select
+                            style={{...S.input,padding:'4px 8px',fontSize:11,minWidth:140}}
+                            value={g.primary_account_id || ''}
+                            onChange={e => setGroupPrimaryAccount(g.id, e.target.value)}
+                            title={g.primary_account_id ? `Akun bot utama untuk grup ini` : 'Belum di-setup — Bulk Generate akan skip grup ini'}
+                          >
+                            <option value="">— Belum di-set —</option>
+                            {botAccounts.map(a => (
+                              <option key={a.account_id} value={a.account_id}>
+                                {a.account_name}{a.partner_account_id ? ' (pair)' : ''}
+                              </option>
+                            ))}
+                          </select>
+                        </td>}
                         {isAdmin && <td style={S.td}>
                           <button onClick={()=>startEditGroup(g)} style={{...S.btn('#1e3a5f'),padding:'3px 8px',fontSize:11,marginRight:4}}>Edit</button>
                           <button onClick={()=>deleteGroup(g.id)} style={{...S.btn('#7f1d1d'),padding:'3px 8px',fontSize:11}}>Hapus</button>
