@@ -82,6 +82,49 @@ async function dumpTable(tableName, columns = '*') {
   return allRows;
 }
 
+// ============================================================
+// CLEANUP — hapus data lama biar DB tetep lean (free tier Supabase)
+// Dipanggil setiap habis backup sukses (1 cron = backup + cleanup).
+//
+// Retention policy:
+//   image_hashes        > 30 hari → DELETE (deduplication ngecek tetep work, hash baru terus dibikin)
+//   activity_log        > 60 hari → DELETE (volume besar, regenerable dari posting_tracker)
+//   task_queue (done)   > 14 hari → DELETE (history operasional, gak perlu lama)
+//   task_queue (failed) > 14 hari → DELETE
+// ============================================================
+async function runCleanup() {
+  const startTime = Date.now();
+  const results = {};
+
+  const cleanupTargets = [
+    { table: 'image_hashes', daysAgo: 30, column: 'created_at' },
+    { table: 'activity_log', daysAgo: 60, column: 'created_at' },
+    { table: 'task_queue', daysAgo: 14, column: 'created_at', statusIn: ['done', 'failed'] },
+  ];
+
+  for (const t of cleanupTargets) {
+    try {
+      const cutoff = new Date(Date.now() - t.daysAgo * 86400000).toISOString();
+      let query = supabase.from(t.table).delete().lt(t.column, cutoff);
+      if (t.statusIn) query = query.in('status', t.statusIn);
+      const { data, error } = await query.select('id'); // returning deleted rows
+      if (error) {
+        results[t.table] = { error: error.message };
+      } else {
+        results[t.table] = { deleted: (data || []).length, retention_days: t.daysAgo };
+      }
+    } catch (e) {
+      results[t.table] = { error: e.message?.substring(0, 200) || 'unknown' };
+    }
+  }
+
+  return {
+    duration_ms: Date.now() - startTime,
+    results,
+    total_deleted: Object.values(results).reduce((sum, r) => sum + (r.deleted || 0), 0),
+  };
+}
+
 async function runBackup(triggerType) {
   const startTime = Date.now();
   const tables = {};
@@ -158,7 +201,17 @@ export async function GET(req) {
   if (!result.success) {
     return NextResponse.json(result, { status: 500 });
   }
-  return NextResponse.json(result);
+
+  // Setelah backup sukses, jalankan cleanup data lama (1 cron = backup + cleanup)
+  // Kalau cleanup gagal, gak ngerusak backup — cuma kasih warning di response
+  let cleanup = null;
+  try {
+    cleanup = await runCleanup();
+  } catch (e) {
+    cleanup = { error: e.message?.substring(0, 200) || 'cleanup crashed' };
+  }
+
+  return NextResponse.json({ ...result, cleanup });
 }
 
 // POST = manual trigger dengan Bearer token (dipakai tombol "Backup Sekarang" di dashboard)
