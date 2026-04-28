@@ -4318,10 +4318,11 @@ export default function Home() {
                     <option value="reels">📘 Facebook Reels</option>
                     <option value="tiktok">🎵 TikTok</option>
                     <option value="ig">📷 Instagram</option>
+                    <option value="x">𝕏 Twitter / X</option>
                   </select>
                 </div>
                 <div><label style={{display:'block',fontSize:12,color:'#9ca3af',marginBottom:4}}>ID Akun</label>
-                  <input style={S.input} placeholder={baType==='reels'?'89654516608':baType==='tiktok'?'artezi9090@gmail.com':'artezi9090'} value={baId} onChange={e=>setBaId(e.target.value)} /></div>
+                  <input style={S.input} placeholder={baType==='reels'?'89654516608':baType==='tiktok'?'artezi9090@gmail.com':baType==='x'?'username_x':'artezi9090'} value={baId} onChange={e=>setBaId(e.target.value)} /></div>
                 <div><label style={{display:'block',fontSize:12,color:'#9ca3af',marginBottom:4}}>Nama Profil</label>
                   <input style={S.input} placeholder="Bima Pratama" value={baName} onChange={e=>setBaName(e.target.value)} /></div>
               </div>
@@ -4338,11 +4339,12 @@ export default function Home() {
               </div>
               {baMsg && <p style={{fontSize:13,color:baMsg.includes('Error')?'#ef4444':'#10b981'}}>{baMsg}</p>}
 
-              {/* 3 Tabel per platform */}
+              {/* 4 Tabel per platform */}
               {[
                 { type:'reels', label:'📘 Facebook Reels', color:'#1877F2', filter:a=>a.account_type==='reels'||a.account_type==='both' },
                 { type:'tiktok', label:'🎵 TikTok', color:'#00f2ea', filter:a=>a.account_type==='tiktok' },
                 { type:'ig', label:'📷 Instagram', color:'#E4405F', filter:a=>a.account_type==='ig' },
+                { type:'x', label:'𝕏 Twitter / X', color:'#ffffff', filter:a=>a.account_type==='x' },
               ].map(section => {
                 const accs = botAccounts.filter(section.filter);
                 return (
