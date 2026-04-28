@@ -585,6 +585,14 @@ export default function Home() {
     loadData();
   };
 
+  // Quick-set fallback theme untuk grup (5 pilihan: cinematic, neon, sport_magazine, 3d_text, minimalist)
+  const setGroupFallbackTheme = async (groupId, theme) => {
+    await supabase.from('groups').update({
+      fallback_theme: theme || 'cinematic',
+    }).eq('id', groupId);
+    loadData();
+  };
+
   // Weekly stats functions
   const loadWeeklyStats = async (y, m) => {
     const { data } = await supabase.from('weekly_stats').select('*').eq('year', y).eq('month', m);
@@ -4553,7 +4561,7 @@ export default function Home() {
               <span style={{fontSize:12,color:'#6b7280',alignSelf:'center'}}>{filteredGroups.length} grup</span>
             </div>
             <table style={{width:'100%',borderCollapse:'collapse',background:'#111827',borderRadius:12,overflow:'hidden',border:'1px solid #1f2937'}}>
-              <thead><tr><th style={S.th}>#</th><th style={S.th}>Nama Grup</th><th style={S.th}>Klub</th><th style={S.th}>Liga</th>{isAdmin && <th style={S.th} title="Akun bot A (admin/moderator) untuk Bulk Task Generate. Cycle 3+4 otomatis ke partner-nya.">Akun Bot Utama</th>}{isAdmin && <th style={S.th}>Aksi</th>}</tr></thead>
+              <thead><tr><th style={S.th}>#</th><th style={S.th}>Nama Grup</th><th style={S.th}>Klub</th><th style={S.th}>Liga</th>{isAdmin && <th style={S.th} title="Akun bot A (admin/moderator) untuk Bulk Task Generate. Cycle 3+4 otomatis ke partner-nya.">Akun Bot Utama</th>}{isAdmin && <th style={S.th} title="Tema visual fallback canvas saat berita gak cukup">Tema Fallback</th>}{isAdmin && <th style={S.th}>Aksi</th>}</tr></thead>
               <tbody>
                 {filteredGroups.map((g, i) => (
                   <tr key={g.id}>
@@ -4582,6 +4590,19 @@ export default function Home() {
                           </select>
                         </td>}
                         {isAdmin && <td style={S.td}>
+                          <select
+                            style={{...S.input,padding:'4px 8px',fontSize:11,minWidth:130}}
+                            value={g.fallback_theme || 'cinematic'}
+                            onChange={e => setGroupFallbackTheme(g.id, e.target.value)}
+                          >
+                            <option value="cinematic">🎬 Cinematic</option>
+                            <option value="neon">✨ Neon</option>
+                            <option value="sport_magazine">🏆 Sport Magazine</option>
+                            <option value="3d_text">🎮 3D Text</option>
+                            <option value="minimalist">🌅 Minimalist</option>
+                          </select>
+                        </td>}
+                        {isAdmin && <td style={S.td}>
                           <button onClick={saveEditGroup} style={{...S.btn('#065f46'),padding:'3px 8px',fontSize:11,marginRight:4}}>Simpan</button>
                           <button onClick={()=>setEditingGroup(null)} style={{...S.btn('#374151'),padding:'3px 8px',fontSize:11}}>Batal</button>
                         </td>}
@@ -4605,6 +4626,20 @@ export default function Home() {
                                 {a.account_name}{a.partner_account_id ? ' (pair)' : ''}
                               </option>
                             ))}
+                          </select>
+                        </td>}
+                        {isAdmin && <td style={S.td}>
+                          <select
+                            style={{...S.input,padding:'4px 8px',fontSize:11,minWidth:130}}
+                            value={g.fallback_theme || 'cinematic'}
+                            onChange={e => setGroupFallbackTheme(g.id, e.target.value)}
+                            title="Tema visual saat berita & archive sama-sama gak cukup"
+                          >
+                            <option value="cinematic">🎬 Cinematic</option>
+                            <option value="neon">✨ Neon</option>
+                            <option value="sport_magazine">🏆 Sport Magazine</option>
+                            <option value="3d_text">🎮 3D Text</option>
+                            <option value="minimalist">🌅 Minimalist</option>
                           </select>
                         </td>}
                         {isAdmin && <td style={S.td}>
