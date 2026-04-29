@@ -431,7 +431,7 @@ export default function Home() {
     if (saved) { const u = JSON.parse(saved); setUser(u); setTab(u.role === 'admin' ? 'overview' : 'groups'); }
   }, []);
 
-  useEffect(() => { if (user) loadData(); }, [user]);
+  useEffect(() => { if (user) { loadData(); loadAutoMasterSwitch(); } }, [user]);
   useEffect(() => {
     // Saat user pilih grup di "Buat Tugas Posting", auto-load cycle status hari ini
     if (user?.role === 'admin' && tqGroups.length > 0) loadCycleStatus(tqGroups);
@@ -591,6 +591,33 @@ export default function Home() {
     await supabase.from('groups').update({
       fallback_theme: theme || 'cinematic',
     }).eq('id', groupId);
+    loadData();
+  };
+
+  // ============================================================
+  // AUTONOMOUS POSTING — master switch + per-grup toggle/interval (DORMANT)
+  // ============================================================
+  const [autoMasterSwitch, setAutoMasterSwitch] = useState(false);
+  const loadAutoMasterSwitch = async () => {
+    const { data } = await supabase.from('app_config').select('value').eq('key', 'auto_post_master_switch').single();
+    if (data) setAutoMasterSwitch(data.value === true || data.value === 'true');
+  };
+  const toggleAutoMasterSwitch = async () => {
+    const newVal = !autoMasterSwitch;
+    if (newVal && !confirm('AKTIFKAN autonomous posting?\n\nBot akan auto-create posting task tiap interval untuk semua grup yang auto_post_enabled=true.\n\nLanjut?')) return;
+    const { error } = await supabase.from('app_config').update({
+      value: newVal, updated_at: new Date().toISOString(),
+    }).eq('key', 'auto_post_master_switch');
+    if (error) { alert('Error: ' + error.message); return; }
+    setAutoMasterSwitch(newVal);
+  };
+  const setGroupAutoPost = async (groupId, enabled) => {
+    await supabase.from('groups').update({ auto_post_enabled: !!enabled }).eq('id', groupId);
+    loadData();
+  };
+  const setGroupInterval = async (groupId, hours) => {
+    const v = Math.max(1, Math.min(24, parseInt(hours, 10) || 2));
+    await supabase.from('groups').update({ posting_interval_hours: v }).eq('id', groupId);
     loadData();
   };
 
@@ -4572,7 +4599,7 @@ export default function Home() {
               <span style={{fontSize:12,color:'#6b7280',alignSelf:'center'}}>{filteredGroups.length} grup</span>
             </div>
             <table style={{width:'100%',borderCollapse:'collapse',background:'#111827',borderRadius:12,overflow:'hidden',border:'1px solid #1f2937'}}>
-              <thead><tr><th style={S.th}>#</th><th style={S.th}>Nama Grup</th><th style={S.th}>Klub</th><th style={S.th}>Liga</th>{isAdmin && <th style={S.th} title="Akun bot A (admin/moderator) untuk Bulk Task Generate. Cycle 3+4 otomatis ke partner-nya.">Akun Bot Utama</th>}{isAdmin && <th style={S.th} title="Tema visual fallback canvas saat berita gak cukup">Tema Fallback</th>}{isAdmin && <th style={S.th}>Aksi</th>}</tr></thead>
+              <thead><tr><th style={S.th}>#</th><th style={S.th}>Nama Grup</th><th style={S.th}>Klub</th><th style={S.th}>Liga</th>{isAdmin && <th style={S.th} title="Akun bot A (admin/moderator) untuk Bulk Task Generate. Cycle 3+4 otomatis ke partner-nya.">Akun Bot Utama</th>}{isAdmin && <th style={S.th} title="Tema visual fallback canvas saat berita gak cukup">Tema Fallback</th>}{isAdmin && <th style={S.th} title="Bot self-driven posting per grup. Master switch harus aktif juga.">Auto-Post</th>}{isAdmin && <th style={S.th}>Aksi</th>}</tr></thead>
               <tbody>
                 {filteredGroups.map((g, i) => (
                   <tr key={g.id}>
@@ -4613,6 +4640,7 @@ export default function Home() {
                             <option value="minimalist">🌅 Minimalist</option>
                           </select>
                         </td>}
+                        {isAdmin && <td style={S.td}><span style={{fontSize:11,color:'#6b7280'}}>—</span></td>}
                         {isAdmin && <td style={S.td}>
                           <button onClick={saveEditGroup} style={{...S.btn('#065f46'),padding:'3px 8px',fontSize:11,marginRight:4}}>Simpan</button>
                           <button onClick={()=>setEditingGroup(null)} style={{...S.btn('#374151'),padding:'3px 8px',fontSize:11}}>Batal</button>
@@ -4652,6 +4680,20 @@ export default function Home() {
                             <option value="3d_text">🎮 3D Text</option>
                             <option value="minimalist">🌅 Minimalist</option>
                           </select>
+                        </td>}
+                        {isAdmin && <td style={S.td}>
+                          <div style={{display:'flex',gap:6,alignItems:'center'}}>
+                            <label style={{display:'flex',alignItems:'center',gap:4,cursor:'pointer',fontSize:11}} title="Toggle: bot auto-post untuk grup ini (master switch juga harus ON)">
+                              <input type="checkbox" checked={!!g.auto_post_enabled} onChange={e=>setGroupAutoPost(g.id, e.target.checked)} />
+                              <span style={{color:g.auto_post_enabled?'#10b981':'#6b7280'}}>{g.auto_post_enabled?'ON':'OFF'}</span>
+                            </label>
+                            <input type="number" min="1" max="24"
+                              style={{...S.input,padding:'4px 6px',fontSize:11,width:50}}
+                              value={g.posting_interval_hours || 2}
+                              onChange={e=>setGroupInterval(g.id, e.target.value)}
+                              title="Interval (jam) antar auto-post" />
+                            <span style={{fontSize:10,color:'#6b7280'}}>jam</span>
+                          </div>
                         </td>}
                         {isAdmin && <td style={S.td}>
                           <button onClick={()=>startEditGroup(g)} style={{...S.btn('#1e3a5f'),padding:'3px 8px',fontSize:11,marginRight:4}}>Edit</button>
@@ -5038,6 +5080,30 @@ export default function Home() {
         {tab === 'settings' && isAdmin && (
           <>
             {settingsMsg && <p style={{fontSize:13,color:settingsMsg.includes('Gagal')||settingsMsg.includes('Error')?'#ef4444':'#10b981',marginBottom:16}}>{settingsMsg}</p>}
+
+            {/* SECTION 0: AUTONOMOUS POSTING MASTER SWITCH */}
+            <div style={{...S.box,marginBottom:20,border:autoMasterSwitch?'2px solid #10b981':'2px solid #ef4444'}}>
+              <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:16,flexWrap:'wrap'}}>
+                <div style={{flex:1,minWidth:280}}>
+                  <h3 style={{color:'#67e8f9',fontSize:15,margin:'0 0 6px 0',fontWeight:800,textTransform:'uppercase',letterSpacing:1}}>🤖 Autonomous Posting (Master Switch)</h3>
+                  <p style={{fontSize:12,color:'#9ca3af',margin:'0 0 8px 0'}}>
+                    Bot mandiri auto-create posting task tiap interval per grup, tanpa user intervensi.
+                    {autoMasterSwitch ? (
+                      <span style={{color:'#10b981',fontWeight:700}}> ✅ AKTIF — bot self-driven</span>
+                    ) : (
+                      <span style={{color:'#ef4444',fontWeight:700}}> ⛔ DORMANT — bot manual mode (default)</span>
+                    )}
+                  </p>
+                  <p style={{fontSize:11,color:'#6b7280',margin:0}}>
+                    Triple safety: master ON + grup auto_post_enabled=true + interval lewat. Aman dimainkan satu-per-satu.
+                  </p>
+                </div>
+                <button onClick={toggleAutoMasterSwitch}
+                  style={{...S.btn(autoMasterSwitch?'#7f1d1d':'#065f46'),padding:'12px 24px',fontSize:13,fontWeight:800}}>
+                  {autoMasterSwitch ? '⛔ MATIKAN' : '▶ AKTIFKAN'}
+                </button>
+              </div>
+            </div>
 
             {/* SECTION 1: BOT ACCOUNTS QUICK VIEW (read-only view + toggle) */}
             <div style={{...S.box,marginBottom:20}}>
