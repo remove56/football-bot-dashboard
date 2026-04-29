@@ -2723,14 +2723,61 @@ export default function RootLayout({ children }) {
             opacity: 0.85;
             pointer-events: none;
           }
-          /* Stars layer NEAR WARP (bigger stars, medium-fast zoom) — galaxy-style depth */
+          /* WARP FAR STARS — bintang jauh zoom slow (galaxy hyperspace, slowest) */
           [data-theme="cosmic-fusion"] .theme-fx-layer.fx-back {
             background-image:
-              /* Nebula clouds (tidak warp, biar ada base background) */
-              radial-gradient(ellipse at center, rgba(168, 85, 247, 0.70) 0%, transparent 50%),
-              radial-gradient(ellipse 500px 800px at 30% 40%, rgba(236, 72, 153, 0.22) 0%, transparent 60%),
-              radial-gradient(ellipse 600px 400px at 70% 60%, rgba(59, 130, 246, 0.20) 0%, transparent 60%);
-            animation: fusionNebulaRotate 70s linear infinite;
+              radial-gradient(1px 1px at 5% 10%, rgba(255, 255, 255, 0.85), transparent),
+              radial-gradient(1px 1px at 12% 22%, rgba(165, 243, 252, 0.80), transparent),
+              radial-gradient(1px 1px at 19% 35%, rgba(254, 240, 138, 0.85), transparent),
+              radial-gradient(1px 1px at 26% 48%, rgba(255, 255, 255, 0.80), transparent),
+              radial-gradient(1.5px 1.5px at 33% 61%, rgba(167, 139, 250, 0.85), transparent),
+              radial-gradient(1px 1px at 40% 74%, rgba(252, 165, 165, 0.80), transparent),
+              radial-gradient(1px 1px at 47% 87%, rgba(255, 255, 255, 0.85), transparent),
+              radial-gradient(1.5px 1.5px at 54% 12%, rgba(96, 165, 250, 0.80), transparent),
+              radial-gradient(1px 1px at 61% 25%, rgba(254, 243, 199, 0.85), transparent),
+              radial-gradient(1px 1px at 68% 38%, rgba(165, 243, 252, 0.80), transparent),
+              radial-gradient(1.5px 1.5px at 75% 51%, rgba(255, 255, 255, 0.85), transparent),
+              radial-gradient(1px 1px at 82% 64%, rgba(167, 139, 250, 0.80), transparent),
+              radial-gradient(1px 1px at 89% 77%, rgba(252, 165, 165, 0.85), transparent),
+              radial-gradient(1.5px 1.5px at 96% 90%, rgba(254, 240, 138, 0.80), transparent),
+              radial-gradient(1px 1px at 8% 65%, rgba(255, 255, 255, 0.85), transparent),
+              radial-gradient(1px 1px at 16% 82%, rgba(96, 165, 250, 0.80), transparent),
+              radial-gradient(1px 1px at 24% 95%, rgba(254, 243, 199, 0.85), transparent),
+              radial-gradient(1.5px 1.5px at 32% 8%, rgba(165, 243, 252, 0.80), transparent),
+              radial-gradient(1px 1px at 38% 19%, rgba(255, 255, 255, 0.85), transparent),
+              radial-gradient(1px 1px at 44% 32%, rgba(252, 165, 165, 0.80), transparent),
+              radial-gradient(1px 1px at 50% 45%, rgba(167, 139, 250, 0.85), transparent),
+              radial-gradient(1.5px 1.5px at 56% 58%, rgba(255, 255, 255, 0.80), transparent),
+              radial-gradient(1px 1px at 62% 71%, rgba(254, 240, 138, 0.85), transparent),
+              radial-gradient(1px 1px at 68% 84%, rgba(96, 165, 250, 0.80), transparent),
+              radial-gradient(1px 1px at 74% 5%, rgba(165, 243, 252, 0.85), transparent),
+              radial-gradient(1.5px 1.5px at 80% 18%, rgba(255, 255, 255, 0.85), transparent),
+              radial-gradient(1px 1px at 86% 31%, rgba(254, 243, 199, 0.80), transparent),
+              radial-gradient(1px 1px at 92% 44%, rgba(167, 139, 250, 0.85), transparent),
+              radial-gradient(1px 1px at 98% 57%, rgba(252, 165, 165, 0.80), transparent),
+              radial-gradient(1.5px 1.5px at 4% 38%, rgba(255, 255, 255, 0.85), transparent),
+              radial-gradient(1px 1px at 10% 51%, rgba(254, 240, 138, 0.80), transparent),
+              radial-gradient(1px 1px at 18% 76%, rgba(96, 165, 250, 0.85), transparent),
+              radial-gradient(1.5px 1.5px at 28% 14%, rgba(165, 243, 252, 0.85), transparent),
+              radial-gradient(1px 1px at 36% 29%, rgba(254, 243, 199, 0.80), transparent),
+              radial-gradient(1px 1px at 42% 52%, rgba(167, 139, 250, 0.85), transparent),
+              radial-gradient(1px 1px at 48% 75%, rgba(252, 165, 165, 0.80), transparent),
+              radial-gradient(1.5px 1.5px at 54% 92%, rgba(255, 255, 255, 0.85), transparent),
+              radial-gradient(1px 1px at 60% 16%, rgba(96, 165, 250, 0.80), transparent),
+              radial-gradient(1px 1px at 66% 39%, rgba(254, 240, 138, 0.85), transparent),
+              radial-gradient(1.5px 1.5px at 72% 62%, rgba(165, 243, 252, 0.80), transparent),
+              radial-gradient(1px 1px at 78% 85%, rgba(255, 255, 255, 0.85), transparent),
+              radial-gradient(1px 1px at 84% 9%, rgba(167, 139, 250, 0.80), transparent),
+              radial-gradient(1px 1px at 90% 22%, rgba(254, 243, 199, 0.85), transparent),
+              radial-gradient(1.5px 1.5px at 96% 35%, rgba(252, 165, 165, 0.80), transparent),
+              radial-gradient(1px 1px at 14% 47%, rgba(255, 255, 255, 0.80), transparent),
+              radial-gradient(1px 1px at 22% 68%, rgba(96, 165, 250, 0.85), transparent),
+              radial-gradient(1px 1px at 30% 91%, rgba(165, 243, 252, 0.80), transparent),
+              radial-gradient(1.5px 1.5px at 46% 6%, rgba(254, 243, 199, 0.85), transparent),
+              radial-gradient(1px 1px at 58% 28%, rgba(167, 139, 250, 0.80), transparent),
+              radial-gradient(1px 1px at 70% 49%, rgba(252, 165, 165, 0.85), transparent);
+            background-size: 100% 100%;
+            animation: fusionStarsWarpFar 12s linear infinite;
           }
           /* Bintang ORBIT memutar sekitar pusat (50 stars, very dim alpha 0.25-0.35) */
           [data-theme="cosmic-fusion"] .theme-fx-layer.fx-mid {
@@ -2794,41 +2841,83 @@ export default function RootLayout({ children }) {
             content: '';
             position: absolute; inset: 0;
             background-image:
-              radial-gradient(1.5px 1.5px at 12% 22%, rgba(255, 255, 255, 0.55), transparent),
-              radial-gradient(2px 2px at 38% 68%, rgba(254, 240, 138, 0.55), transparent),
-              radial-gradient(1.5px 1.5px at 62% 35%, rgba(165, 243, 252, 0.55), transparent),
-              radial-gradient(2px 2px at 82% 78%, rgba(255, 255, 255, 0.55), transparent),
-              radial-gradient(1.5px 1.5px at 88% 18%, rgba(252, 165, 165, 0.55), transparent),
-              radial-gradient(1.5px 1.5px at 22% 92%, rgba(167, 139, 250, 0.55), transparent),
-              radial-gradient(1.5px 1.5px at 55% 8%, rgba(255, 255, 255, 0.55), transparent),
-              radial-gradient(2px 2px at 78% 92%, rgba(254, 243, 199, 0.55), transparent),
-              radial-gradient(1.5px 1.5px at 32% 42%, rgba(96, 165, 250, 0.50), transparent),
-              radial-gradient(1.5px 1.5px at 68% 52%, rgba(255, 255, 255, 0.50), transparent),
-              radial-gradient(1.5px 1.5px at 18% 50%, rgba(254, 243, 199, 0.50), transparent),
-              radial-gradient(1.5px 1.5px at 92% 62%, rgba(165, 243, 252, 0.50), transparent),
-              radial-gradient(1.5px 1.5px at 42% 18%, rgba(167, 139, 250, 0.50), transparent),
-              radial-gradient(1.5px 1.5px at 72% 28%, rgba(252, 165, 165, 0.50), transparent);
+              radial-gradient(1.5px 1.5px at 5% 8%, rgba(255, 255, 255, 0.85), transparent),
+              radial-gradient(1.5px 1.5px at 12% 22%, rgba(165, 243, 252, 0.80), transparent),
+              radial-gradient(2px 2px at 19% 36%, rgba(254, 240, 138, 0.85), transparent),
+              radial-gradient(1.5px 1.5px at 26% 50%, rgba(255, 255, 255, 0.80), transparent),
+              radial-gradient(2px 2px at 33% 64%, rgba(167, 139, 250, 0.85), transparent),
+              radial-gradient(1.5px 1.5px at 40% 78%, rgba(252, 165, 165, 0.80), transparent),
+              radial-gradient(1.5px 1.5px at 47% 92%, rgba(96, 165, 250, 0.85), transparent),
+              radial-gradient(2px 2px at 54% 6%, rgba(255, 255, 255, 0.80), transparent),
+              radial-gradient(1.5px 1.5px at 61% 20%, rgba(254, 243, 199, 0.85), transparent),
+              radial-gradient(2px 2px at 68% 34%, rgba(165, 243, 252, 0.80), transparent),
+              radial-gradient(1.5px 1.5px at 75% 48%, rgba(167, 139, 250, 0.85), transparent),
+              radial-gradient(2px 2px at 82% 62%, rgba(255, 255, 255, 0.85), transparent),
+              radial-gradient(1.5px 1.5px at 89% 76%, rgba(254, 240, 138, 0.80), transparent),
+              radial-gradient(2px 2px at 96% 90%, rgba(252, 165, 165, 0.85), transparent),
+              radial-gradient(1.5px 1.5px at 8% 50%, rgba(255, 255, 255, 0.80), transparent),
+              radial-gradient(1.5px 1.5px at 16% 75%, rgba(96, 165, 250, 0.85), transparent),
+              radial-gradient(2px 2px at 24% 12%, rgba(254, 243, 199, 0.85), transparent),
+              radial-gradient(1.5px 1.5px at 32% 88%, rgba(165, 243, 252, 0.80), transparent),
+              radial-gradient(2px 2px at 44% 28%, rgba(167, 139, 250, 0.85), transparent),
+              radial-gradient(1.5px 1.5px at 52% 56%, rgba(252, 165, 165, 0.80), transparent),
+              radial-gradient(1.5px 1.5px at 60% 80%, rgba(255, 255, 255, 0.85), transparent),
+              radial-gradient(2px 2px at 68% 8%, rgba(254, 240, 138, 0.80), transparent),
+              radial-gradient(1.5px 1.5px at 76% 30%, rgba(96, 165, 250, 0.85), transparent),
+              radial-gradient(2px 2px at 84% 56%, rgba(167, 139, 250, 0.80), transparent),
+              radial-gradient(1.5px 1.5px at 92% 32%, rgba(255, 255, 255, 0.85), transparent),
+              radial-gradient(2px 2px at 4% 70%, rgba(254, 243, 199, 0.80), transparent),
+              radial-gradient(1.5px 1.5px at 14% 42%, rgba(165, 243, 252, 0.85), transparent),
+              radial-gradient(1.5px 1.5px at 28% 60%, rgba(255, 255, 255, 0.80), transparent),
+              radial-gradient(2px 2px at 38% 18%, rgba(167, 139, 250, 0.85), transparent),
+              radial-gradient(1.5px 1.5px at 48% 70%, rgba(252, 165, 165, 0.80), transparent),
+              radial-gradient(2px 2px at 58% 38%, rgba(254, 240, 138, 0.85), transparent),
+              radial-gradient(1.5px 1.5px at 72% 88%, rgba(255, 255, 255, 0.85), transparent),
+              radial-gradient(1.5px 1.5px at 88% 8%, rgba(96, 165, 250, 0.80), transparent),
+              radial-gradient(2px 2px at 22% 4%, rgba(165, 243, 252, 0.85), transparent),
+              radial-gradient(1.5px 1.5px at 64% 96%, rgba(254, 243, 199, 0.80), transparent);
             background-size: 100% 100%;
             animation: fusionStarsWarpMid 6s linear infinite;
             pointer-events: none;
           }
-          /* Layer 3 (front): HYPERSPACE WARP stars (banyak, dim) */
+          /* Layer 3 (front): HYPERSPACE WARP stars FRONT — paling cepat, paling dekat */
           [data-theme="cosmic-fusion"] .theme-fx-layer.fx-front {
             background-image:
-              radial-gradient(1.5px 1.5px at 50% 50%, rgba(255, 255, 255, 0.65), transparent),
-              radial-gradient(1.5px 1.5px at 30% 30%, rgba(147, 197, 253, 0.60), transparent),
-              radial-gradient(1.5px 1.5px at 70% 70%, rgba(253, 230, 138, 0.60), transparent),
-              radial-gradient(1.5px 1.5px at 20% 70%, rgba(255, 255, 255, 0.55), transparent),
-              radial-gradient(1.5px 1.5px at 80% 30%, rgba(253, 164, 175, 0.60), transparent),
-              radial-gradient(2px 2px at 40% 80%, rgba(255, 255, 255, 0.65), transparent),
-              radial-gradient(2px 2px at 60% 20%, rgba(196, 181, 253, 0.60), transparent),
-              radial-gradient(1.5px 1.5px at 15% 45%, rgba(165, 243, 252, 0.55), transparent),
-              radial-gradient(1.5px 1.5px at 85% 55%, rgba(255, 255, 255, 0.55), transparent),
-              radial-gradient(1.5px 1.5px at 25% 15%, rgba(254, 243, 199, 0.60), transparent),
-              radial-gradient(1.5px 1.5px at 75% 85%, rgba(167, 139, 250, 0.60), transparent),
-              radial-gradient(1.5px 1.5px at 45% 35%, rgba(255, 255, 255, 0.55), transparent),
-              radial-gradient(1.5px 1.5px at 55% 65%, rgba(252, 165, 165, 0.55), transparent),
-              radial-gradient(1.5px 1.5px at 10% 90%, rgba(96, 165, 250, 0.55), transparent);
+              radial-gradient(2px 2px at 5% 10%, rgba(255, 255, 255, 0.95), transparent),
+              radial-gradient(2px 2px at 14% 23%, rgba(147, 197, 253, 0.90), transparent),
+              radial-gradient(2.5px 2.5px at 22% 36%, rgba(253, 230, 138, 0.95), transparent),
+              radial-gradient(2px 2px at 30% 49%, rgba(255, 255, 255, 0.90), transparent),
+              radial-gradient(2.5px 2.5px at 38% 62%, rgba(196, 181, 253, 0.95), transparent),
+              radial-gradient(2px 2px at 46% 75%, rgba(253, 164, 175, 0.90), transparent),
+              radial-gradient(2.5px 2.5px at 54% 88%, rgba(255, 255, 255, 0.95), transparent),
+              radial-gradient(2px 2px at 62% 5%, rgba(165, 243, 252, 0.90), transparent),
+              radial-gradient(2.5px 2.5px at 70% 18%, rgba(254, 243, 199, 0.95), transparent),
+              radial-gradient(2px 2px at 78% 31%, rgba(167, 139, 250, 0.90), transparent),
+              radial-gradient(2.5px 2.5px at 86% 44%, rgba(255, 255, 255, 0.95), transparent),
+              radial-gradient(2px 2px at 94% 57%, rgba(252, 165, 165, 0.90), transparent),
+              radial-gradient(2.5px 2.5px at 8% 70%, rgba(255, 255, 255, 0.95), transparent),
+              radial-gradient(2px 2px at 18% 83%, rgba(96, 165, 250, 0.90), transparent),
+              radial-gradient(2.5px 2.5px at 28% 96%, rgba(254, 240, 138, 0.95), transparent),
+              radial-gradient(2px 2px at 38% 8%, rgba(165, 243, 252, 0.90), transparent),
+              radial-gradient(2.5px 2.5px at 48% 21%, rgba(255, 255, 255, 0.95), transparent),
+              radial-gradient(2px 2px at 58% 34%, rgba(167, 139, 250, 0.90), transparent),
+              radial-gradient(2.5px 2.5px at 68% 47%, rgba(252, 165, 165, 0.95), transparent),
+              radial-gradient(2px 2px at 78% 60%, rgba(254, 243, 199, 0.90), transparent),
+              radial-gradient(2.5px 2.5px at 88% 73%, rgba(255, 255, 255, 0.95), transparent),
+              radial-gradient(2px 2px at 98% 86%, rgba(96, 165, 250, 0.90), transparent),
+              radial-gradient(2px 2px at 12% 38%, rgba(255, 255, 255, 0.90), transparent),
+              radial-gradient(2.5px 2.5px at 22% 56%, rgba(254, 240, 138, 0.95), transparent),
+              radial-gradient(2px 2px at 32% 74%, rgba(196, 181, 253, 0.90), transparent),
+              radial-gradient(2.5px 2.5px at 42% 92%, rgba(165, 243, 252, 0.95), transparent),
+              radial-gradient(2px 2px at 52% 6%, rgba(255, 255, 255, 0.90), transparent),
+              radial-gradient(2.5px 2.5px at 62% 24%, rgba(252, 165, 165, 0.95), transparent),
+              radial-gradient(2px 2px at 72% 42%, rgba(167, 139, 250, 0.90), transparent),
+              radial-gradient(2.5px 2.5px at 82% 60%, rgba(254, 243, 199, 0.95), transparent),
+              radial-gradient(2px 2px at 92% 78%, rgba(255, 255, 255, 0.90), transparent),
+              radial-gradient(2.5px 2.5px at 6% 26%, rgba(165, 243, 252, 0.90), transparent),
+              radial-gradient(2px 2px at 26% 14%, rgba(96, 165, 250, 0.95), transparent),
+              radial-gradient(2.5px 2.5px at 56% 46%, rgba(254, 240, 138, 0.90), transparent),
+              radial-gradient(2px 2px at 76% 86%, rgba(255, 255, 255, 0.95), transparent);
             background-size: 100% 100%;
             animation: fusionWarp 4s linear infinite;
           }
@@ -2911,6 +3000,12 @@ export default function RootLayout({ children }) {
             0%   { transform: scale(0.15); opacity: 0; }
             20%  { opacity: 0.85; }
             100% { transform: scale(2.8); opacity: 0; }
+          }
+          @keyframes fusionStarsWarpFar {
+            0%   { transform: scale(0.1); opacity: 0; }
+            25%  { opacity: 0.85; }
+            75%  { opacity: 0.85; }
+            100% { transform: scale(2); opacity: 0; }
           }
           /* Bintang ORBIT memutar sekitar pusat (replace spiral arms) */
           @keyframes fusionStarsOrbit {
