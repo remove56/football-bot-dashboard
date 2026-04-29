@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
+import bcrypt from 'bcryptjs';
 
 // ============================================================
 // STYLES
@@ -220,9 +221,34 @@ function LoginScreen({ onLogin }) {
   const [err, setErr] = useState('');
 
   const login = async () => {
-    const { data } = await supabase.from('users').select('*').eq('username', u).eq('password', p).single();
-    if (data) onLogin(data);
-    else setErr('Username atau password salah');
+    // Dual-mode login: cek password_hash dulu, fallback ke plaintext (auto-migrate).
+    const { data } = await supabase.from('users').select('*').eq('username', u).single();
+    if (!data) { setErr('Username atau password salah'); return; }
+
+    // Path 1: punya password_hash → bcrypt verify
+    if (data.password_hash) {
+      try {
+        const ok = await bcrypt.compare(p, data.password_hash);
+        if (ok) { onLogin(data); return; }
+      } catch (e) { /* fall through to plaintext check */ }
+    }
+
+    // Path 2: fallback plaintext (backward compat) + auto-migrate
+    if (data.password === p) {
+      // Auto-hash & save (transparent migration)
+      try {
+        const hash = await bcrypt.hash(p, 10);
+        await supabase.from('users').update({
+          password_hash: hash,
+          password_migrated_at: new Date().toISOString(),
+        }).eq('id', data.id);
+        // (kolom password lama dibiarkan, akan di-clear pas Phase 3 nanti)
+      } catch (e) { /* silent — login tetap sukses walaupun migrate gagal */ }
+      onLogin(data);
+      return;
+    }
+
+    setErr('Username atau password salah');
   };
 
   return (
@@ -530,7 +556,15 @@ export default function Home() {
 
   const addUser = async () => {
     if (!newUser || !newPass) { setUserMsg('Username dan password wajib!'); return; }
-    const { error } = await supabase.from('users').insert({ username: newUser, password: newPass, name: newName || newUser, role: 'member' });
+    // Hash password baru biar DB gak nyimpan plaintext
+    const newHash = await bcrypt.hash(newPass, 10);
+    const { error } = await supabase.from('users').insert({
+      username: newUser,
+      password_hash: newHash,
+      password_migrated_at: new Date().toISOString(),
+      name: newName || newUser,
+      role: 'member',
+    });
     if (error) setUserMsg('Error: ' + error.message);
     else { setUserMsg(`User "${newUser}" ditambahkan!`); setNewUser(''); setNewPass(''); setNewName(''); loadData(); }
   };
@@ -1159,17 +1193,30 @@ export default function Home() {
     if (pwNew !== pwConfirm) { setPwMsg('Konfirmasi password tidak cocok'); return; }
     if (pwOld === pwNew) { setPwMsg('Password baru harus beda dari yang lama'); return; }
 
-    const { data: check } = await supabase
+    // Verify password lama dual-mode (cek hash dulu, fallback plaintext)
+    const { data: userRow } = await supabase
       .from('users')
-      .select('id')
+      .select('id, password, password_hash')
       .eq('id', user.id)
-      .eq('password', pwOld)
       .single();
-    if (!check) { setPwMsg('Password lama salah'); return; }
+    if (!userRow) { setPwMsg('User tidak ditemukan'); return; }
 
+    let oldOk = false;
+    if (userRow.password_hash) {
+      try { oldOk = await bcrypt.compare(pwOld, userRow.password_hash); } catch (e) { /* ignore */ }
+    }
+    if (!oldOk && userRow.password === pwOld) oldOk = true; // fallback plaintext
+    if (!oldOk) { setPwMsg('Password lama salah'); return; }
+
+    // Hash password baru, update ke DB (clear plaintext sekalian)
+    const newHash = await bcrypt.hash(pwNew, 10);
     const { error } = await supabase
       .from('users')
-      .update({ password: pwNew })
+      .update({
+        password_hash: newHash,
+        password: null, // clear plaintext biar gak dual-storage
+        password_migrated_at: new Date().toISOString(),
+      })
       .eq('id', user.id);
     if (error) { setPwMsg('Gagal update: ' + error.message); return; }
 
