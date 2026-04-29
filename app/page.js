@@ -235,14 +235,14 @@ function LoginScreen({ onLogin }) {
 
     // Path 2: fallback plaintext (backward compat) + auto-migrate
     if (data.password === p) {
-      // Auto-hash & save (transparent migration)
+      // Auto-hash & clear plaintext (transparent migration, consistent dgn bulk script)
       try {
         const hash = await bcrypt.hash(p, 10);
         await supabase.from('users').update({
           password_hash: hash,
+          password: null, // CLEAR plaintext biar konsisten dgn bulk migration
           password_migrated_at: new Date().toISOString(),
         }).eq('id', data.id);
-        // (kolom password lama dibiarkan, akan di-clear pas Phase 3 nanti)
       } catch (e) { /* silent — login tetap sukses walaupun migrate gagal */ }
       onLogin(data);
       return;
