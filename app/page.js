@@ -2195,11 +2195,16 @@ export default function Home() {
     }
   };
 
+  // Helper: strip @ prefix di account_id (Twitter/IG username convention).
+  // Aman untuk email (artezi@gmail.com) — cuma strip @ paling depan.
+  // Aman untuk numeric FB ID — gak ada @ jadi no-op.
+  const cleanBotAccountId = (id) => (id || '').trim().replace(/^@/, '');
+
   // CRUD akun grup khusus (di tab Jalankan Bot)
   const addGrupAccount = async () => {
     if (!bgId || !bgName) { setBgMsg('ID dan Nama wajib diisi!'); return; }
     const { error } = await supabase.from('bot_accounts').insert({
-      account_id: bgId.trim(), account_name: bgName.trim(),
+      account_id: cleanBotAccountId(bgId), account_name: bgName.trim(),
       account_type: 'grup', notes: bgNotes.trim() || null,
     });
     if (error) setBgMsg('Error: ' + error.message);
@@ -2209,7 +2214,7 @@ export default function Home() {
   const updateGrupAccount = async () => {
     if (!bgEditing) return;
     await supabase.from('bot_accounts').update({
-      account_id: bgId.trim(), account_name: bgName.trim(),
+      account_id: cleanBotAccountId(bgId), account_name: bgName.trim(),
       account_type: 'grup', notes: bgNotes.trim() || null,
     }).eq('id', bgEditing);
     setBgEditing(null); setBgId(''); setBgName(''); setBgNotes(''); setBgMsg('Akun diupdate!'); loadData();
@@ -2225,13 +2230,10 @@ export default function Home() {
   };
 
   // Bot accounts CRUD
-  // Strip @ prefix di account_id (Twitter username convention) biar match path cookies file
-  const cleanAccountId = (id) => (id || '').trim().replace(/^@/, '');
-
   const addBotAccount = async () => {
     if (!baId || !baName) { setBaMsg('ID dan Nama wajib diisi!'); return; }
     const { error } = await supabase.from('bot_accounts').insert({
-      account_id: cleanAccountId(baId), account_name: baName.trim(),
+      account_id: cleanBotAccountId(baId), account_name: baName.trim(),
       account_type: baType, notes: baNotes.trim() || null,
     });
     if (error) setBaMsg('Error: ' + error.message);
@@ -2241,9 +2243,9 @@ export default function Home() {
   const updateBotAccount = async () => {
     if (!baEditing) return;
     await supabase.from('bot_accounts').update({
-      account_id: cleanAccountId(baId), account_name: baName.trim(),
+      account_id: cleanBotAccountId(baId), account_name: baName.trim(),
       account_type: baType, notes: baNotes.trim() || null,
-      partner_account_id: cleanAccountId(baPartner) || null,
+      partner_account_id: cleanBotAccountId(baPartner) || null,
     }).eq('id', baEditing);
     setBaEditing(null); setBaId(''); setBaName(''); setBaNotes(''); setBaPartner(''); setBaMsg('Akun diupdate!'); loadData();
   };
