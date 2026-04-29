@@ -2416,12 +2416,242 @@ export default function RootLayout({ children }) {
             50%      { opacity: 1; transform: scale(1.5); }
           }
 
+          /* ============================================================
+             PHOTO BACKGROUND OVERRIDE — 4 cosmic photo HD themes
+             Pakai foto NASA-style asli dari /public/themes/, override CSS gradient
+             pure dengan photo-realistic background + 3D animation parallax/zoom
+             ============================================================ */
+
+          /* === Common: hide CSS planets, simplify pseudo-elements === */
+          [data-theme="dust-explosion"] .theme-planet,
+          [data-theme="whirlpool"] .theme-planet,
+          [data-theme="interstellar"] .theme-planet,
+          [data-theme="solar-spiral"] .theme-planet { display: none !important; }
+
+          /* === 🔆 DUST EXPLOSION — photo background === */
+          [data-theme="dust-explosion"] body {
+            background: #000 url('/themes/photo-dust-explosion.jpg') center center / cover no-repeat fixed !important;
+            animation: photoZoomBreath 18s ease-in-out infinite;
+          }
+          [data-theme="dust-explosion"] body::before {
+            content: '';
+            position: fixed; inset: 0;
+            width: auto; height: auto; margin: 0;
+            background: radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.5) 80%, rgba(0,0,0,0.85) 100%);
+            filter: none;
+            animation: none;
+            pointer-events: none;
+            z-index: 0;
+          }
+          [data-theme="dust-explosion"] body::after {
+            background-image: none;
+            background: radial-gradient(ellipse at 50% 50%, rgba(255,209,102,0.08) 0%, transparent 60%);
+            animation: dustOverlayPulse 7s ease-in-out infinite;
+            opacity: 0.7;
+          }
+          [data-theme="dust-explosion"] .particle-layer {
+            position: fixed; inset: 0;
+            pointer-events: none; z-index: 1; overflow: hidden;
+          }
+          [data-theme="dust-explosion"] .particle-layer::before,
+          [data-theme="dust-explosion"] .particle-layer::after {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 300px; height: 100px;
+            margin: -50px 0 0 -150px;
+            border: 2px solid rgba(255, 209, 102, 0.4);
+            border-radius: 50%;
+            animation: dustShockwave 5s ease-out infinite;
+          }
+          [data-theme="dust-explosion"] .particle-layer::after {
+            border-color: rgba(255, 134, 51, 0.3);
+            animation-delay: 2.5s;
+          }
+
+          /* === 🌊 WHIRLPOOL — photo background === */
+          [data-theme="whirlpool"] body {
+            background: #000 url('/themes/photo-whirlpool.jpg') center center / cover no-repeat fixed !important;
+            animation: photoSlowRotate 60s linear infinite;
+          }
+          [data-theme="whirlpool"] body::before {
+            content: '';
+            position: fixed; inset: 0;
+            background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.4) 80%, rgba(0,5,15,0.85) 100%);
+            filter: none;
+            animation: none;
+            pointer-events: none;
+            z-index: 0;
+          }
+          [data-theme="whirlpool"] body::after {
+            background-image: none;
+            background: radial-gradient(circle at center, rgba(34,211,238,0.10) 0%, transparent 50%);
+            animation: whirlpoolPulse 6s ease-in-out infinite;
+          }
+          [data-theme="whirlpool"] .particle-layer {
+            position: fixed; inset: 0;
+            margin: 0; width: auto; height: auto;
+            background: none;
+            filter: none;
+            animation: none;
+            pointer-events: none;
+            z-index: 1;
+          }
+
+          /* === 💍 INTERSTELLAR — photo background === */
+          [data-theme="interstellar"] body {
+            background: #000 url('/themes/photo-interstellar.jpg') center center / cover no-repeat fixed !important;
+            animation: photoZoomBreath 22s ease-in-out infinite;
+          }
+          [data-theme="interstellar"] body::before {
+            content: '';
+            position: fixed; inset: 0;
+            background: radial-gradient(ellipse at center, transparent 35%, rgba(0,0,0,0.4) 80%, rgba(10,5,2,0.9) 100%);
+            background-image: none;
+            background-size: auto;
+            animation: none;
+            opacity: 1;
+            pointer-events: none;
+            z-index: 0;
+          }
+          [data-theme="interstellar"] body::after {
+            background-image: none;
+            background: radial-gradient(ellipse at center, rgba(252,211,77,0.12) 0%, transparent 60%);
+            animation: interstellarOverlayPulse 5s ease-in-out infinite;
+          }
+          [data-theme="interstellar"] .jets {
+            position: fixed;
+            top: 0; left: 50%;
+            margin-left: -2px;
+            width: 4px; height: 100vh;
+            background: linear-gradient(180deg,
+              transparent 0%,
+              rgba(252, 211, 77, 0.3) 30%,
+              rgba(245, 158, 11, 0.5) 50%,
+              rgba(252, 211, 77, 0.3) 70%,
+              transparent 100%);
+            filter: blur(4px);
+            animation: interstellarJet 5s ease-in-out infinite;
+            pointer-events: none;
+            z-index: 1;
+            opacity: 0.6;
+          }
+          [data-theme="interstellar"] .particle-layer {
+            position: fixed; inset: 0;
+            pointer-events: none;
+            z-index: 1;
+          }
+          [data-theme="interstellar"] .particle-layer::before {
+            content: '';
+            position: absolute;
+            top: 30%; left: 20%;
+            width: 6px; height: 6px;
+            background: white;
+            border-radius: 50%;
+            box-shadow: 0 0 30px 10px rgba(252, 211, 77, 0.6);
+            animation: interstellarFlare 4s ease-in-out infinite;
+          }
+          [data-theme="interstellar"] .particle-layer::after {
+            content: '';
+            position: absolute;
+            bottom: 25%; right: 25%;
+            width: 5px; height: 5px;
+            background: white;
+            border-radius: 50%;
+            box-shadow: 0 0 25px 8px rgba(245, 158, 11, 0.5);
+            animation: interstellarFlare 5s ease-in-out infinite;
+            animation-delay: 2s;
+          }
+
+          /* === 🌟 SOLAR SPIRAL — photo background === */
+          [data-theme="solar-spiral"] body {
+            background: #000 url('/themes/photo-solar-spiral.jpg') center center / cover no-repeat fixed !important;
+            animation: photoZoomBreath 20s ease-in-out infinite;
+          }
+          [data-theme="solar-spiral"] body::before {
+            content: '';
+            position: fixed; inset: 0;
+            background: radial-gradient(ellipse at center, transparent 40%, rgba(0,0,0,0.35) 80%, rgba(10,5,0,0.85) 100%);
+            filter: none;
+            animation: none;
+            pointer-events: none;
+            z-index: 0;
+          }
+          [data-theme="solar-spiral"] body::after {
+            background-image: none;
+            background: radial-gradient(circle at center, rgba(254,243,199,0.10) 0%, transparent 50%);
+            animation: solarOverlayPulse 6s ease-in-out infinite;
+          }
+          [data-theme="solar-spiral"] .particle-layer {
+            position: fixed; inset: 0;
+            pointer-events: none;
+            z-index: 1;
+          }
+          [data-theme="solar-spiral"] .particle-layer::before {
+            content: '';
+            position: absolute;
+            top: 30%; left: 25%;
+            width: 8px; height: 8px;
+            background: white;
+            border-radius: 50%;
+            box-shadow:
+              0 0 20px 5px white,
+              0 0 50px 15px rgba(252, 211, 77, 0.6),
+              0 0 100px 30px rgba(251, 146, 60, 0.4);
+            animation: solarFlare 4s ease-in-out infinite;
+          }
+          [data-theme="solar-spiral"] .particle-layer::after {
+            content: '';
+            position: absolute;
+            bottom: 20%; right: 22%;
+            width: 6px; height: 6px;
+            background: white;
+            border-radius: 50%;
+            box-shadow:
+              0 0 15px 4px white,
+              0 0 40px 12px rgba(254, 240, 138, 0.6),
+              0 0 80px 25px rgba(245, 158, 11, 0.4);
+            animation: solarFlare 5s ease-in-out infinite;
+            animation-delay: 2s;
+          }
+
+          /* === Shared keyframes for photo themes === */
+          @keyframes photoZoomBreath {
+            0%, 100% { background-size: 105% auto; background-position: 50% 50%; }
+            50%      { background-size: 115% auto; background-position: 52% 48%; }
+          }
+          @keyframes photoSlowRotate {
+            0%   { background-size: 110% auto; transform: rotate(0deg); }
+            50%  { background-size: 120% auto; transform: rotate(2deg); }
+            100% { background-size: 110% auto; transform: rotate(0deg); }
+          }
+          @keyframes dustOverlayPulse {
+            0%, 100% { opacity: 0.7; }
+            50%      { opacity: 1; }
+          }
+          @keyframes whirlpoolPulse {
+            0%, 100% { opacity: 0.6; }
+            50%      { opacity: 1; }
+          }
+          @keyframes interstellarOverlayPulse {
+            0%, 100% { opacity: 0.6; }
+            50%      { opacity: 1; }
+          }
+          @keyframes solarOverlayPulse {
+            0%, 100% { opacity: 0.6; }
+            50%      { opacity: 1; }
+          }
+
           /* Reduce motion → disable 3D animations */
           @media (prefers-reduced-motion: reduce) {
             .theme-fx-layer { animation: none !important; transform: none !important; }
             .theme-planet { animation: none !important; }
             .particle-layer, .particle-layer::before, .particle-layer::after,
             .jets { animation: none !important; }
+            [data-theme="dust-explosion"] body,
+            [data-theme="whirlpool"] body,
+            [data-theme="interstellar"] body,
+            [data-theme="solar-spiral"] body { animation: none !important; }
           }
 
           /* Mobile: simpler 3D (skip front layer animation = save battery) */
