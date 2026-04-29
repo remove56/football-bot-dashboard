@@ -574,15 +574,347 @@ export default function RootLayout({ children }) {
             100% { transform: translate3d(60px, -40px, 100px); }
           }
 
+          /* ============================================================
+             4 GALAXY VARIANTS — planet-based 3D themes (HD CSS planets)
+             ============================================================ */
+
+          /* Planet base styles — common to all galaxy variants */
+          .theme-planet {
+            position: absolute;
+            border-radius: 50%;
+            display: none; /* hidden by default, enable per theme */
+            transform-style: preserve-3d;
+          }
+          .theme-planet-ring {
+            position: absolute;
+            border-radius: 50%;
+            border-style: solid;
+            transform-style: preserve-3d;
+          }
+
+          /* ====== 🪐 DEEP SPACE (planet + ring + stars) — ref gambar 1 ====== */
+          html[data-theme="deepspace"] body {
+            background: radial-gradient(ellipse at center, #0a0e2e 0%, #050715 60%, #000 100%) !important;
+          }
+          html[data-theme="deepspace"] body::before {
+            background-image:
+              radial-gradient(ellipse 1000px 600px at 30% 40%, rgba(99, 102, 241, 0.18) 0%, transparent 60%),
+              radial-gradient(ellipse 800px 500px at 70% 60%, rgba(34, 211, 238, 0.12) 0%, transparent 60%);
+          }
+          html[data-theme="deepspace"] body::after {
+            background: linear-gradient(90deg, transparent, rgba(96, 165, 250, 0.8), rgba(167, 139, 250, 0.8), transparent);
+            box-shadow: 0 0 30px rgba(96, 165, 250, 0.6);
+            height: 2px;
+          }
+          /* Stars layer */
+          html[data-theme="deepspace"] .theme-fx-layer.fx-back {
+            background-image:
+              radial-gradient(1px 1px at 12% 18%, white, transparent),
+              radial-gradient(1px 1px at 28% 55%, white, transparent),
+              radial-gradient(1px 1px at 45% 25%, white, transparent),
+              radial-gradient(1px 1px at 65% 75%, white, transparent),
+              radial-gradient(1px 1px at 88% 30%, white, transparent),
+              radial-gradient(1.5px 1.5px at 22% 80%, #fef3c7, transparent),
+              radial-gradient(1.5px 1.5px at 75% 50%, #93c5fd, transparent),
+              radial-gradient(2px 2px at 55% 85%, white, transparent);
+            background-size: 220px 220px, 280px 280px, 250px 250px, 320px 320px, 290px 290px, 340px 340px, 380px 380px, 420px 420px;
+            animation: deepStarsDrift 100s linear infinite;
+          }
+          /* Comet/light streak */
+          html[data-theme="deepspace"] .theme-fx-layer.fx-mid {
+            background-image:
+              linear-gradient(115deg, transparent 47%, rgba(255, 255, 255, 0.6) 49%, rgba(255, 255, 255, 0.8) 50%, rgba(255, 255, 255, 0.6) 51%, transparent 53%);
+            background-size: 1500px 1500px;
+            background-position: -800px 0;
+            animation: cometStreak 18s linear infinite;
+            opacity: 0.4;
+          }
+          /* Big Earth-like planet bottom right */
+          html[data-theme="deepspace"] .theme-planet { display: block; }
+          html[data-theme="deepspace"] .planet-1 {
+            width: 480px; height: 480px;
+            right: -120px; bottom: 5%;
+            background:
+              radial-gradient(circle at 30% 25%, #93c5fd 0%, #3b82f6 25%, #1e40af 55%, #0a1d50 85%, #050d2e 100%);
+            box-shadow:
+              inset -100px -50px 150px rgba(0, 0, 0, 0.75),
+              inset 60px 40px 80px rgba(147, 197, 253, 0.15),
+              0 0 120px rgba(59, 130, 246, 0.3);
+            animation: planetSpin 120s linear infinite;
+          }
+          /* Distant ringed (Saturn-like) planet upper right */
+          html[data-theme="deepspace"] .planet-2 {
+            width: 140px; height: 140px;
+            top: 12%; right: 18%;
+            background:
+              radial-gradient(circle at 30% 30%, #fcd34d 0%, #f59e0b 40%, #b45309 75%, #5c2a08 100%);
+            box-shadow:
+              inset -30px -15px 40px rgba(0, 0, 0, 0.65),
+              0 0 30px rgba(251, 191, 36, 0.4);
+            animation: planetSpin 80s linear infinite reverse;
+          }
+          html[data-theme="deepspace"] .planet-2::after {
+            content: '';
+            position: absolute;
+            width: 280%; height: 35%;
+            top: 33%; left: -90%;
+            border: 3px solid rgba(252, 211, 77, 0.5);
+            border-radius: 50%;
+            transform: rotateX(72deg);
+            box-shadow: 0 0 15px rgba(252, 211, 77, 0.3);
+          }
+          /* Small far planet upper left */
+          html[data-theme="deepspace"] .planet-3 {
+            width: 70px; height: 70px;
+            top: 25%; left: 12%;
+            background: radial-gradient(circle at 30% 30%, #c4b5fd 0%, #7c3aed 50%, #2e1065 100%);
+            box-shadow:
+              inset -15px -8px 20px rgba(0, 0, 0, 0.6),
+              0 0 20px rgba(139, 92, 246, 0.4);
+            animation: planetSpin 60s linear infinite;
+          }
+          @keyframes deepStarsDrift {
+            0%   { transform: translateX(0) rotate(0deg); }
+            100% { transform: translateX(-100px) rotate(20deg); }
+          }
+          @keyframes cometStreak {
+            0%   { transform: translate3d(-1500px, 0, 50px); }
+            100% { transform: translate3d(1500px, 1500px, 50px); }
+          }
+          @keyframes planetSpin {
+            from { transform: rotate(0deg); }
+            to   { transform: rotate(360deg); }
+          }
+
+          /* ====== 🌀 SPIRAL GALAXY (blue cyan vortex) — ref gambar 2 ====== */
+          html[data-theme="spiral"] body {
+            background: radial-gradient(ellipse at center, #0a1d4d 0%, #050a25 60%, #000 100%) !important;
+          }
+          html[data-theme="spiral"] body::before {
+            background-image:
+              radial-gradient(ellipse 1200px 800px at 50% 50%, rgba(34, 211, 238, 0.25) 0%, rgba(59, 130, 246, 0.15) 35%, transparent 65%);
+          }
+          html[data-theme="spiral"] body::after {
+            background: linear-gradient(90deg, transparent, rgba(34, 211, 238, 0.9), rgba(96, 165, 250, 0.9), transparent);
+            box-shadow: 0 0 30px rgba(34, 211, 238, 0.7);
+            height: 2px;
+          }
+          /* Spiral arms */
+          html[data-theme="spiral"] .theme-fx-layer.fx-back {
+            background-image:
+              conic-gradient(from 0deg at 50% 50%,
+                transparent 0deg,
+                rgba(34, 211, 238, 0.18) 30deg,
+                transparent 60deg,
+                rgba(96, 165, 250, 0.15) 130deg,
+                transparent 180deg,
+                rgba(34, 211, 238, 0.18) 230deg,
+                transparent 280deg,
+                rgba(96, 165, 250, 0.15) 320deg,
+                transparent 360deg);
+            animation: spiralRotate 80s linear infinite;
+          }
+          /* Sparkles */
+          html[data-theme="spiral"] .theme-fx-layer.fx-mid {
+            background-image:
+              radial-gradient(2px 2px at 20% 30%, rgba(165, 243, 252, 0.9), transparent),
+              radial-gradient(2px 2px at 70% 60%, rgba(255, 255, 255, 0.9), transparent),
+              radial-gradient(1.5px 1.5px at 45% 75%, rgba(147, 197, 253, 0.8), transparent),
+              radial-gradient(2.5px 2.5px at 85% 20%, rgba(255, 255, 255, 1), transparent),
+              radial-gradient(1px 1px at 30% 85%, rgba(165, 243, 252, 0.7), transparent),
+              radial-gradient(2px 2px at 60% 15%, rgba(255, 255, 255, 0.9), transparent),
+              radial-gradient(1.5px 1.5px at 90% 80%, rgba(96, 165, 250, 0.8), transparent);
+            background-size: 200px 200px, 250px 250px, 280px 280px, 320px 320px, 220px 220px, 260px 260px, 300px 300px;
+            animation: sparkleTwinkle 5s ease-in-out infinite, spiralCounterRotate 60s linear infinite;
+          }
+          /* Sparkle particles closer */
+          html[data-theme="spiral"] .theme-fx-layer.fx-front {
+            background-image:
+              radial-gradient(3px 3px at 50% 50%, white, transparent),
+              radial-gradient(2px 2px at 25% 25%, rgba(165, 243, 252, 1), transparent),
+              radial-gradient(2px 2px at 75% 75%, rgba(96, 165, 250, 1), transparent),
+              radial-gradient(2.5px 2.5px at 60% 30%, white, transparent),
+              radial-gradient(2px 2px at 30% 70%, rgba(165, 243, 252, 0.9), transparent);
+            background-size: 100% 100%;
+            animation: spiralWarp 6s linear infinite;
+          }
+          @keyframes spiralRotate {
+            from { transform: rotate(0deg) translateZ(-300px); }
+            to   { transform: rotate(360deg) translateZ(-300px); }
+          }
+          @keyframes spiralCounterRotate {
+            from { transform: rotate(0deg) translateZ(-100px); }
+            to   { transform: rotate(-360deg) translateZ(-100px); }
+          }
+          @keyframes sparkleTwinkle {
+            0%, 100% { opacity: 1; }
+            50%      { opacity: 0.5; }
+          }
+          @keyframes spiralWarp {
+            0%   { transform: translateZ(-600px) scale(0.1); opacity: 0; }
+            30%  { opacity: 1; }
+            100% { transform: translateZ(300px) scale(2.5); opacity: 0; }
+          }
+
+          /* ====== ☀️ SOLAR SYSTEM (warm sunset planets) — ref gambar 3 ====== */
+          html[data-theme="solar"] body {
+            background: linear-gradient(180deg, #1a0a2e 0%, #2e1a08 30%, #4a2810 60%, #1a0a04 100%) !important;
+          }
+          html[data-theme="solar"] body::before {
+            background-image:
+              radial-gradient(ellipse 1500px 500px at 50% 80%, rgba(251, 146, 60, 0.35) 0%, rgba(234, 88, 12, 0.20) 30%, transparent 60%),
+              radial-gradient(ellipse 800px 400px at 30% 30%, rgba(96, 165, 250, 0.15) 0%, transparent 60%);
+          }
+          html[data-theme="solar"] body::after {
+            background: linear-gradient(90deg, transparent, #fb923c, #fbbf24, #fb923c, transparent);
+            box-shadow: 0 0 30px rgba(251, 146, 60, 0.7), 0 0 50px rgba(251, 191, 36, 0.4);
+            height: 2px;
+          }
+          html[data-theme="solar"] .theme-fx-layer.fx-back {
+            background-image:
+              radial-gradient(1px 1px at 20% 20%, rgba(255, 237, 213, 0.7), transparent),
+              radial-gradient(1px 1px at 50% 30%, rgba(255, 255, 255, 0.6), transparent),
+              radial-gradient(1.5px 1.5px at 75% 15%, rgba(254, 243, 199, 0.8), transparent),
+              radial-gradient(1px 1px at 35% 60%, rgba(255, 255, 255, 0.5), transparent);
+            background-size: 280px 280px, 320px 320px, 380px 380px, 250px 250px;
+            animation: solarStarsDrift 80s linear infinite;
+          }
+          html[data-theme="solar"] .theme-planet { display: block; }
+          /* Big planet center-right (Earth-like with atmosphere) */
+          html[data-theme="solar"] .planet-1 {
+            width: 350px; height: 350px;
+            right: 8%; top: 25%;
+            background: radial-gradient(circle at 32% 28%, #93c5fd 0%, #3b82f6 30%, #1e3a8a 65%, #0c1f5e 95%);
+            box-shadow:
+              inset -75px -40px 110px rgba(0, 0, 0, 0.7),
+              inset 50px 30px 60px rgba(147, 197, 253, 0.2),
+              0 0 80px rgba(96, 165, 250, 0.35);
+            animation: planetSpin 100s linear infinite;
+          }
+          /* Big ringed planet left */
+          html[data-theme="solar"] .planet-2 {
+            width: 220px; height: 220px;
+            left: 5%; top: 35%;
+            background: radial-gradient(circle at 30% 30%, #fde68a 0%, #f59e0b 40%, #92400e 80%, #451a03 100%);
+            box-shadow:
+              inset -50px -25px 70px rgba(0, 0, 0, 0.7),
+              0 0 60px rgba(251, 191, 36, 0.4);
+            animation: planetSpin 90s linear infinite reverse;
+          }
+          html[data-theme="solar"] .planet-2::after {
+            content: '';
+            position: absolute;
+            width: 280%; height: 38%;
+            top: 32%; left: -90%;
+            border: 4px solid rgba(254, 215, 170, 0.55);
+            border-radius: 50%;
+            transform: rotateX(70deg) rotate(-15deg);
+            box-shadow: 0 0 20px rgba(251, 191, 36, 0.4);
+          }
+          /* Small middle planet */
+          html[data-theme="solar"] .planet-3 {
+            width: 100px; height: 100px;
+            top: 20%; left: 40%;
+            background: radial-gradient(circle at 30% 30%, #fca5a5 0%, #ef4444 50%, #7f1d1d 100%);
+            box-shadow:
+              inset -22px -12px 30px rgba(0, 0, 0, 0.65),
+              0 0 25px rgba(239, 68, 68, 0.5);
+            animation: planetSpin 70s linear infinite;
+          }
+          @keyframes solarStarsDrift {
+            0%   { transform: translateX(0); }
+            100% { transform: translateX(-80px); }
+          }
+
+          /* ====== 🔥 MARS APOCALYPSE (red apocalyptic) — ref gambar 4 ====== */
+          html[data-theme="mars"] body {
+            background: linear-gradient(180deg, #1a0808 0%, #4a0a08 30%, #2a0404 70%, #0a0202 100%) !important;
+          }
+          html[data-theme="mars"] body::before {
+            background-image:
+              radial-gradient(ellipse 1200px 600px at 60% 40%, rgba(220, 38, 38, 0.30) 0%, rgba(127, 29, 29, 0.18) 35%, transparent 65%),
+              radial-gradient(ellipse 800px 400px at 25% 70%, rgba(245, 158, 11, 0.18) 0%, transparent 60%);
+          }
+          html[data-theme="mars"] body::after {
+            background: linear-gradient(90deg, transparent, #dc2626, #f59e0b, #dc2626, transparent);
+            box-shadow: 0 0 35px rgba(220, 38, 38, 0.8), 0 0 60px rgba(245, 158, 11, 0.4);
+            height: 3px;
+          }
+          /* Embers/sparks rising */
+          html[data-theme="mars"] .theme-fx-layer.fx-back {
+            background-image:
+              radial-gradient(2px 2px at 15% 90%, rgba(251, 146, 60, 0.7), transparent),
+              radial-gradient(1.5px 1.5px at 35% 80%, rgba(220, 38, 38, 0.6), transparent),
+              radial-gradient(2px 2px at 55% 95%, rgba(251, 191, 36, 0.7), transparent),
+              radial-gradient(1px 1px at 75% 85%, rgba(252, 165, 165, 0.6), transparent),
+              radial-gradient(1.5px 1.5px at 85% 75%, rgba(245, 158, 11, 0.7), transparent);
+            background-size: 200px 200px, 250px 250px, 220px 220px, 180px 180px, 280px 280px;
+            animation: emberRise 12s linear infinite;
+          }
+          /* Heat distortion overlay */
+          html[data-theme="mars"] .theme-fx-layer.fx-mid {
+            background-image:
+              repeating-linear-gradient(0deg,
+                rgba(220, 38, 38, 0.04) 0px,
+                rgba(220, 38, 38, 0.04) 1px,
+                transparent 2px,
+                transparent 4px);
+            animation: heatHaze 6s ease-in-out infinite;
+          }
+          html[data-theme="mars"] .theme-planet { display: block; }
+          /* Big red Mars planet */
+          html[data-theme="mars"] .planet-1 {
+            width: 450px; height: 450px;
+            right: -80px; top: 15%;
+            background:
+              radial-gradient(circle at 30% 25%, #fca5a5 0%, #dc2626 25%, #7f1d1d 60%, #3f0a0a 90%);
+            box-shadow:
+              inset -90px -45px 130px rgba(0, 0, 0, 0.75),
+              inset 50px 30px 70px rgba(254, 202, 202, 0.15),
+              0 0 100px rgba(220, 38, 38, 0.5);
+            animation: planetSpin 120s linear infinite;
+          }
+          /* Mars ring debris */
+          html[data-theme="mars"] .planet-1::after {
+            content: '';
+            position: absolute;
+            width: 200%; height: 40%;
+            top: 30%; left: -50%;
+            border: 2px dashed rgba(245, 158, 11, 0.3);
+            border-radius: 50%;
+            transform: rotateX(78deg) rotate(20deg);
+          }
+          /* Distant moon */
+          html[data-theme="mars"] .planet-2 {
+            width: 80px; height: 80px;
+            top: 18%; left: 18%;
+            background: radial-gradient(circle at 30% 30%, #d1d5db 0%, #6b7280 50%, #1f2937 100%);
+            box-shadow: inset -18px -10px 25px rgba(0, 0, 0, 0.7);
+            animation: planetSpin 50s linear infinite;
+          }
+          @keyframes emberRise {
+            0%   { transform: translateY(0) translateZ(50px); opacity: 1; }
+            100% { transform: translateY(-300px) translateZ(50px); opacity: 0; }
+          }
+          @keyframes heatHaze {
+            0%, 100% { transform: translateY(0); }
+            50%      { transform: translateY(2px); }
+          }
+
           /* Reduce motion → disable 3D animations */
           @media (prefers-reduced-motion: reduce) {
             .theme-fx-layer { animation: none !important; transform: none !important; }
+            .theme-planet { animation: none !important; }
           }
 
           /* Mobile: simpler 3D (skip front layer animation = save battery) */
           @media (max-width: 768px) {
             .theme-fx-layer.fx-front { animation-duration: 30s !important; }
             .theme-fx { perspective: 800px; }
+            /* Shrink planets on small screens */
+            .theme-planet.planet-1 { transform: scale(0.6); }
+            .theme-planet.planet-2 { transform: scale(0.6); }
+            .theme-planet.planet-3 { transform: scale(0.6); }
           }
         `}} />
       </head>
@@ -598,6 +930,10 @@ export default function RootLayout({ children }) {
           <div className="theme-fx-layer fx-back"></div>
           <div className="theme-fx-layer fx-mid"></div>
           <div className="theme-fx-layer fx-front"></div>
+          {/* Planets — visible only di galaxy variants (deepspace/solar/mars) */}
+          <div className="theme-planet planet-1"></div>
+          <div className="theme-planet planet-2"></div>
+          <div className="theme-planet planet-3"></div>
         </div>
         <div style={{ position: 'relative', zIndex: 2 }}>
           {children}

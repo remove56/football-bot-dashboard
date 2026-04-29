@@ -1642,7 +1642,7 @@ export default function Home() {
 
     // Load tema dashboard + apply ke <html data-theme>
     const savedTheme = localStorage.getItem('fb-dash-theme') || 'ice';
-    const validThemes = ['ice', 'glass', 'galaxy', 'cyberpunk', 'aurora'];
+    const validThemes = ['ice', 'glass', 'galaxy', 'cyberpunk', 'aurora', 'deepspace', 'spiral', 'solar', 'mars'];
     const themeName = validThemes.includes(savedTheme) ? savedTheme : 'ice';
     setTheme(themeName);
     if (typeof document !== 'undefined') {
@@ -1861,7 +1861,7 @@ export default function Home() {
   };
 
   const changeTheme = (newTheme) => {
-    const validThemes = ['ice', 'glass', 'galaxy', 'cyberpunk', 'aurora'];
+    const validThemes = ['ice', 'glass', 'galaxy', 'cyberpunk', 'aurora', 'deepspace', 'spiral', 'solar', 'mars'];
     if (!validThemes.includes(newTheme)) return;
     setTheme(newTheme);
     localStorage.setItem('fb-dash-theme', newTheme);
@@ -2289,11 +2289,19 @@ export default function Home() {
           </a>
           <select value={theme} onChange={e=>changeTheme(e.target.value)} title="Ganti tema dashboard"
             style={{background:'rgba(15,23,42,0.6)',border:'1px solid rgba(8,145,178,0.5)',borderRadius:6,color:'#a5f3fc',fontSize:11,padding:'3px 6px',cursor:'pointer',outline:'none'}}>
-            <option value="ice">🧊 Ice</option>
-            <option value="glass">💎 Glass</option>
-            <option value="galaxy">🌌 Galaxy</option>
-            <option value="cyberpunk">🔮 Cyberpunk</option>
-            <option value="aurora">🌅 Aurora</option>
+            <optgroup label="Standar">
+              <option value="ice">🧊 Ice</option>
+              <option value="glass">💎 Glass</option>
+              <option value="galaxy">🌌 Galaxy</option>
+              <option value="cyberpunk">🔮 Cyberpunk</option>
+              <option value="aurora">🌅 Aurora</option>
+            </optgroup>
+            <optgroup label="Galaxy HD 3D">
+              <option value="deepspace">🪐 Deep Space</option>
+              <option value="spiral">🌀 Spiral Galaxy</option>
+              <option value="solar">☀️ Solar System</option>
+              <option value="mars">🔥 Mars Apocalypse</option>
+            </optgroup>
           </select>
           <a onClick={()=>setGuideOpen(true)} style={{color:'#a5f3fc',cursor:'pointer',fontSize:12}} title="Panduan Pemakaian">❓</a>
           <a onClick={()=>setPwModal(true)} style={{color:'#67e8f9',cursor:'pointer',fontSize:12}} title="Ganti Password">🔑</a>
