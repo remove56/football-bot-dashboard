@@ -389,6 +389,7 @@ export default function Home() {
   const [chatViewOnceMode, setChatViewOnceMode] = useState(false); // toggle 🔥 view once
   const chatLocalViewedRef = useRef(new Map()); // id -> { message, attachment_url, ... } konten lokal sebelum di-clear di DB
   const [soundEnabled, setSoundEnabled] = useState(true); // sound notification toggle
+  const [theme, setTheme] = useState('ice'); // dashboard theme: ice/glass/galaxy/cyberpunk/aurora
   const [appearOffline, setAppearOffline] = useState(false); // user can hide their online status
   const [onlineUsers, setOnlineUsers] = useState({}); // { userId: last_active_at }
   const chatMediaRecorderRef = useRef(null);
@@ -1639,6 +1640,15 @@ export default function Home() {
     const saved = localStorage.getItem('fb-dash-sound-enabled');
     if (saved !== null) setSoundEnabled(saved === 'true');
 
+    // Load tema dashboard + apply ke <html data-theme>
+    const savedTheme = localStorage.getItem('fb-dash-theme') || 'ice';
+    const validThemes = ['ice', 'glass', 'galaxy', 'cyberpunk', 'aurora'];
+    const themeName = validThemes.includes(savedTheme) ? savedTheme : 'ice';
+    setTheme(themeName);
+    if (typeof document !== 'undefined') {
+      document.documentElement.setAttribute('data-theme', themeName);
+    }
+
     // Pre-load audio files
     if (typeof Audio !== 'undefined') {
       chatAudioRef.current = new Audio('/sounds/chat-beep.wav');
@@ -1847,6 +1857,16 @@ export default function Home() {
           });
         }
       } catch (e) { /* silent */ }
+    }
+  };
+
+  const changeTheme = (newTheme) => {
+    const validThemes = ['ice', 'glass', 'galaxy', 'cyberpunk', 'aurora'];
+    if (!validThemes.includes(newTheme)) return;
+    setTheme(newTheme);
+    localStorage.setItem('fb-dash-theme', newTheme);
+    if (typeof document !== 'undefined') {
+      document.documentElement.setAttribute('data-theme', newTheme);
     }
   };
 
@@ -2267,6 +2287,14 @@ export default function Home() {
           <a onClick={toggleSoundEnabled} style={{color:'#a5f3fc',cursor:'pointer',fontSize:12}} title={soundEnabled ? 'Suara ON (klik untuk matikan)' : 'Suara OFF (klik untuk nyalakan)'}>
             {soundEnabled ? '🔊' : '🔇'}
           </a>
+          <select value={theme} onChange={e=>changeTheme(e.target.value)} title="Ganti tema dashboard"
+            style={{background:'rgba(15,23,42,0.6)',border:'1px solid rgba(8,145,178,0.5)',borderRadius:6,color:'#a5f3fc',fontSize:11,padding:'3px 6px',cursor:'pointer',outline:'none'}}>
+            <option value="ice">🧊 Ice</option>
+            <option value="glass">💎 Glass</option>
+            <option value="galaxy">🌌 Galaxy</option>
+            <option value="cyberpunk">🔮 Cyberpunk</option>
+            <option value="aurora">🌅 Aurora</option>
+          </select>
           <a onClick={()=>setGuideOpen(true)} style={{color:'#a5f3fc',cursor:'pointer',fontSize:12}} title="Panduan Pemakaian">❓</a>
           <a onClick={()=>setPwModal(true)} style={{color:'#67e8f9',cursor:'pointer',fontSize:12}} title="Ganti Password">🔑</a>
           <a onClick={logout} style={{color:'#ef4444',cursor:'pointer'}}>Logout</a>
