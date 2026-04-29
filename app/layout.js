@@ -1195,6 +1195,231 @@ export default function RootLayout({ children }) {
             50%      { opacity: 1; transform: scale(1.2); }
           }
 
+          /* ============================================================
+             2 EDGE-FILLING THEMES — Meteor Shower, Galaxy Collision
+             Cover full viewport (sudut, sidebar, header) bukan cuma center
+             ============================================================ */
+
+          /* ====== 🌠 METEOR SHOWER (bintang jatuh diagonal) ====== */
+          html[data-theme="meteor"] body {
+            background: linear-gradient(180deg, #1a0a3e 0%, #0d0529 40%, #050218 70%, #000 100%) !important;
+          }
+          html[data-theme="meteor"] body::before {
+            background-image:
+              radial-gradient(ellipse 1500px 600px at 50% 30%, rgba(99, 102, 241, 0.12) 0%, transparent 60%),
+              radial-gradient(ellipse 1200px 400px at 30% 70%, rgba(167, 139, 250, 0.10) 0%, transparent 60%);
+          }
+          html[data-theme="meteor"] body::after {
+            background: linear-gradient(90deg, transparent, rgba(167, 139, 250, 0.85), rgba(254, 240, 138, 0.85), rgba(167, 139, 250, 0.85), transparent);
+            box-shadow: 0 0 30px rgba(167, 139, 250, 0.6), 0 0 50px rgba(254, 240, 138, 0.4);
+            height: 2px;
+          }
+          /* Far meteors (small, slow, dim) — covers edges & corners */
+          html[data-theme="meteor"] .theme-fx-layer.fx-back {
+            background-image:
+              /* Star field */
+              radial-gradient(1px 1px at 8% 12%, white, transparent),
+              radial-gradient(1px 1px at 22% 35%, white, transparent),
+              radial-gradient(1px 1px at 45% 18%, rgba(254, 240, 138, 0.7), transparent),
+              radial-gradient(1px 1px at 68% 65%, white, transparent),
+              radial-gradient(1px 1px at 88% 25%, white, transparent),
+              radial-gradient(1.5px 1.5px at 18% 78%, rgba(252, 165, 165, 0.7), transparent),
+              radial-gradient(1.5px 1.5px at 75% 88%, rgba(147, 197, 253, 0.7), transparent),
+              /* Far meteor streaks (tile pattern) */
+              linear-gradient(135deg, transparent 35%, rgba(255, 255, 255, 0.4) 50%, transparent 65%);
+            background-size: 250px 250px, 320px 320px, 280px 280px, 350px 350px, 290px 290px, 330px 330px, 370px 370px, 200px 200px;
+            animation: meteorFar 8s linear infinite, twinkleStarsMeteor 4s ease-in-out infinite;
+          }
+          /* Mid meteors (medium speed, brighter) */
+          html[data-theme="meteor"] .theme-fx-layer.fx-mid {
+            background-image:
+              linear-gradient(135deg, transparent 38%, rgba(255, 255, 255, 0.55) 47%, rgba(255, 237, 213, 0.85) 50%, rgba(255, 255, 255, 0.55) 53%, transparent 62%);
+            background-size: 350px 350px;
+            background-repeat: repeat;
+            animation: meteorMid 5s linear infinite;
+            opacity: 0.85;
+          }
+          /* Close meteors (big, fast, very bright, depth=200px forward) */
+          html[data-theme="meteor"] .theme-fx-layer.fx-front {
+            background-image:
+              linear-gradient(135deg,
+                transparent 36%,
+                rgba(254, 240, 138, 0.6) 44%,
+                rgba(255, 255, 255, 0.95) 48%,
+                rgba(255, 237, 213, 1) 50%,
+                rgba(255, 255, 255, 0.95) 52%,
+                rgba(254, 240, 138, 0.6) 56%,
+                transparent 64%);
+            background-size: 500px 500px;
+            background-repeat: repeat;
+            animation: meteorClose 3s linear infinite;
+            opacity: 0.9;
+          }
+          html[data-theme="meteor"] .theme-planet { display: block; }
+          /* Crescent moon at top-left (decorative, non-animated) */
+          html[data-theme="meteor"] .planet-1 {
+            width: 110px; height: 110px;
+            top: 8%; left: 6%;
+            background:
+              radial-gradient(circle at 40% 35%, #fef3c7 0%, #f3e8ff 30%, #c4b5fd 60%, #4c1d95 100%);
+            box-shadow:
+              inset -25px -10px 35px rgba(0, 0, 0, 0.5),
+              inset 15px 8px 20px rgba(254, 243, 199, 0.4),
+              0 0 40px rgba(196, 181, 253, 0.5);
+            animation: planetSpin 200s linear infinite;
+          }
+          @keyframes meteorFar {
+            from { background-position: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0; }
+            to   { background-position: -100px 100px, -100px 100px, -100px 100px, -100px 100px, -100px 100px, -100px 100px, -100px 100px, -300px 300px; }
+          }
+          @keyframes meteorMid {
+            from { background-position: 0 0; }
+            to   { background-position: -700px 700px; }
+          }
+          @keyframes meteorClose {
+            from { background-position: 0 0; }
+            to   { background-position: -1200px 1200px; }
+          }
+          @keyframes twinkleStarsMeteor {
+            0%, 100% { opacity: 1; }
+            50%      { opacity: 0.7; }
+          }
+
+          /* ====== 💫 GALAXY COLLISION (2 spiral galaksi tabrakan) ====== */
+          html[data-theme="collision"] body {
+            background: radial-gradient(ellipse at center, #1a0a2e 0%, #0a0420 60%, #000 100%) !important;
+          }
+          html[data-theme="collision"] body::before {
+            background-image:
+              radial-gradient(ellipse 800px 400px at 20% 50%, rgba(34, 211, 238, 0.15) 0%, transparent 60%),
+              radial-gradient(ellipse 800px 400px at 80% 50%, rgba(236, 72, 153, 0.15) 0%, transparent 60%),
+              radial-gradient(ellipse 600px 300px at 50% 50%, rgba(254, 240, 138, 0.20) 0%, transparent 60%);
+          }
+          html[data-theme="collision"] body::after {
+            background: linear-gradient(90deg, transparent, rgba(34, 211, 238, 0.9), rgba(254, 240, 138, 0.9), rgba(236, 72, 153, 0.9), transparent);
+            box-shadow: 0 0 30px rgba(254, 240, 138, 0.7), 0 0 60px rgba(236, 72, 153, 0.5);
+            height: 3px;
+          }
+          /* Background stars covering edges/corners */
+          html[data-theme="collision"] .theme-fx-layer.fx-back {
+            background-image:
+              radial-gradient(1px 1px at 5% 8%, white, transparent),
+              radial-gradient(1px 1px at 15% 28%, white, transparent),
+              radial-gradient(1px 1px at 28% 50%, rgba(254, 240, 138, 0.7), transparent),
+              radial-gradient(1px 1px at 42% 78%, white, transparent),
+              radial-gradient(1px 1px at 58% 22%, rgba(252, 165, 165, 0.7), transparent),
+              radial-gradient(1px 1px at 72% 65%, white, transparent),
+              radial-gradient(1px 1px at 85% 35%, rgba(147, 197, 253, 0.7), transparent),
+              radial-gradient(1.5px 1.5px at 92% 88%, white, transparent),
+              radial-gradient(1px 1px at 8% 92%, rgba(254, 215, 170, 0.7), transparent);
+            background-size: 240px 240px, 290px 290px, 320px 320px, 280px 280px, 360px 360px, 310px 310px, 270px 270px, 380px 380px, 330px 330px;
+            animation: collisionStarsDrift 80s linear infinite;
+          }
+          /* Energy beams streaming from collision point (edge to edge) */
+          html[data-theme="collision"] .theme-fx-layer.fx-mid {
+            background-image:
+              linear-gradient(0deg, transparent 47%, rgba(254, 240, 138, 0.25) 49%, rgba(255, 255, 255, 0.4) 50%, rgba(254, 240, 138, 0.25) 51%, transparent 53%),
+              linear-gradient(45deg, transparent 47%, rgba(34, 211, 238, 0.20) 49%, rgba(255, 255, 255, 0.35) 50%, rgba(34, 211, 238, 0.20) 51%, transparent 53%),
+              linear-gradient(135deg, transparent 47%, rgba(236, 72, 153, 0.20) 49%, rgba(255, 255, 255, 0.35) 50%, rgba(236, 72, 153, 0.20) 51%, transparent 53%),
+              linear-gradient(90deg, transparent 47%, rgba(254, 240, 138, 0.30) 49%, rgba(255, 255, 255, 0.45) 50%, rgba(254, 240, 138, 0.30) 51%, transparent 53%);
+            animation: collisionBeams 8s ease-in-out infinite;
+            opacity: 0.6;
+          }
+          /* Debris flying outward across full viewport */
+          html[data-theme="collision"] .theme-fx-layer.fx-front {
+            background-image:
+              radial-gradient(2px 2px at 30% 40%, rgba(254, 240, 138, 1), transparent),
+              radial-gradient(2px 2px at 70% 60%, rgba(236, 72, 153, 1), transparent),
+              radial-gradient(2px 2px at 25% 70%, rgba(34, 211, 238, 1), transparent),
+              radial-gradient(2.5px 2.5px at 75% 30%, rgba(255, 255, 255, 1), transparent),
+              radial-gradient(2px 2px at 50% 50%, rgba(254, 240, 138, 1), transparent),
+              radial-gradient(2px 2px at 15% 25%, rgba(167, 139, 250, 0.9), transparent),
+              radial-gradient(2.5px 2.5px at 85% 75%, rgba(252, 165, 165, 1), transparent);
+            background-size: 100% 100%;
+            animation: collisionDebris 5s linear infinite;
+          }
+          html[data-theme="collision"] .theme-planet { display: block; }
+          /* LEFT galaxy (blue/cyan spiral) — covers left edge */
+          html[data-theme="collision"] .planet-1 {
+            width: 600px; height: 600px;
+            left: -150px; top: 50%;
+            margin-top: -300px;
+            background: conic-gradient(from 0deg at 50% 50%,
+              transparent 0deg,
+              rgba(34, 211, 238, 0.45) 30deg,
+              transparent 80deg,
+              rgba(96, 165, 250, 0.40) 130deg,
+              transparent 200deg,
+              rgba(34, 211, 238, 0.45) 250deg,
+              transparent 320deg);
+            border-radius: 50%;
+            filter: blur(15px);
+            animation: galaxySpinLeft 30s linear infinite;
+            box-shadow: 0 0 100px rgba(34, 211, 238, 0.4);
+          }
+          /* RIGHT galaxy (purple/pink spiral) — covers right edge */
+          html[data-theme="collision"] .planet-2 {
+            width: 550px; height: 550px;
+            right: -130px; top: 50%;
+            margin-top: -275px;
+            background: conic-gradient(from 0deg at 50% 50%,
+              transparent 0deg,
+              rgba(168, 85, 247, 0.45) 30deg,
+              transparent 80deg,
+              rgba(236, 72, 153, 0.40) 130deg,
+              transparent 200deg,
+              rgba(168, 85, 247, 0.45) 250deg,
+              transparent 320deg);
+            border-radius: 50%;
+            filter: blur(15px);
+            animation: galaxySpinRight 35s linear infinite reverse;
+            box-shadow: 0 0 100px rgba(236, 72, 153, 0.4);
+          }
+          /* COLLISION POINT (bright energy ball at center) */
+          html[data-theme="collision"] .planet-3 {
+            width: 240px; height: 240px;
+            top: 50%; left: 50%;
+            margin: -120px 0 0 -120px;
+            background: radial-gradient(circle at 50% 50%,
+              white 0%,
+              rgba(254, 240, 138, 0.9) 25%,
+              rgba(251, 146, 60, 0.6) 50%,
+              transparent 80%);
+            border-radius: 50%;
+            box-shadow:
+              0 0 80px 30px rgba(254, 240, 138, 0.7),
+              0 0 160px 70px rgba(251, 146, 60, 0.4),
+              0 0 300px 140px rgba(220, 38, 38, 0.25);
+            animation: collisionCorePulse 1.8s ease-in-out infinite;
+            filter: blur(2px);
+          }
+          @keyframes collisionStarsDrift {
+            0%   { transform: scale(1); }
+            50%  { transform: scale(1.05); }
+            100% { transform: scale(1); }
+          }
+          @keyframes collisionBeams {
+            0%, 100% { opacity: 0.4; transform: scale(1); }
+            50%      { opacity: 0.7; transform: scale(1.05); }
+          }
+          @keyframes collisionDebris {
+            0%   { transform: scale(0.3) translateZ(-200px); opacity: 0; }
+            20%  { opacity: 1; }
+            100% { transform: scale(2.5) translateZ(300px); opacity: 0; }
+          }
+          @keyframes galaxySpinLeft {
+            from { transform: rotate(0deg); }
+            to   { transform: rotate(360deg); }
+          }
+          @keyframes galaxySpinRight {
+            from { transform: rotate(0deg); }
+            to   { transform: rotate(360deg); }
+          }
+          @keyframes collisionCorePulse {
+            0%, 100% { transform: scale(1); filter: blur(2px) brightness(1); }
+            50%      { transform: scale(1.2); filter: blur(2px) brightness(1.3); }
+          }
+
           /* Reduce motion → disable 3D animations */
           @media (prefers-reduced-motion: reduce) {
             .theme-fx-layer { animation: none !important; transform: none !important; }
