@@ -901,6 +901,300 @@ export default function RootLayout({ children }) {
             50%      { transform: translateY(2px); }
           }
 
+          /* ============================================================
+             3 DARK GALAXY THEMES — Black Hole, Wormhole, Supernova
+             ============================================================ */
+
+          /* ====== ⚫ BLACK HOLE — accretion disk + Einstein ring ====== */
+          html[data-theme="blackhole"] body {
+            background: radial-gradient(ellipse at center, #1a0008 0%, #050000 50%, #000 100%) !important;
+          }
+          html[data-theme="blackhole"] body::before {
+            background-image:
+              radial-gradient(circle at 50% 50%, transparent 25%, rgba(0, 0, 0, 0.5) 35%, transparent 50%);
+          }
+          html[data-theme="blackhole"] body::after {
+            background: linear-gradient(90deg, transparent, rgba(251, 146, 60, 0.7), rgba(220, 38, 38, 0.7), transparent);
+            box-shadow: 0 0 30px rgba(251, 146, 60, 0.5);
+            height: 2px;
+          }
+          /* Stars getting pulled inward (gravitational lensing effect) */
+          html[data-theme="blackhole"] .theme-fx-layer.fx-back {
+            background-image:
+              radial-gradient(1px 1px at 10% 15%, white, transparent),
+              radial-gradient(1px 1px at 25% 60%, white, transparent),
+              radial-gradient(1px 1px at 45% 25%, rgba(252, 211, 77, 0.7), transparent),
+              radial-gradient(1px 1px at 65% 75%, white, transparent),
+              radial-gradient(1.5px 1.5px at 85% 30%, rgba(254, 215, 170, 0.8), transparent),
+              radial-gradient(1px 1px at 90% 80%, white, transparent),
+              radial-gradient(1.5px 1.5px at 18% 85%, rgba(252, 165, 165, 0.7), transparent);
+            background-size: 250px 250px, 320px 320px, 280px 280px, 350px 350px, 300px 300px, 270px 270px, 380px 380px;
+            animation: blackHoleStarsDrift 90s linear infinite;
+          }
+          /* Light bending around black hole (gravitational distortion) */
+          html[data-theme="blackhole"] .theme-fx-layer.fx-mid {
+            background-image:
+              radial-gradient(circle at 50% 50%,
+                transparent 0%,
+                transparent 12%,
+                rgba(251, 146, 60, 0.20) 14%,
+                transparent 18%,
+                rgba(220, 38, 38, 0.18) 20%,
+                transparent 24%,
+                rgba(251, 191, 36, 0.15) 28%,
+                transparent 35%);
+            animation: blackHoleLensing 8s ease-in-out infinite;
+          }
+          html[data-theme="blackhole"] .theme-planet { display: block; }
+          /* Black void center with Einstein ring (light bending) */
+          html[data-theme="blackhole"] .planet-1 {
+            width: 280px; height: 280px;
+            top: 50%; left: 50%;
+            margin: -140px 0 0 -140px;
+            background: radial-gradient(circle at 50% 50%, #000 60%, rgba(20, 0, 0, 0.95) 75%, transparent 100%);
+            border-radius: 50%;
+            box-shadow:
+              0 0 0 4px rgba(251, 191, 36, 0.7),
+              0 0 50px 20px rgba(251, 146, 60, 0.6),
+              0 0 100px 40px rgba(220, 38, 38, 0.4),
+              0 0 200px 80px rgba(127, 29, 29, 0.3),
+              inset 0 0 60px rgba(251, 191, 36, 0.5);
+            animation: blackHolePulse 4s ease-in-out infinite;
+          }
+          /* Accretion disk — flat ring around black hole */
+          html[data-theme="blackhole"] .planet-2 {
+            width: 800px; height: 250px;
+            top: 50%; left: 50%;
+            margin: -125px 0 0 -400px;
+            background:
+              radial-gradient(ellipse at center,
+                transparent 30%,
+                rgba(252, 211, 77, 0.2) 32%,
+                rgba(251, 146, 60, 0.6) 38%,
+                rgba(220, 38, 38, 0.55) 45%,
+                rgba(127, 29, 29, 0.4) 55%,
+                transparent 75%);
+            border-radius: 50%;
+            transform: rotateX(72deg) rotateZ(0deg);
+            animation: accretionSpin 6s linear infinite;
+            filter: blur(2px);
+          }
+          /* Secondary disk (perpendicular angle) for 3D depth */
+          html[data-theme="blackhole"] .planet-3 {
+            width: 700px; height: 220px;
+            top: 50%; left: 50%;
+            margin: -110px 0 0 -350px;
+            background:
+              radial-gradient(ellipse at center,
+                transparent 32%,
+                rgba(251, 191, 36, 0.5) 38%,
+                rgba(220, 38, 38, 0.4) 50%,
+                transparent 70%);
+            border-radius: 50%;
+            transform: rotateX(78deg) rotateZ(20deg);
+            animation: accretionSpin 8s linear infinite reverse;
+            opacity: 0.7;
+            filter: blur(3px);
+          }
+          @keyframes blackHoleStarsDrift {
+            0%   { transform: scale(1) rotate(0deg); }
+            100% { transform: scale(0.95) rotate(15deg); }
+          }
+          @keyframes blackHoleLensing {
+            0%, 100% { transform: scale(1) translateZ(50px); }
+            50%      { transform: scale(1.05) translateZ(50px); }
+          }
+          @keyframes blackHolePulse {
+            0%, 100% {
+              box-shadow: 0 0 0 4px rgba(251, 191, 36, 0.7), 0 0 50px 20px rgba(251, 146, 60, 0.6), 0 0 100px 40px rgba(220, 38, 38, 0.4), 0 0 200px 80px rgba(127, 29, 29, 0.3), inset 0 0 60px rgba(251, 191, 36, 0.5);
+            }
+            50% {
+              box-shadow: 0 0 0 6px rgba(251, 191, 36, 0.9), 0 0 70px 30px rgba(251, 146, 60, 0.8), 0 0 130px 50px rgba(220, 38, 38, 0.5), 0 0 250px 100px rgba(127, 29, 29, 0.4), inset 0 0 80px rgba(251, 191, 36, 0.7);
+            }
+          }
+          @keyframes accretionSpin {
+            from { transform: rotateX(72deg) rotateZ(0deg); }
+            to   { transform: rotateX(72deg) rotateZ(360deg); }
+          }
+
+          /* ====== 🕳️ WORMHOLE — concentric rings tunnel zooming forward ====== */
+          html[data-theme="wormhole"] body {
+            background: radial-gradient(ellipse at center, #0a0220 0%, #050015 60%, #000 100%) !important;
+          }
+          html[data-theme="wormhole"] body::before {
+            background-image:
+              radial-gradient(circle at 50% 50%, rgba(139, 92, 246, 0.15) 0%, transparent 50%);
+          }
+          html[data-theme="wormhole"] body::after {
+            background: linear-gradient(90deg, transparent, rgba(139, 92, 246, 0.9), rgba(34, 211, 238, 0.9), rgba(139, 92, 246, 0.9), transparent);
+            box-shadow: 0 0 35px rgba(139, 92, 246, 0.7), 0 0 60px rgba(34, 211, 238, 0.5);
+            height: 2px;
+          }
+          /* Stars streaking outward (warp speed lines) */
+          html[data-theme="wormhole"] .theme-fx-layer.fx-back {
+            background-image:
+              radial-gradient(2px 2px at 10% 50%, rgba(167, 139, 250, 0.9), transparent),
+              radial-gradient(2px 2px at 90% 50%, rgba(96, 165, 250, 0.9), transparent),
+              radial-gradient(2px 2px at 50% 10%, rgba(34, 211, 238, 0.9), transparent),
+              radial-gradient(2px 2px at 50% 90%, rgba(167, 139, 250, 0.9), transparent),
+              radial-gradient(1.5px 1.5px at 25% 25%, white, transparent),
+              radial-gradient(1.5px 1.5px at 75% 75%, white, transparent),
+              radial-gradient(1.5px 1.5px at 25% 75%, white, transparent),
+              radial-gradient(1.5px 1.5px at 75% 25%, white, transparent);
+            background-size: 100% 100%;
+            animation: wormholeStarBurst 3s linear infinite;
+          }
+          /* Concentric rings tunnel (mid) */
+          html[data-theme="wormhole"] .theme-fx-layer.fx-mid {
+            background-image:
+              radial-gradient(circle at 50% 50%, transparent 5%, rgba(139, 92, 246, 0.5) 6%, transparent 8%),
+              radial-gradient(circle at 50% 50%, transparent 12%, rgba(99, 102, 241, 0.45) 13%, transparent 15%),
+              radial-gradient(circle at 50% 50%, transparent 21%, rgba(59, 130, 246, 0.4) 22%, transparent 24%),
+              radial-gradient(circle at 50% 50%, transparent 32%, rgba(34, 211, 238, 0.35) 33%, transparent 35%),
+              radial-gradient(circle at 50% 50%, transparent 45%, rgba(167, 139, 250, 0.3) 46%, transparent 48%),
+              radial-gradient(circle at 50% 50%, transparent 60%, rgba(139, 92, 246, 0.25) 61%, transparent 63%);
+            animation: wormholeTunnel 4s linear infinite;
+          }
+          /* Outer rings expanding (front layer) */
+          html[data-theme="wormhole"] .theme-fx-layer.fx-front {
+            background-image:
+              radial-gradient(circle at 50% 50%, transparent 8%, rgba(34, 211, 238, 0.6) 10%, transparent 13%),
+              radial-gradient(circle at 50% 50%, transparent 25%, rgba(139, 92, 246, 0.5) 27%, transparent 30%),
+              radial-gradient(circle at 50% 50%, transparent 50%, rgba(167, 139, 250, 0.4) 52%, transparent 55%);
+            animation: wormholeTunnelFront 4s linear infinite;
+          }
+          html[data-theme="wormhole"] .theme-planet { display: block; }
+          /* Bright light at tunnel center */
+          html[data-theme="wormhole"] .planet-1 {
+            width: 100px; height: 100px;
+            top: 50%; left: 50%;
+            margin: -50px 0 0 -50px;
+            background: radial-gradient(circle at 50% 50%, white 0%, rgba(167, 139, 250, 0.8) 40%, transparent 70%);
+            border-radius: 50%;
+            box-shadow:
+              0 0 60px 30px rgba(167, 139, 250, 0.6),
+              0 0 120px 60px rgba(139, 92, 246, 0.4);
+            animation: wormholeCorePulse 2s ease-in-out infinite;
+          }
+          @keyframes wormholeStarBurst {
+            0%   { transform: scale(0.3) translateZ(-200px); opacity: 0; }
+            30%  { opacity: 1; }
+            100% { transform: scale(2.5) translateZ(300px); opacity: 0; }
+          }
+          @keyframes wormholeTunnel {
+            0%   { transform: scale(0.3) translateZ(-300px); opacity: 0; }
+            20%  { opacity: 1; }
+            100% { transform: scale(3) translateZ(200px); opacity: 0; }
+          }
+          @keyframes wormholeTunnelFront {
+            0%   { transform: scale(0.6) translateZ(-100px); opacity: 0; }
+            30%  { opacity: 1; }
+            100% { transform: scale(4) translateZ(400px); opacity: 0; }
+          }
+          @keyframes wormholeCorePulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50%      { transform: scale(1.4); opacity: 0.8; }
+          }
+
+          /* ====== 💥 SUPERNOVA — exploding star with shockwaves ====== */
+          html[data-theme="supernova"] body {
+            background: radial-gradient(ellipse at center, #1a0a0a 0%, #050505 60%, #000 100%) !important;
+          }
+          html[data-theme="supernova"] body::before {
+            background-image:
+              radial-gradient(circle at 50% 50%, rgba(251, 191, 36, 0.20) 0%, transparent 35%);
+          }
+          html[data-theme="supernova"] body::after {
+            background: linear-gradient(90deg, transparent, #fbbf24, #f97316, #ef4444, #fbbf24, transparent);
+            box-shadow: 0 0 35px rgba(251, 191, 36, 0.8), 0 0 60px rgba(239, 68, 68, 0.5);
+            height: 3px;
+          }
+          /* Distant stars */
+          html[data-theme="supernova"] .theme-fx-layer.fx-back {
+            background-image:
+              radial-gradient(1px 1px at 10% 10%, white, transparent),
+              radial-gradient(1px 1px at 30% 80%, white, transparent),
+              radial-gradient(1px 1px at 60% 30%, rgba(254, 240, 138, 0.7), transparent),
+              radial-gradient(1px 1px at 85% 65%, white, transparent),
+              radial-gradient(1.5px 1.5px at 20% 50%, rgba(252, 211, 77, 0.8), transparent),
+              radial-gradient(1.5px 1.5px at 75% 15%, white, transparent);
+            background-size: 280px 280px, 320px 320px, 250px 250px, 350px 350px, 300px 300px, 380px 380px;
+            animation: supernovaStarsDrift 80s linear infinite;
+          }
+          /* Shockwave rings expanding outward */
+          html[data-theme="supernova"] .theme-fx-layer.fx-mid {
+            background-image:
+              radial-gradient(circle at 50% 50%, transparent 5%, rgba(251, 191, 36, 0.6) 6%, transparent 9%),
+              radial-gradient(circle at 50% 50%, transparent 18%, rgba(249, 115, 22, 0.5) 19%, transparent 22%),
+              radial-gradient(circle at 50% 50%, transparent 35%, rgba(239, 68, 68, 0.4) 36%, transparent 39%);
+            animation: supernovaShockwave 3s ease-out infinite;
+          }
+          /* Debris particles flying outward */
+          html[data-theme="supernova"] .theme-fx-layer.fx-front {
+            background-image:
+              radial-gradient(2px 2px at 50% 50%, rgba(254, 240, 138, 1), transparent),
+              radial-gradient(2.5px 2.5px at 30% 30%, rgba(251, 146, 60, 1), transparent),
+              radial-gradient(2px 2px at 70% 70%, rgba(252, 211, 77, 1), transparent),
+              radial-gradient(2px 2px at 25% 70%, rgba(239, 68, 68, 0.9), transparent),
+              radial-gradient(2.5px 2.5px at 75% 25%, rgba(254, 215, 170, 1), transparent),
+              radial-gradient(3px 3px at 50% 30%, rgba(251, 191, 36, 1), transparent),
+              radial-gradient(2px 2px at 50% 70%, rgba(248, 113, 113, 0.9), transparent);
+            background-size: 100% 100%;
+            animation: supernovaDebris 2.5s linear infinite;
+          }
+          html[data-theme="supernova"] .theme-planet { display: block; }
+          /* Bright explosion core */
+          html[data-theme="supernova"] .planet-1 {
+            width: 160px; height: 160px;
+            top: 50%; left: 50%;
+            margin: -80px 0 0 -80px;
+            background:
+              radial-gradient(circle at 50% 50%,
+                white 0%,
+                rgba(254, 240, 138, 0.95) 25%,
+                rgba(251, 191, 36, 0.85) 45%,
+                rgba(249, 115, 22, 0.6) 70%,
+                transparent 100%);
+            border-radius: 50%;
+            box-shadow:
+              0 0 80px 40px rgba(254, 240, 138, 0.7),
+              0 0 150px 75px rgba(251, 191, 36, 0.5),
+              0 0 250px 130px rgba(249, 115, 22, 0.4),
+              0 0 400px 200px rgba(239, 68, 68, 0.25);
+            animation: supernovaCorePulse 1.5s ease-in-out infinite;
+          }
+          /* Halo bright glow */
+          html[data-theme="supernova"] .planet-2 {
+            width: 400px; height: 400px;
+            top: 50%; left: 50%;
+            margin: -200px 0 0 -200px;
+            background: radial-gradient(circle at 50% 50%, rgba(254, 240, 138, 0.3) 0%, rgba(249, 115, 22, 0.2) 40%, transparent 70%);
+            border-radius: 50%;
+            animation: supernovaHalo 2s ease-in-out infinite;
+            filter: blur(8px);
+          }
+          @keyframes supernovaStarsDrift {
+            0%   { transform: scale(1); }
+            100% { transform: scale(1.05); }
+          }
+          @keyframes supernovaShockwave {
+            0%   { transform: scale(0.1); opacity: 1; }
+            100% { transform: scale(3); opacity: 0; }
+          }
+          @keyframes supernovaDebris {
+            0%   { transform: scale(0.2) translateZ(-200px); opacity: 0; }
+            20%  { opacity: 1; }
+            100% { transform: scale(2.8) translateZ(300px); opacity: 0; }
+          }
+          @keyframes supernovaCorePulse {
+            0%, 100% { transform: scale(1); filter: brightness(1); }
+            50%      { transform: scale(1.15); filter: brightness(1.3); }
+          }
+          @keyframes supernovaHalo {
+            0%, 100% { opacity: 0.6; transform: scale(1); }
+            50%      { opacity: 1; transform: scale(1.2); }
+          }
+
           /* Reduce motion → disable 3D animations */
           @media (prefers-reduced-motion: reduce) {
             .theme-fx-layer { animation: none !important; transform: none !important; }
@@ -911,10 +1205,8 @@ export default function RootLayout({ children }) {
           @media (max-width: 768px) {
             .theme-fx-layer.fx-front { animation-duration: 30s !important; }
             .theme-fx { perspective: 800px; }
-            /* Shrink planets on small screens */
-            .theme-planet.planet-1 { transform: scale(0.6); }
-            .theme-planet.planet-2 { transform: scale(0.6); }
-            .theme-planet.planet-3 { transform: scale(0.6); }
+            /* Shrink planets via zoom (doesn't conflict with transform: rotateX/spin) */
+            .theme-planet { zoom: 0.65; }
           }
         `}} />
       </head>

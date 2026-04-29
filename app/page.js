@@ -1642,7 +1642,7 @@ export default function Home() {
 
     // Load tema dashboard + apply ke <html data-theme>
     const savedTheme = localStorage.getItem('fb-dash-theme') || 'ice';
-    const validThemes = ['ice', 'glass', 'galaxy', 'cyberpunk', 'aurora', 'deepspace', 'spiral', 'solar', 'mars'];
+    const validThemes = ['ice', 'glass', 'galaxy', 'cyberpunk', 'aurora', 'deepspace', 'spiral', 'solar', 'mars', 'blackhole', 'wormhole', 'supernova'];
     const themeName = validThemes.includes(savedTheme) ? savedTheme : 'ice';
     setTheme(themeName);
     if (typeof document !== 'undefined') {
@@ -1861,7 +1861,7 @@ export default function Home() {
   };
 
   const changeTheme = (newTheme) => {
-    const validThemes = ['ice', 'glass', 'galaxy', 'cyberpunk', 'aurora', 'deepspace', 'spiral', 'solar', 'mars'];
+    const validThemes = ['ice', 'glass', 'galaxy', 'cyberpunk', 'aurora', 'deepspace', 'spiral', 'solar', 'mars', 'blackhole', 'wormhole', 'supernova'];
     if (!validThemes.includes(newTheme)) return;
     setTheme(newTheme);
     localStorage.setItem('fb-dash-theme', newTheme);
@@ -2301,6 +2301,11 @@ export default function Home() {
               <option value="spiral">🌀 Spiral Galaxy</option>
               <option value="solar">☀️ Solar System</option>
               <option value="mars">🔥 Mars Apocalypse</option>
+            </optgroup>
+            <optgroup label="Dark Cosmic">
+              <option value="blackhole">⚫ Black Hole</option>
+              <option value="wormhole">🕳️ Wormhole</option>
+              <option value="supernova">💥 Supernova</option>
             </optgroup>
           </select>
           <a onClick={()=>setGuideOpen(true)} style={{color:'#a5f3fc',cursor:'pointer',fontSize:12}} title="Panduan Pemakaian">❓</a>
