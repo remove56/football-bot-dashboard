@@ -2654,27 +2654,53 @@ export default function RootLayout({ children }) {
             pointer-events: none;
             z-index: 0;
           }
-          /* Stars + sparkles layer */
+          /* Stars layer FAR (small, slow drift) — parallax depth back */
           [data-theme="cosmic-fusion"] body::after {
             content: '';
             position: fixed; inset: 0;
             height: 100vh; bottom: 0; z-index: 0;
             background-image:
-              radial-gradient(2px 2px at 10% 15%, white, transparent),
-              radial-gradient(2px 2px at 30% 60%, rgba(165, 243, 252, 0.9), transparent),
-              radial-gradient(1.5px 1.5px at 50% 30%, white, transparent),
-              radial-gradient(2.5px 2.5px at 70% 75%, rgba(254, 240, 138, 0.9), transparent),
-              radial-gradient(1.5px 1.5px at 90% 25%, rgba(252, 165, 165, 0.9), transparent),
-              radial-gradient(2px 2px at 18% 85%, rgba(96, 165, 250, 0.9), transparent),
-              radial-gradient(2px 2px at 60% 15%, white, transparent),
-              radial-gradient(1.5px 1.5px at 85% 88%, rgba(167, 139, 250, 0.9), transparent),
-              radial-gradient(3px 3px at 40% 50%, rgba(254, 243, 199, 1), transparent),
-              radial-gradient(2px 2px at 65% 40%, rgba(165, 243, 252, 1), transparent);
-            background-size: 250px 250px, 280px 280px, 320px 320px, 350px 350px, 290px 290px, 310px 310px, 270px 270px, 360px 360px, 400px 400px, 220px 220px;
+              radial-gradient(1.5px 1.5px at 10% 15%, white, transparent),
+              radial-gradient(1.5px 1.5px at 30% 60%, rgba(165, 243, 252, 0.9), transparent),
+              radial-gradient(1px 1px at 50% 30%, white, transparent),
+              radial-gradient(1.5px 1.5px at 70% 75%, rgba(254, 240, 138, 0.9), transparent),
+              radial-gradient(1px 1px at 90% 25%, rgba(252, 165, 165, 0.9), transparent),
+              radial-gradient(1.5px 1.5px at 18% 85%, rgba(96, 165, 250, 0.9), transparent),
+              radial-gradient(1.5px 1.5px at 60% 15%, white, transparent),
+              radial-gradient(1px 1px at 85% 88%, rgba(167, 139, 250, 0.9), transparent),
+              radial-gradient(2px 2px at 40% 50%, rgba(254, 243, 199, 1), transparent),
+              radial-gradient(1.5px 1.5px at 65% 40%, rgba(165, 243, 252, 1), transparent),
+              radial-gradient(1.5px 1.5px at 5% 50%, white, transparent),
+              radial-gradient(1px 1px at 95% 70%, rgba(254, 240, 138, 0.8), transparent),
+              radial-gradient(1.5px 1.5px at 25% 25%, rgba(167, 139, 250, 0.8), transparent),
+              radial-gradient(1px 1px at 75% 5%, white, transparent);
+            background-size: 250px 250px, 280px 280px, 320px 320px, 350px 350px, 290px 290px, 310px 310px, 270px 270px, 360px 360px, 400px 400px, 220px 220px, 240px 240px, 300px 300px, 280px 280px, 330px 330px;
             box-shadow: none;
-            animation: fusionStarsTwinkle 8s ease-in-out infinite;
-            opacity: 0.85;
+            animation: fusionStarsTwinkle 6s ease-in-out infinite, fusionStarsDriftFar 90s linear infinite;
+            opacity: 0.9;
             pointer-events: none;
+          }
+          /* Stars layer NEAR (bigger, faster drift) — parallax depth front
+             Pakai .theme-fx-layer.fx-back yg sebelumnya nebula (tapi kita combine via background-image multi-layer di body::before, jadi fx-back bisa dipakai untuk near stars) */
+          [data-theme="cosmic-fusion"] .theme-fx-layer.fx-back {
+            background-image:
+              /* Nebula clouds (tetap dari before) */
+              radial-gradient(ellipse at center, rgba(168, 85, 247, 0.30) 0%, transparent 50%),
+              radial-gradient(ellipse 500px 800px at 30% 40%, rgba(236, 72, 153, 0.22) 0%, transparent 60%),
+              radial-gradient(ellipse 600px 400px at 70% 60%, rgba(59, 130, 246, 0.20) 0%, transparent 60%),
+              /* NEAR stars (bigger, brighter) */
+              radial-gradient(2.5px 2.5px at 12% 22%, white, transparent),
+              radial-gradient(3px 3px at 38% 68%, rgba(254, 240, 138, 1), transparent),
+              radial-gradient(2.5px 2.5px at 62% 35%, rgba(165, 243, 252, 1), transparent),
+              radial-gradient(3px 3px at 82% 78%, white, transparent),
+              radial-gradient(2.5px 2.5px at 88% 18%, rgba(252, 165, 165, 1), transparent),
+              radial-gradient(2px 2px at 22% 92%, rgba(167, 139, 250, 1), transparent),
+              radial-gradient(2.5px 2.5px at 55% 8%, white, transparent),
+              radial-gradient(3px 3px at 78% 92%, rgba(254, 243, 199, 1), transparent);
+            background-size:
+              100% 100%, 100% 100%, 100% 100%,
+              180px 180px, 220px 220px, 200px 200px, 240px 240px, 190px 190px, 210px 210px, 170px 170px, 230px 230px;
+            animation: fusionStarsDriftNear 50s linear infinite, fusionNebulaRotate 70s linear infinite;
           }
           /* Layer 1 (back): rotating nebula clouds (galaxy3DBack-style) */
           [data-theme="cosmic-fusion"] .theme-fx-layer.fx-back {
@@ -2785,8 +2811,18 @@ export default function RootLayout({ children }) {
             50%      { transform: scale(1.08) rotate(2deg); opacity: 1; }
           }
           @keyframes fusionStarsTwinkle {
-            0%, 100% { opacity: 0.85; }
-            50%      { opacity: 1; }
+            0%, 100% { opacity: 0.85; filter: brightness(1); }
+            50%      { opacity: 1; filter: brightness(1.4); }
+          }
+          /* Bintang JAUH drift pelan diagonal — parallax depth back */
+          @keyframes fusionStarsDriftFar {
+            from { background-position: 0 0; }
+            to   { background-position: -120px 80px; }
+          }
+          /* Bintang DEKAT drift cepat diagonal — parallax depth near */
+          @keyframes fusionStarsDriftNear {
+            from { background-position: 0 0; }
+            to   { background-position: -280px 180px; }
           }
           @keyframes fusionNebulaRotate {
             from { transform: translateZ(-500px) rotate(0deg); }
