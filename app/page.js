@@ -1642,7 +1642,7 @@ export default function Home() {
 
     // Load tema dashboard + apply ke <html data-theme>
     const savedTheme = localStorage.getItem('fb-dash-theme') || 'ice';
-    const validThemes = ['ice', 'glass', 'galaxy', 'cyberpunk', 'aurora', 'deepspace', 'spiral', 'solar', 'mars', 'blackhole', 'wormhole', 'supernova', 'meteor', 'collision', 'supernova-cinematic', 'binary-star', 'blackhole-anime', 'galactic-nebula', 'dust-explosion', 'whirlpool', 'interstellar', 'solar-spiral'];
+    const validThemes = ['ice', 'glass', 'galaxy', 'cyberpunk', 'aurora', 'deepspace', 'spiral', 'solar', 'mars', 'blackhole', 'wormhole', 'supernova', 'meteor', 'collision', 'supernova-cinematic', 'binary-star', 'blackhole-anime', 'galactic-nebula', 'dust-explosion', 'whirlpool', 'interstellar', 'solar-spiral', 'cosmic-fusion'];
     const themeName = validThemes.includes(savedTheme) ? savedTheme : 'ice';
     setTheme(themeName);
     if (typeof document !== 'undefined') {
@@ -1861,7 +1861,7 @@ export default function Home() {
   };
 
   const changeTheme = (newTheme) => {
-    const validThemes = ['ice', 'glass', 'galaxy', 'cyberpunk', 'aurora', 'deepspace', 'spiral', 'solar', 'mars', 'blackhole', 'wormhole', 'supernova', 'meteor', 'collision', 'supernova-cinematic', 'binary-star', 'blackhole-anime', 'galactic-nebula', 'dust-explosion', 'whirlpool', 'interstellar', 'solar-spiral'];
+    const validThemes = ['ice', 'glass', 'galaxy', 'cyberpunk', 'aurora', 'deepspace', 'spiral', 'solar', 'mars', 'blackhole', 'wormhole', 'supernova', 'meteor', 'collision', 'supernova-cinematic', 'binary-star', 'blackhole-anime', 'galactic-nebula', 'dust-explosion', 'whirlpool', 'interstellar', 'solar-spiral', 'cosmic-fusion'];
     if (!validThemes.includes(newTheme)) return;
     setTheme(newTheme);
     localStorage.setItem('fb-dash-theme', newTheme);
@@ -2289,6 +2289,9 @@ export default function Home() {
           </a>
           <select value={theme} onChange={e=>changeTheme(e.target.value)} title="Ganti tema dashboard"
             style={{background:'rgba(15,23,42,0.6)',border:'1px solid rgba(8,145,178,0.5)',borderRadius:6,color:'#a5f3fc',fontSize:11,padding:'3px 6px',cursor:'pointer',outline:'none'}}>
+            <optgroup label="⭐ Featured">
+              <option value="cosmic-fusion">🌠 Cosmic Fusion (Galaxy + Spiral + Supernova)</option>
+            </optgroup>
             <optgroup label="Standar">
               <option value="ice">🧊 Ice</option>
               <option value="glass">💎 Glass</option>

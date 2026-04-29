@@ -2615,6 +2615,209 @@ export default function RootLayout({ children }) {
             animation-delay: 2s;
           }
 
+          /* ============================================================
+             🌠 COSMIC FUSION — kombinasi Galaxy + Spiral + Supernova
+             User minta gabungkan 3 tema favorit jadi 1 mega-cosmic.
+             ============================================================ */
+
+          [data-theme="cosmic-fusion"] body {
+            background: radial-gradient(ellipse at 30% 30%, #1a0a3e 0%, #0a0420 35%, #0a0010 70%, #000 100%) !important;
+            color: #fef3c7 !important;
+            font-family: 'Georgia', 'Times New Roman', serif !important;
+            letter-spacing: 0.025em;
+          }
+          [data-theme="cosmic-fusion"] h1,
+          [data-theme="cosmic-fusion"] h2,
+          [data-theme="cosmic-fusion"] h3 {
+            font-family: 'Impact', 'Arial Black', sans-serif !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.07em !important;
+            text-shadow:
+              0 0 25px rgba(254, 243, 199, 0.6),
+              0 0 45px rgba(168, 85, 247, 0.5),
+              0 0 70px rgba(251, 146, 60, 0.4) !important;
+          }
+          /* Multi-color nebula background */
+          [data-theme="cosmic-fusion"] body::before {
+            content: '';
+            position: fixed; inset: 0;
+            background-image:
+              /* Purple nebula (galaxy) */
+              radial-gradient(ellipse 1000px 600px at 25% 30%, rgba(168, 85, 247, 0.30) 0%, transparent 60%),
+              /* Pink nebula (galaxy) */
+              radial-gradient(ellipse 800px 500px at 75% 60%, rgba(236, 72, 153, 0.25) 0%, transparent 60%),
+              /* Blue nebula (spiral) */
+              radial-gradient(ellipse 700px 400px at 50% 70%, rgba(59, 130, 246, 0.22) 0%, transparent 60%),
+              /* Red supernova hint (supernova-cinematic) */
+              radial-gradient(ellipse 600px 400px at 80% 25%, rgba(251, 146, 60, 0.20) 0%, transparent 65%);
+            animation: fusionNebulaShift 25s ease-in-out infinite;
+            pointer-events: none;
+            z-index: 0;
+          }
+          /* Stars + sparkles layer */
+          [data-theme="cosmic-fusion"] body::after {
+            content: '';
+            position: fixed; inset: 0;
+            height: 100vh; bottom: 0; z-index: 0;
+            background-image:
+              radial-gradient(2px 2px at 10% 15%, white, transparent),
+              radial-gradient(2px 2px at 30% 60%, rgba(165, 243, 252, 0.9), transparent),
+              radial-gradient(1.5px 1.5px at 50% 30%, white, transparent),
+              radial-gradient(2.5px 2.5px at 70% 75%, rgba(254, 240, 138, 0.9), transparent),
+              radial-gradient(1.5px 1.5px at 90% 25%, rgba(252, 165, 165, 0.9), transparent),
+              radial-gradient(2px 2px at 18% 85%, rgba(96, 165, 250, 0.9), transparent),
+              radial-gradient(2px 2px at 60% 15%, white, transparent),
+              radial-gradient(1.5px 1.5px at 85% 88%, rgba(167, 139, 250, 0.9), transparent),
+              radial-gradient(3px 3px at 40% 50%, rgba(254, 243, 199, 1), transparent),
+              radial-gradient(2px 2px at 65% 40%, rgba(165, 243, 252, 1), transparent);
+            background-size: 250px 250px, 280px 280px, 320px 320px, 350px 350px, 290px 290px, 310px 310px, 270px 270px, 360px 360px, 400px 400px, 220px 220px;
+            box-shadow: none;
+            animation: fusionStarsTwinkle 8s ease-in-out infinite;
+            opacity: 0.85;
+            pointer-events: none;
+          }
+          /* Layer 1 (back): rotating nebula clouds (galaxy3DBack-style) */
+          [data-theme="cosmic-fusion"] .theme-fx-layer.fx-back {
+            background-image:
+              radial-gradient(ellipse at center, rgba(168, 85, 247, 0.30) 0%, transparent 50%),
+              radial-gradient(ellipse 500px 800px at 30% 40%, rgba(236, 72, 153, 0.22) 0%, transparent 60%),
+              radial-gradient(ellipse 600px 400px at 70% 60%, rgba(59, 130, 246, 0.20) 0%, transparent 60%);
+            animation: fusionNebulaRotate 70s linear infinite;
+          }
+          /* Layer 2 (mid): SPIRAL ARMS conic-gradient (spiral theme) */
+          [data-theme="cosmic-fusion"] .theme-fx-layer.fx-mid {
+            background-image:
+              conic-gradient(from 0deg at 50% 50%,
+                transparent 0deg,
+                rgba(168, 85, 247, 0.18) 30deg,
+                transparent 60deg,
+                rgba(34, 211, 238, 0.15) 130deg,
+                transparent 180deg,
+                rgba(168, 85, 247, 0.18) 230deg,
+                transparent 280deg,
+                rgba(34, 211, 238, 0.15) 320deg,
+                transparent 360deg);
+            animation: fusionSpiralRotate 60s linear infinite;
+          }
+          /* Layer 3 (front): HYPERSPACE WARP stars (galaxy theme) */
+          [data-theme="cosmic-fusion"] .theme-fx-layer.fx-front {
+            background-image:
+              radial-gradient(2px 2px at 50% 50%, white, transparent),
+              radial-gradient(2px 2px at 30% 30%, #93c5fd, transparent),
+              radial-gradient(2px 2px at 70% 70%, #fde68a, transparent),
+              radial-gradient(2px 2px at 20% 70%, white, transparent),
+              radial-gradient(2px 2px at 80% 30%, #fda4af, transparent),
+              radial-gradient(3px 3px at 40% 80%, white, transparent),
+              radial-gradient(3px 3px at 60% 20%, #c4b5fd, transparent);
+            background-size: 100% 100%;
+            animation: fusionWarp 4s linear infinite;
+          }
+          [data-theme="cosmic-fusion"] .theme-planet { display: block !important; }
+          /* SUPERNOVA explosion at top-right (supernova-cinematic) */
+          [data-theme="cosmic-fusion"] .planet-1 {
+            width: 1100px; height: 1100px;
+            top: -200px; right: -300px;
+            background: radial-gradient(circle at center,
+              rgba(255, 250, 230, 0.95) 0%,
+              rgba(255, 209, 102, 0.55) 8%,
+              rgba(255, 134, 51, 0.35) 22%,
+              rgba(186, 51, 26, 0.18) 45%,
+              transparent 70%);
+            border-radius: 50%;
+            filter: blur(3px);
+            animation: fusionSupernovaBreath 8s ease-in-out infinite;
+          }
+          /* Secondary spiral galaxy at bottom-left (spiral) */
+          [data-theme="cosmic-fusion"] .planet-2 {
+            width: 600px; height: 600px;
+            bottom: -150px; left: -150px;
+            background: conic-gradient(from 0deg at 50% 50%,
+              transparent 0deg,
+              rgba(34, 211, 238, 0.30) 30deg,
+              transparent 80deg,
+              rgba(96, 165, 250, 0.25) 130deg,
+              transparent 200deg,
+              rgba(34, 211, 238, 0.30) 250deg,
+              transparent 320deg);
+            border-radius: 50%;
+            filter: blur(8px);
+            animation: fusionMiniSpiral 35s linear infinite;
+          }
+          /* Bright stellar core at center (galaxy core) */
+          [data-theme="cosmic-fusion"] .planet-3 {
+            width: 180px; height: 180px;
+            top: 50%; left: 50%;
+            margin: -90px 0 0 -90px;
+            background: radial-gradient(circle at 50% 50%,
+              white 0%, rgba(254, 243, 199, 0.85) 30%,
+              rgba(251, 191, 36, 0.5) 60%, transparent 100%);
+            border-radius: 50%;
+            box-shadow:
+              0 0 60px 25px rgba(254, 243, 199, 0.6),
+              0 0 120px 50px rgba(168, 85, 247, 0.4),
+              0 0 200px 90px rgba(251, 146, 60, 0.3);
+            filter: blur(2px);
+            animation: fusionCorePulse 3s ease-in-out infinite;
+          }
+          /* Particle layer: shockwave rings (supernova-cinematic) */
+          [data-theme="cosmic-fusion"] .particle-layer {
+            position: fixed; inset: 0;
+            pointer-events: none; z-index: 1; overflow: hidden;
+          }
+          [data-theme="cosmic-fusion"] .particle-layer::before,
+          [data-theme="cosmic-fusion"] .particle-layer::after {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 280px; height: 280px;
+            margin: -140px 0 0 -140px;
+            border: 2px solid rgba(254, 243, 199, 0.4);
+            border-radius: 50%;
+            animation: fusionShockwave 4s ease-out infinite;
+          }
+          [data-theme="cosmic-fusion"] .particle-layer::after {
+            border-color: rgba(168, 85, 247, 0.4);
+            animation-delay: 2s;
+          }
+
+          @keyframes fusionNebulaShift {
+            0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.85; }
+            50%      { transform: scale(1.08) rotate(2deg); opacity: 1; }
+          }
+          @keyframes fusionStarsTwinkle {
+            0%, 100% { opacity: 0.85; }
+            50%      { opacity: 1; }
+          }
+          @keyframes fusionNebulaRotate {
+            from { transform: translateZ(-500px) rotate(0deg); }
+            to   { transform: translateZ(-500px) rotate(360deg); }
+          }
+          @keyframes fusionSpiralRotate {
+            from { transform: translateZ(-200px) rotate(0deg); }
+            to   { transform: translateZ(-200px) rotate(-360deg); }
+          }
+          @keyframes fusionWarp {
+            0%   { transform: translateZ(-800px) scale(0.05); opacity: 0; }
+            20%  { opacity: 1; }
+            100% { transform: translateZ(400px) scale(3); opacity: 0; }
+          }
+          @keyframes fusionSupernovaBreath {
+            0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.85; filter: blur(3px); }
+            50%      { transform: scale(1.1) rotate(3deg); opacity: 1; filter: blur(2px); }
+          }
+          @keyframes fusionMiniSpiral {
+            from { transform: rotate(0deg); }
+            to   { transform: rotate(360deg); }
+          }
+          @keyframes fusionCorePulse {
+            0%, 100% { transform: scale(1); filter: blur(2px) brightness(1); }
+            50%      { transform: scale(1.15); filter: blur(2px) brightness(1.4); }
+          }
+          @keyframes fusionShockwave {
+            0%   { transform: scale(0.3); opacity: 1; }
+            100% { transform: scale(4); opacity: 0; }
+          }
+
           /* === Shared keyframes for photo themes === */
           @keyframes photoZoomBreath {
             0%, 100% { background-size: 105% auto; background-position: 50% 50%; }
