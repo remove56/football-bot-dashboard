@@ -2111,7 +2111,7 @@ export default function Home() {
   const [reelsTasks, setReelsTasks] = useState([]);
   const [reelsKeyword, setReelsKeyword] = useState('');
   const [reelsMsg, setReelsMsg] = useState('');
-  const [reelsPlatforms, setReelsPlatforms] = useState({ facebook: true, tiktok: false, instagram: false });
+  const [reelsPlatforms, setReelsPlatforms] = useState({ facebook: true, tiktok: false, instagram: false, x: false });
 
   // Dynamic accounts — dari database
   const reelsAccounts = botAccounts.filter(a => (a.account_type === 'reels' || a.account_type === 'both') && a.is_active);
@@ -4433,6 +4433,7 @@ export default function Home() {
                     { key: 'facebook', label: 'Facebook', color: '#1877F2', icon: '📘' },
                     { key: 'tiktok', label: 'TikTok', color: '#00f2ea', icon: '🎵' },
                     { key: 'instagram', label: 'Instagram', color: '#E4405F', icon: '📷' },
+                    { key: 'x', label: 'Twitter / X', color: '#ffffff', icon: '𝕏' },
                   ].map(p => (
                     <label key={p.key} onClick={()=>setReelsPlatforms(prev=>({...prev,[p.key]:!prev[p.key]}))}
                       style={{display:'flex',alignItems:'center',gap:8,cursor:'pointer',padding:'8px 16px',borderRadius:8,
@@ -4504,6 +4505,7 @@ export default function Home() {
                             {platforms.includes('facebook') && <span title="Facebook" style={{fontSize:12}}>📘</span>}
                             {platforms.includes('tiktok') && <span title="TikTok" style={{fontSize:12}}>🎵</span>}
                             {platforms.includes('instagram') && <span title="Instagram" style={{fontSize:12}}>📷</span>}
+                            {platforms.includes('x') && <span title="Twitter / X" style={{fontSize:12}}>𝕏</span>}
                           </div>
                         </td>
                         <td style={{...S.td,fontSize:12,color:'#9ca3af'}}>{t.keyword || 'random'}</td>
