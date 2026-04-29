@@ -389,7 +389,7 @@ export default function Home() {
   const [chatViewOnceMode, setChatViewOnceMode] = useState(false); // toggle 🔥 view once
   const chatLocalViewedRef = useRef(new Map()); // id -> { message, attachment_url, ... } konten lokal sebelum di-clear di DB
   const [soundEnabled, setSoundEnabled] = useState(true); // sound notification toggle
-  const [theme, setTheme] = useState('ice'); // dashboard theme: ice/glass/galaxy/cyberpunk/aurora
+  // Theme dipaksa cosmic-fusion untuk SEMUA user (single theme system)
   const [appearOffline, setAppearOffline] = useState(false); // user can hide their online status
   const [onlineUsers, setOnlineUsers] = useState({}); // { userId: last_active_at }
   const chatMediaRecorderRef = useRef(null);
@@ -1640,14 +1640,13 @@ export default function Home() {
     const saved = localStorage.getItem('fb-dash-sound-enabled');
     if (saved !== null) setSoundEnabled(saved === 'true');
 
-    // Load tema dashboard + apply ke <html data-theme>
-    const savedTheme = localStorage.getItem('fb-dash-theme') || 'ice';
-    const validThemes = ['ice', 'glass', 'galaxy', 'cyberpunk', 'aurora', 'deepspace', 'spiral', 'solar', 'mars', 'blackhole', 'wormhole', 'supernova', 'meteor', 'collision', 'supernova-cinematic', 'binary-star', 'blackhole-anime', 'galactic-nebula', 'dust-explosion', 'whirlpool', 'interstellar', 'solar-spiral', 'cosmic-fusion'];
-    const themeName = validThemes.includes(savedTheme) ? savedTheme : 'ice';
-    setTheme(themeName);
+    // FORCE cosmic-fusion untuk semua user (single theme system).
+    // Ignore localStorage — kalau user lama punya tema lain saved, tetep pake cosmic-fusion.
     if (typeof document !== 'undefined') {
-      document.documentElement.setAttribute('data-theme', themeName);
+      document.documentElement.setAttribute('data-theme', 'cosmic-fusion');
     }
+    // Hapus old localStorage entry biar gak nyangkut
+    try { localStorage.removeItem('fb-dash-theme'); } catch (e) { /* silent */ }
 
     // Pre-load audio files
     if (typeof Audio !== 'undefined') {
@@ -1857,16 +1856,6 @@ export default function Home() {
           });
         }
       } catch (e) { /* silent */ }
-    }
-  };
-
-  const changeTheme = (newTheme) => {
-    const validThemes = ['ice', 'glass', 'galaxy', 'cyberpunk', 'aurora', 'deepspace', 'spiral', 'solar', 'mars', 'blackhole', 'wormhole', 'supernova', 'meteor', 'collision', 'supernova-cinematic', 'binary-star', 'blackhole-anime', 'galactic-nebula', 'dust-explosion', 'whirlpool', 'interstellar', 'solar-spiral', 'cosmic-fusion'];
-    if (!validThemes.includes(newTheme)) return;
-    setTheme(newTheme);
-    localStorage.setItem('fb-dash-theme', newTheme);
-    if (typeof document !== 'undefined') {
-      document.documentElement.setAttribute('data-theme', newTheme);
     }
   };
 
@@ -2287,46 +2276,6 @@ export default function Home() {
           <a onClick={toggleSoundEnabled} style={{color:'#a5f3fc',cursor:'pointer',fontSize:12}} title={soundEnabled ? 'Suara ON (klik untuk matikan)' : 'Suara OFF (klik untuk nyalakan)'}>
             {soundEnabled ? '🔊' : '🔇'}
           </a>
-          <select value={theme} onChange={e=>changeTheme(e.target.value)} title="Ganti tema dashboard"
-            style={{background:'rgba(15,23,42,0.6)',border:'1px solid rgba(8,145,178,0.5)',borderRadius:6,color:'#a5f3fc',fontSize:11,padding:'3px 6px',cursor:'pointer',outline:'none'}}>
-            <optgroup label="⭐ Featured">
-              <option value="cosmic-fusion">🌠 Cosmic Fusion (Galaxy + Spiral + Supernova)</option>
-            </optgroup>
-            <optgroup label="Standar">
-              <option value="ice">🧊 Ice</option>
-              <option value="glass">💎 Glass</option>
-              <option value="galaxy">🌌 Galaxy</option>
-              <option value="cyberpunk">🔮 Cyberpunk</option>
-              <option value="aurora">🌅 Aurora</option>
-            </optgroup>
-            <optgroup label="Galaxy HD 3D">
-              <option value="deepspace">🪐 Deep Space</option>
-              <option value="spiral">🌀 Spiral Galaxy</option>
-              <option value="solar">☀️ Solar System</option>
-              <option value="mars">🔥 Mars Apocalypse</option>
-            </optgroup>
-            <optgroup label="Dark Cosmic">
-              <option value="blackhole">⚫ Black Hole</option>
-              <option value="wormhole">🕳️ Wormhole</option>
-              <option value="supernova">💥 Supernova</option>
-            </optgroup>
-            <optgroup label="Edge-to-Edge">
-              <option value="meteor">🌠 Meteor Shower</option>
-              <option value="collision">💫 Galaxy Collision</option>
-            </optgroup>
-            <optgroup label="Cinematic 3D HD">
-              <option value="supernova-cinematic">🌋 Supernova Cinematic</option>
-              <option value="binary-star">✨ Binary Star Dance</option>
-              <option value="blackhole-anime">🌀 Black Hole Anime</option>
-              <option value="galactic-nebula">🎆 Galactic Nebula</option>
-            </optgroup>
-            <optgroup label="Cosmic Photo HD">
-              <option value="dust-explosion">🔆 Dust Explosion</option>
-              <option value="whirlpool">🌊 Whirlpool Black Hole</option>
-              <option value="interstellar">💍 Interstellar (Gargantua)</option>
-              <option value="solar-spiral">🌟 Solar Spiral Galaxy</option>
-            </optgroup>
-          </select>
           <a onClick={()=>setGuideOpen(true)} style={{color:'#a5f3fc',cursor:'pointer',fontSize:12}} title="Panduan Pemakaian">❓</a>
           <a onClick={()=>setPwModal(true)} style={{color:'#67e8f9',cursor:'pointer',fontSize:12}} title="Ganti Password">🔑</a>
           <a onClick={logout} style={{color:'#ef4444',cursor:'pointer'}}>Logout</a>
