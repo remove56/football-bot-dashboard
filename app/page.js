@@ -2225,10 +2225,13 @@ export default function Home() {
   };
 
   // Bot accounts CRUD
+  // Strip @ prefix di account_id (Twitter username convention) biar match path cookies file
+  const cleanAccountId = (id) => (id || '').trim().replace(/^@/, '');
+
   const addBotAccount = async () => {
     if (!baId || !baName) { setBaMsg('ID dan Nama wajib diisi!'); return; }
     const { error } = await supabase.from('bot_accounts').insert({
-      account_id: baId.trim(), account_name: baName.trim(),
+      account_id: cleanAccountId(baId), account_name: baName.trim(),
       account_type: baType, notes: baNotes.trim() || null,
     });
     if (error) setBaMsg('Error: ' + error.message);
@@ -2238,9 +2241,9 @@ export default function Home() {
   const updateBotAccount = async () => {
     if (!baEditing) return;
     await supabase.from('bot_accounts').update({
-      account_id: baId.trim(), account_name: baName.trim(),
+      account_id: cleanAccountId(baId), account_name: baName.trim(),
       account_type: baType, notes: baNotes.trim() || null,
-      partner_account_id: baPartner.trim() || null,
+      partner_account_id: cleanAccountId(baPartner) || null,
     }).eq('id', baEditing);
     setBaEditing(null); setBaId(''); setBaName(''); setBaNotes(''); setBaPartner(''); setBaMsg('Akun diupdate!'); loadData();
   };
