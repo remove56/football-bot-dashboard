@@ -1642,7 +1642,7 @@ export default function Home() {
 
     // Load tema dashboard + apply ke <html data-theme>
     const savedTheme = localStorage.getItem('fb-dash-theme') || 'ice';
-    const validThemes = ['ice', 'glass', 'galaxy', 'cyberpunk', 'aurora', 'deepspace', 'spiral', 'solar', 'mars', 'blackhole', 'wormhole', 'supernova', 'meteor', 'collision'];
+    const validThemes = ['ice', 'glass', 'galaxy', 'cyberpunk', 'aurora', 'deepspace', 'spiral', 'solar', 'mars', 'blackhole', 'wormhole', 'supernova', 'meteor', 'collision', 'supernova-cinematic', 'binary-star', 'blackhole-anime', 'galactic-nebula'];
     const themeName = validThemes.includes(savedTheme) ? savedTheme : 'ice';
     setTheme(themeName);
     if (typeof document !== 'undefined') {
@@ -1861,7 +1861,7 @@ export default function Home() {
   };
 
   const changeTheme = (newTheme) => {
-    const validThemes = ['ice', 'glass', 'galaxy', 'cyberpunk', 'aurora', 'deepspace', 'spiral', 'solar', 'mars', 'blackhole', 'wormhole', 'supernova', 'meteor', 'collision'];
+    const validThemes = ['ice', 'glass', 'galaxy', 'cyberpunk', 'aurora', 'deepspace', 'spiral', 'solar', 'mars', 'blackhole', 'wormhole', 'supernova', 'meteor', 'collision', 'supernova-cinematic', 'binary-star', 'blackhole-anime', 'galactic-nebula'];
     if (!validThemes.includes(newTheme)) return;
     setTheme(newTheme);
     localStorage.setItem('fb-dash-theme', newTheme);
@@ -2310,6 +2310,12 @@ export default function Home() {
             <optgroup label="Edge-to-Edge">
               <option value="meteor">🌠 Meteor Shower</option>
               <option value="collision">💫 Galaxy Collision</option>
+            </optgroup>
+            <optgroup label="Cinematic 3D HD">
+              <option value="supernova-cinematic">🌋 Supernova Cinematic</option>
+              <option value="binary-star">✨ Binary Star Dance</option>
+              <option value="blackhole-anime">🌀 Black Hole Anime</option>
+              <option value="galactic-nebula">🎆 Galactic Nebula</option>
             </optgroup>
           </select>
           <a onClick={()=>setGuideOpen(true)} style={{color:'#a5f3fc',cursor:'pointer',fontSize:12}} title="Panduan Pemakaian">❓</a>

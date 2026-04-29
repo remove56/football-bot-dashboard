@@ -1420,10 +1420,429 @@ export default function RootLayout({ children }) {
             50%      { transform: scale(1.2); filter: blur(2px) brightness(1.3); }
           }
 
+          /* ============================================================
+             4 CINEMATIC 3D HD THEMES — supernova/binary-star/blackhole-anime/galactic-nebula
+             Pakai .particle-layer + .jets divs (separate dari .theme-fx system)
+             FIX: height: 100vh override global body::after height: 2px
+             ============================================================ */
+
+          /* ============ TEMA 1: SUPERNOVA CINEMATIC ============ */
+          [data-theme="supernova-cinematic"] body {
+            background: radial-gradient(ellipse at 75% 50%, #1a0808 0%, #0a0405 50%, #000000 100%) !important;
+            color: #ffd9b3;
+            position: relative;
+            overflow-x: hidden;
+          }
+          [data-theme="supernova-cinematic"] body::before {
+            content: '';
+            position: fixed;
+            top: -50%; right: -30%;
+            width: 1200px; height: 1200px;
+            background: radial-gradient(circle at center,
+              rgba(255,245,224,0.9) 0%,
+              rgba(255,209,102,0.5) 8%,
+              rgba(255,107,61,0.3) 25%,
+              rgba(163,45,45,0.15) 50%,
+              transparent 70%);
+            filter: blur(2px);
+            animation: supernovaBreath 8s ease-in-out infinite;
+            pointer-events: none;
+            z-index: 0;
+            background-image: radial-gradient(circle at center,
+              rgba(255,245,224,0.9) 0%,
+              rgba(255,209,102,0.5) 8%,
+              rgba(255,107,61,0.3) 25%,
+              rgba(163,45,45,0.15) 50%,
+              transparent 70%);
+          }
+          [data-theme="supernova-cinematic"] body::after {
+            content: '';
+            position: fixed; inset: 0;
+            height: 100vh; bottom: 0; z-index: 0;
+            background-image:
+              radial-gradient(2px 2px at 20% 30%, white, transparent),
+              radial-gradient(1px 1px at 60% 70%, #ffd9b3, transparent),
+              radial-gradient(1.5px 1.5px at 80% 10%, white, transparent),
+              radial-gradient(1px 1px at 30% 80%, #ffe4cc, transparent),
+              radial-gradient(2px 2px at 90% 60%, white, transparent),
+              radial-gradient(1px 1px at 10% 50%, #ffd9b3, transparent);
+            background-size: 600px 600px;
+            box-shadow: none;
+            animation: snStarsTwinkle 12s linear infinite;
+            pointer-events: none;
+            opacity: 0.7;
+          }
+          [data-theme="supernova-cinematic"] .particle-layer {
+            position: fixed; inset: 0;
+            pointer-events: none;
+            z-index: 1;
+            overflow: hidden;
+          }
+          [data-theme="supernova-cinematic"] .particle-layer::before,
+          [data-theme="supernova-cinematic"] .particle-layer::after {
+            content: '';
+            position: absolute;
+            top: 50%; right: 10%;
+            width: 200px; height: 200px;
+            border: 1px solid rgba(255,209,102,0.3);
+            border-radius: 50%;
+            animation: snShockwave 4s ease-out infinite;
+          }
+          [data-theme="supernova-cinematic"] .particle-layer::after {
+            animation-delay: 2s;
+            border-color: rgba(255,107,61,0.25);
+          }
+          [data-theme="supernova-cinematic"] .stat-card,
+          [data-theme="supernova-cinematic"] .card {
+            background: rgba(20,8,5,0.7);
+            border: 1px solid rgba(255,107,61,0.3);
+            border-radius: 8px;
+            position: relative;
+            overflow: hidden;
+          }
+          [data-theme="supernova-cinematic"] .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0;
+            width: 3px; height: 100%;
+            background: linear-gradient(180deg, #ffd166, #ff6b3d);
+            opacity: 0.7;
+          }
+          [data-theme="supernova-cinematic"] .stat-card .value,
+          [data-theme="supernova-cinematic"] .stat-number {
+            color: #ffd166;
+            text-shadow: 0 0 20px rgba(255,209,102,0.4);
+          }
+          @keyframes supernovaBreath {
+            0%,100% { transform: scale(1) rotate(0deg); opacity: 0.85; }
+            50% { transform: scale(1.08) rotate(2deg); opacity: 1; }
+          }
+          @keyframes snStarsTwinkle {
+            from { background-position: 0 0; }
+            to { background-position: 600px 600px; }
+          }
+          @keyframes snShockwave {
+            0% { transform: translate(50%,-50%) scale(0.3); opacity: 1; }
+            100% { transform: translate(50%,-50%) scale(3); opacity: 0; }
+          }
+
+          /* ============ TEMA 2: BINARY STAR DANCE ============ */
+          [data-theme="binary-star"] body {
+            background: radial-gradient(ellipse at center, #0a1f1a 0%, #050f0d 50%, #000505 100%) !important;
+            color: #9fe1cb;
+            position: relative;
+            overflow-x: hidden;
+          }
+          [data-theme="binary-star"] body::before {
+            content: '';
+            position: fixed; inset: 0;
+            background-image:
+              linear-gradient(rgba(93,202,165,0.08) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(93,202,165,0.08) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: bsGridScroll 20s linear infinite;
+            pointer-events: none;
+            z-index: 0;
+          }
+          [data-theme="binary-star"] body::after {
+            content: '';
+            position: fixed; inset: 0;
+            height: 100vh; bottom: 0; z-index: 0;
+            background-image:
+              radial-gradient(1.5px 1.5px at 15% 20%, #5dcaa5, transparent),
+              radial-gradient(1px 1px at 50% 60%, #85b7eb, transparent),
+              radial-gradient(2px 2px at 80% 30%, #5dcaa5, transparent),
+              radial-gradient(1.5px 1.5px at 70% 90%, #5dcaa5, transparent);
+            background-size: 700px 700px;
+            box-shadow: none;
+            animation: bsStarsTwinkle 15s linear infinite;
+            pointer-events: none;
+            opacity: 0.6;
+          }
+          [data-theme="binary-star"] .particle-layer {
+            position: fixed;
+            top: 20%; right: 5%;
+            width: 300px; height: 300px;
+            pointer-events: none;
+            z-index: 1;
+            animation: bsOrbitRotate 20s linear infinite;
+          }
+          [data-theme="binary-star"] .particle-layer::before,
+          [data-theme="binary-star"] .particle-layer::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            width: 60px; height: 60px;
+            border-radius: 50%;
+            filter: blur(8px);
+          }
+          [data-theme="binary-star"] .particle-layer::before {
+            left: 20%;
+            background: radial-gradient(circle, white 0%, #5dcaa5 40%, transparent 70%);
+            animation: bsPulseStar 2s ease-in-out infinite;
+          }
+          [data-theme="binary-star"] .particle-layer::after {
+            right: 20%;
+            background: radial-gradient(circle, white 0%, #85b7eb 40%, transparent 70%);
+            animation: bsPulseStar 2s ease-in-out infinite reverse;
+          }
+          [data-theme="binary-star"] .stat-card,
+          [data-theme="binary-star"] .card {
+            background: rgba(10,31,26,0.6);
+            border: 1px solid #5dcaa5;
+            border-radius: 6px;
+            box-shadow: 0 0 20px rgba(93,202,165,0.2);
+            position: relative;
+            overflow: hidden;
+          }
+          [data-theme="binary-star"] .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0;
+            width: 3px; height: 100%;
+            background: #5dcaa5;
+            box-shadow: 0 0 15px #5dcaa5;
+          }
+          [data-theme="binary-star"] .stat-card .value,
+          [data-theme="binary-star"] .stat-number {
+            color: #5dcaa5;
+            text-shadow: 0 0 15px #5dcaa5;
+          }
+          @keyframes bsGridScroll {
+            from { background-position: 0 0; }
+            to { background-position: 50px 50px; }
+          }
+          @keyframes bsStarsTwinkle {
+            0% { background-position: 0 0; opacity: 0.4; }
+            50% { opacity: 0.8; }
+            100% { background-position: 700px 700px; opacity: 0.4; }
+          }
+          @keyframes bsOrbitRotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+          }
+          @keyframes bsPulseStar {
+            0%,100% { transform: translateY(-50%) scale(1); opacity: 0.8; }
+            50% { transform: translateY(-50%) scale(1.3); opacity: 1; }
+          }
+
+          /* ============ TEMA 3: BLACK HOLE ANIME ============ */
+          [data-theme="blackhole-anime"] body {
+            background: radial-gradient(ellipse at 70% 50%, #1a1245 0%, #0a0625 40%, #020110 100%) !important;
+            color: #cecbf6;
+            position: relative;
+            overflow-x: hidden;
+          }
+          [data-theme="blackhole-anime"] body::before {
+            content: '';
+            position: fixed; inset: 0;
+            background-image:
+              radial-gradient(2px 2px at 20% 25%, #cecbf6, transparent),
+              radial-gradient(1px 1px at 60% 60%, #85b7eb, transparent),
+              radial-gradient(2px 2px at 85% 20%, #cecbf6, transparent),
+              radial-gradient(1.5px 1.5px at 30% 80%, #85b7eb, transparent),
+              radial-gradient(1px 1px at 75% 75%, #cecbf6, transparent);
+            background-size: 800px 800px;
+            animation: bhStarsDrift 25s linear infinite;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.7;
+          }
+          [data-theme="blackhole-anime"] .particle-layer {
+            position: fixed;
+            top: 50%; right: -100px;
+            transform: translateY(-50%);
+            width: 600px; height: 600px;
+            pointer-events: none;
+            z-index: 1;
+          }
+          [data-theme="blackhole-anime"] .particle-layer::before {
+            content: '';
+            position: absolute; inset: 0;
+            background: radial-gradient(ellipse 280px 80px at center,
+              transparent 18%,
+              #7f77dd 22%,
+              #378add 35%,
+              #7f77dd 50%,
+              transparent 70%);
+            filter: blur(3px);
+            animation: bhDiskRotate 15s linear infinite;
+            opacity: 0.85;
+          }
+          [data-theme="blackhole-anime"] .particle-layer::after {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 120px; height: 120px;
+            background: radial-gradient(circle, #000 60%, transparent 65%);
+            border: 2px solid #cecbf6;
+            border-radius: 50%;
+            transform: translate(-50%,-50%);
+            box-shadow: 0 0 30px #7f77dd, inset 0 0 40px rgba(127,119,221,0.3);
+          }
+          [data-theme="blackhole-anime"] .jets {
+            position: fixed;
+            top: 0; right: 100px;
+            width: 8px; height: 100vh;
+            background: linear-gradient(180deg,
+              transparent 0%,
+              rgba(133,183,235,0.3) 30%,
+              rgba(127,119,221,0.5) 50%,
+              rgba(133,183,235,0.3) 70%,
+              transparent 100%);
+            filter: blur(4px);
+            animation: bhJetPulse 4s ease-in-out infinite;
+            pointer-events: none;
+            z-index: 1;
+          }
+          [data-theme="blackhole-anime"] .stat-card,
+          [data-theme="blackhole-anime"] .card {
+            background: rgba(26,18,69,0.7);
+            border: 1px solid rgba(127,119,221,0.4);
+            border-radius: 10px;
+            backdrop-filter: blur(8px);
+            position: relative;
+            overflow: hidden;
+          }
+          [data-theme="blackhole-anime"] .stat-card::before {
+            content: '';
+            position: absolute;
+            top: -50%; left: -50%;
+            width: 200%; height: 200%;
+            background: conic-gradient(from 0deg,
+              transparent 0deg,
+              rgba(127,119,221,0.15) 90deg,
+              transparent 180deg,
+              rgba(133,183,235,0.15) 270deg,
+              transparent 360deg);
+            animation: bhCardSwirl 8s linear infinite;
+            opacity: 0.6;
+          }
+          [data-theme="blackhole-anime"] .stat-card > * { position: relative; z-index: 1; }
+          [data-theme="blackhole-anime"] .stat-card .value,
+          [data-theme="blackhole-anime"] .stat-number {
+            color: #cecbf6;
+            text-shadow: 0 0 25px rgba(127,119,221,0.6);
+          }
+          @keyframes bhStarsDrift {
+            from { background-position: 0 0; }
+            to { background-position: 800px 0; }
+          }
+          @keyframes bhDiskRotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+          }
+          @keyframes bhJetPulse {
+            0%,100% { opacity: 0.5; transform: scaleY(1); }
+            50% { opacity: 0.9; transform: scaleY(1.1); }
+          }
+          @keyframes bhCardSwirl {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+          }
+
+          /* ============ TEMA 4: GALACTIC NEBULA ============ */
+          [data-theme="galactic-nebula"] body {
+            background: radial-gradient(ellipse at 60% 40%, #1a0f25 0%, #0a0515 50%, #000005 100%) !important;
+            color: #ffffff;
+            position: relative;
+            overflow-x: hidden;
+          }
+          [data-theme="galactic-nebula"] body::before {
+            content: '';
+            position: fixed; inset: 0;
+            background:
+              radial-gradient(ellipse 600px 400px at 75% 30%, rgba(237,147,177,0.25) 0%, transparent 60%),
+              radial-gradient(ellipse 500px 350px at 85% 60%, rgba(133,183,235,0.22) 0%, transparent 60%),
+              radial-gradient(ellipse 400px 300px at 70% 50%, rgba(250,199,117,0.18) 0%, transparent 60%);
+            animation: gnNebulaDrift 20s ease-in-out infinite;
+            pointer-events: none;
+            z-index: 0;
+            filter: blur(2px);
+          }
+          [data-theme="galactic-nebula"] body::after {
+            content: '';
+            position: fixed; inset: 0;
+            height: 100vh; bottom: 0; z-index: 0;
+            background-image:
+              radial-gradient(1px 1px at 10% 20%, white, transparent),
+              radial-gradient(1.5px 1.5px at 30% 50%, #f4c0d1, transparent),
+              radial-gradient(1px 1px at 50% 80%, white, transparent),
+              radial-gradient(2px 2px at 70% 30%, #b5d4f4, transparent),
+              radial-gradient(1px 1px at 85% 70%, white, transparent);
+            background-size: 900px 900px;
+            box-shadow: none;
+            animation: gnStarsTwinkle 18s linear infinite;
+            pointer-events: none;
+            opacity: 0.6;
+          }
+          [data-theme="galactic-nebula"] .particle-layer {
+            position: fixed;
+            top: 30%; right: 10%;
+            width: 400px; height: 400px;
+            pointer-events: none;
+            z-index: 1;
+          }
+          [data-theme="galactic-nebula"] .particle-layer::before,
+          [data-theme="galactic-nebula"] .particle-layer::after {
+            content: '';
+            position: absolute;
+            width: 200px; height: 200px;
+            border-radius: 50%;
+            filter: blur(6px);
+            animation: gnGalaxySpin 30s linear infinite;
+          }
+          [data-theme="galactic-nebula"] .particle-layer::before {
+            top: 20%; left: 10%;
+            background: radial-gradient(circle, white 0%, #ed93b1 8%, rgba(237,147,177,0.4) 20%, transparent 50%);
+          }
+          [data-theme="galactic-nebula"] .particle-layer::after {
+            bottom: 15%; right: 5%;
+            background: radial-gradient(circle, white 0%, #85b7eb 8%, rgba(133,183,235,0.4) 20%, transparent 50%);
+            animation-direction: reverse;
+          }
+          [data-theme="galactic-nebula"] .stat-card,
+          [data-theme="galactic-nebula"] .card {
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 14px;
+            backdrop-filter: blur(16px) saturate(180%);
+            -webkit-backdrop-filter: blur(16px) saturate(180%);
+            position: relative;
+            overflow: hidden;
+          }
+          [data-theme="galactic-nebula"] .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+          }
+          [data-theme="galactic-nebula"] .stat-card .value,
+          [data-theme="galactic-nebula"] .stat-number {
+            color: #ffffff;
+            font-weight: 500;
+          }
+          @keyframes gnNebulaDrift {
+            0%,100% { transform: scale(1) translate(0,0); opacity: 0.85; }
+            50% { transform: scale(1.05) translate(-20px,-10px); opacity: 1; }
+          }
+          @keyframes gnStarsTwinkle {
+            0% { background-position: 0 0; opacity: 0.4; }
+            50% { opacity: 0.7; }
+            100% { background-position: 900px 900px; opacity: 0.4; }
+          }
+          @keyframes gnGalaxySpin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+          }
+
           /* Reduce motion → disable 3D animations */
           @media (prefers-reduced-motion: reduce) {
             .theme-fx-layer { animation: none !important; transform: none !important; }
             .theme-planet { animation: none !important; }
+            .particle-layer, .particle-layer::before, .particle-layer::after,
+            .jets { animation: none !important; }
           }
 
           /* Mobile: simpler 3D (skip front layer animation = save battery) */
@@ -1452,6 +1871,9 @@ export default function RootLayout({ children }) {
           <div className="theme-planet planet-2"></div>
           <div className="theme-planet planet-3"></div>
         </div>
+        {/* Helper layers — visible only di tema cinematic 3D HD (supernova/binary-star/blackhole-anime/galactic-nebula) */}
+        <div className="particle-layer" aria-hidden="true"></div>
+        <div className="jets" aria-hidden="true"></div>
         <div style={{ position: 'relative', zIndex: 2 }}>
           {children}
         </div>
