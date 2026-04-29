@@ -2689,21 +2689,25 @@ export default function RootLayout({ children }) {
               radial-gradient(ellipse 600px 400px at 70% 60%, rgba(59, 130, 246, 0.20) 0%, transparent 60%);
             animation: fusionNebulaRotate 70s linear infinite;
           }
-          /* Tambah star layer baru di .theme-fx-layer.fx-mid bersama spiral arms — middle warp speed */
+          /* Bintang kecil-kecil yang ORBIT memutar sekitar pusat (replace spiral arms) */
           [data-theme="cosmic-fusion"] .theme-fx-layer.fx-mid {
             background-image:
-              /* Spiral arms */
-              conic-gradient(from 0deg at 50% 50%,
-                transparent 0deg,
-                rgba(168, 85, 247, 0.18) 30deg,
-                transparent 60deg,
-                rgba(34, 211, 238, 0.15) 130deg,
-                transparent 180deg,
-                rgba(168, 85, 247, 0.18) 230deg,
-                transparent 280deg,
-                rgba(34, 211, 238, 0.15) 320deg,
-                transparent 360deg);
-            animation: fusionSpiralRotate 60s linear infinite;
+              radial-gradient(1.5px 1.5px at 15% 25%, white, transparent),
+              radial-gradient(1.5px 1.5px at 25% 50%, rgba(165, 243, 252, 0.9), transparent),
+              radial-gradient(2px 2px at 35% 75%, rgba(254, 240, 138, 0.9), transparent),
+              radial-gradient(1.5px 1.5px at 50% 15%, white, transparent),
+              radial-gradient(1.5px 1.5px at 50% 85%, rgba(167, 139, 250, 0.9), transparent),
+              radial-gradient(2px 2px at 65% 25%, rgba(252, 165, 165, 0.9), transparent),
+              radial-gradient(1.5px 1.5px at 75% 50%, white, transparent),
+              radial-gradient(1.5px 1.5px at 85% 75%, rgba(96, 165, 250, 0.9), transparent),
+              radial-gradient(2px 2px at 10% 65%, rgba(254, 243, 199, 1), transparent),
+              radial-gradient(1.5px 1.5px at 90% 35%, rgba(165, 243, 252, 1), transparent),
+              radial-gradient(2px 2px at 30% 10%, white, transparent),
+              radial-gradient(1.5px 1.5px at 70% 90%, rgba(254, 240, 138, 1), transparent),
+              radial-gradient(2px 2px at 5% 40%, white, transparent),
+              radial-gradient(1.5px 1.5px at 95% 60%, rgba(167, 139, 250, 1), transparent);
+            background-size: 100% 100%;
+            animation: fusionStarsOrbit 80s linear infinite;
           }
           /* Tambahkan medium warp stars layer pakai planet-2 background-image trick — tapi planet-2 udah dipakai mini spiral.
              Solusi: pakai pseudo ::before/::after di .theme-fx-layer.fx-mid untuk medium warp */
@@ -2850,6 +2854,11 @@ export default function RootLayout({ children }) {
             0%   { transform: scale(0.15); opacity: 0; }
             20%  { opacity: 1; }
             100% { transform: scale(2.8); opacity: 0; }
+          }
+          /* Bintang ORBIT memutar sekitar pusat (replace spiral arms) */
+          @keyframes fusionStarsOrbit {
+            from { transform: rotate(0deg); }
+            to   { transform: rotate(360deg); }
           }
           @keyframes fusionNebulaRotate {
             from { transform: translateZ(-500px) rotate(0deg); }
