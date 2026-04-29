@@ -1642,7 +1642,7 @@ export default function Home() {
 
     // Load tema dashboard + apply ke <html data-theme>
     const savedTheme = localStorage.getItem('fb-dash-theme') || 'ice';
-    const validThemes = ['ice', 'glass', 'galaxy', 'cyberpunk', 'aurora', 'deepspace', 'spiral', 'solar', 'mars', 'blackhole', 'wormhole', 'supernova', 'meteor', 'collision', 'supernova-cinematic', 'binary-star', 'blackhole-anime', 'galactic-nebula'];
+    const validThemes = ['ice', 'glass', 'galaxy', 'cyberpunk', 'aurora', 'deepspace', 'spiral', 'solar', 'mars', 'blackhole', 'wormhole', 'supernova', 'meteor', 'collision', 'supernova-cinematic', 'binary-star', 'blackhole-anime', 'galactic-nebula', 'dust-explosion', 'whirlpool', 'interstellar', 'solar-spiral'];
     const themeName = validThemes.includes(savedTheme) ? savedTheme : 'ice';
     setTheme(themeName);
     if (typeof document !== 'undefined') {
@@ -1861,7 +1861,7 @@ export default function Home() {
   };
 
   const changeTheme = (newTheme) => {
-    const validThemes = ['ice', 'glass', 'galaxy', 'cyberpunk', 'aurora', 'deepspace', 'spiral', 'solar', 'mars', 'blackhole', 'wormhole', 'supernova', 'meteor', 'collision', 'supernova-cinematic', 'binary-star', 'blackhole-anime', 'galactic-nebula'];
+    const validThemes = ['ice', 'glass', 'galaxy', 'cyberpunk', 'aurora', 'deepspace', 'spiral', 'solar', 'mars', 'blackhole', 'wormhole', 'supernova', 'meteor', 'collision', 'supernova-cinematic', 'binary-star', 'blackhole-anime', 'galactic-nebula', 'dust-explosion', 'whirlpool', 'interstellar', 'solar-spiral'];
     if (!validThemes.includes(newTheme)) return;
     setTheme(newTheme);
     localStorage.setItem('fb-dash-theme', newTheme);
@@ -2316,6 +2316,12 @@ export default function Home() {
               <option value="binary-star">✨ Binary Star Dance</option>
               <option value="blackhole-anime">🌀 Black Hole Anime</option>
               <option value="galactic-nebula">🎆 Galactic Nebula</option>
+            </optgroup>
+            <optgroup label="Cosmic Photo HD">
+              <option value="dust-explosion">🔆 Dust Explosion</option>
+              <option value="whirlpool">🌊 Whirlpool Black Hole</option>
+              <option value="interstellar">💍 Interstellar (Gargantua)</option>
+              <option value="solar-spiral">🌟 Solar Spiral Galaxy</option>
             </optgroup>
           </select>
           <a onClick={()=>setGuideOpen(true)} style={{color:'#a5f3fc',cursor:'pointer',fontSize:12}} title="Panduan Pemakaian">❓</a>

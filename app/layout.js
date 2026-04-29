@@ -1837,6 +1837,585 @@ export default function RootLayout({ children }) {
             to { transform: rotate(360deg); }
           }
 
+          /* ============================================================
+             4 COSMIC PHOTO HD THEMES — dari 4 reference image (NASA-style)
+             Per-tema font berbeda biar match visual vibe
+             ============================================================ */
+
+          /* ============ 🔆 GALACTIC DUST EXPLOSION (cinematic supernova horizontal) ============ */
+          [data-theme="dust-explosion"] body {
+            background: radial-gradient(ellipse at 50% 50%, #2a0a05 0%, #0a0202 50%, #000 100%) !important;
+            color: #ffd9b3 !important;
+            font-family: 'Impact', 'Arial Black', 'Helvetica', sans-serif !important;
+            letter-spacing: 0.03em;
+            position: relative;
+            overflow-x: hidden;
+          }
+          [data-theme="dust-explosion"] h1,
+          [data-theme="dust-explosion"] h2,
+          [data-theme="dust-explosion"] h3 {
+            font-family: 'Impact', 'Arial Black', sans-serif !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.06em !important;
+            text-shadow: 0 0 30px rgba(255, 209, 102, 0.6) !important;
+          }
+          [data-theme="dust-explosion"] body::before {
+            content: '';
+            position: fixed;
+            top: 50%; left: 50%;
+            width: 1800px; height: 600px;
+            margin: -300px 0 0 -900px;
+            background: radial-gradient(ellipse at center,
+              rgba(255, 250, 230, 1) 0%,
+              rgba(255, 209, 102, 0.85) 6%,
+              rgba(255, 134, 51, 0.6) 18%,
+              rgba(186, 51, 26, 0.4) 35%,
+              rgba(82, 13, 13, 0.2) 55%,
+              transparent 75%);
+            filter: blur(8px);
+            animation: dustBreath 7s ease-in-out infinite;
+            pointer-events: none;
+            z-index: 0;
+          }
+          [data-theme="dust-explosion"] body::after {
+            content: '';
+            position: fixed; inset: 0;
+            height: 100vh; bottom: 0; z-index: 0;
+            background-image:
+              radial-gradient(1px 1px at 8% 15%, white, transparent),
+              radial-gradient(1px 1px at 25% 60%, #ffd9b3, transparent),
+              radial-gradient(1.5px 1.5px at 45% 25%, white, transparent),
+              radial-gradient(1px 1px at 65% 75%, #ffe4cc, transparent),
+              radial-gradient(2px 2px at 88% 30%, white, transparent),
+              radial-gradient(1px 1px at 12% 80%, #ffd9b3, transparent),
+              radial-gradient(1.5px 1.5px at 80% 88%, white, transparent);
+            background-size: 250px 250px, 290px 290px, 320px 320px, 270px 270px, 350px 350px, 300px 300px, 380px 380px;
+            box-shadow: none;
+            animation: dustStarsTwinkle 14s linear infinite;
+            pointer-events: none;
+            opacity: 0.85;
+          }
+          [data-theme="dust-explosion"] .theme-planet { display: block !important; }
+          [data-theme="dust-explosion"] .planet-1 {
+            width: 350px; height: 200px;
+            top: 50%; left: 50%;
+            margin: -100px 0 0 -175px;
+            background: radial-gradient(ellipse at center,
+              white 0%, #fff5e0 15%, #ffd166 35%,
+              rgba(255, 134, 51, 0.7) 55%, transparent 85%);
+            border-radius: 50%;
+            box-shadow:
+              0 0 80px 30px rgba(255, 209, 102, 0.7),
+              0 0 160px 70px rgba(255, 134, 51, 0.5),
+              0 0 300px 120px rgba(186, 51, 26, 0.3);
+            filter: blur(4px);
+            animation: dustCorePulse 4s ease-in-out infinite;
+          }
+          [data-theme="dust-explosion"] .planet-2 {
+            width: 700px; height: 100px;
+            top: 50%; left: 50%;
+            margin: -50px 0 0 0;
+            background: linear-gradient(90deg,
+              rgba(255, 209, 102, 0.6) 0%,
+              rgba(255, 134, 51, 0.5) 20%,
+              rgba(186, 51, 26, 0.3) 50%,
+              transparent 100%);
+            filter: blur(15px);
+            border-radius: 50%;
+            animation: dustStreakRight 8s ease-in-out infinite;
+          }
+          [data-theme="dust-explosion"] .planet-3 {
+            width: 700px; height: 100px;
+            top: 50%; right: 50%;
+            margin: -50px 0 0 0;
+            background: linear-gradient(270deg,
+              rgba(255, 209, 102, 0.6) 0%,
+              rgba(186, 51, 26, 0.3) 50%,
+              transparent 100%);
+            filter: blur(15px);
+            border-radius: 50%;
+            animation: dustStreakLeft 8s ease-in-out infinite;
+          }
+          [data-theme="dust-explosion"] .particle-layer {
+            position: fixed; inset: 0;
+            pointer-events: none; z-index: 1; overflow: hidden;
+          }
+          [data-theme="dust-explosion"] .particle-layer::before,
+          [data-theme="dust-explosion"] .particle-layer::after {
+            content: '';
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 300px; height: 100px;
+            margin: -50px 0 0 -150px;
+            border: 2px solid rgba(255, 209, 102, 0.5);
+            border-radius: 50%;
+            animation: dustShockwave 5s ease-out infinite;
+          }
+          [data-theme="dust-explosion"] .particle-layer::after {
+            border-color: rgba(255, 134, 51, 0.4);
+            animation-delay: 2.5s;
+          }
+          @keyframes dustBreath {
+            0%, 100% { transform: scale(1); opacity: 0.85; filter: blur(8px); }
+            50%      { transform: scale(1.1); opacity: 1; filter: blur(6px); }
+          }
+          @keyframes dustStarsTwinkle {
+            from { background-position: 0 0, 0 0, 0 0, 0 0, 0 0, 0 0, 0 0; }
+            to   { background-position: 250px 250px, 290px 290px, 320px 320px, 270px 270px, 350px 350px, 300px 300px, 380px 380px; }
+          }
+          @keyframes dustCorePulse {
+            0%, 100% { transform: scale(1); filter: blur(4px) brightness(1); }
+            50%      { transform: scale(1.15); filter: blur(3px) brightness(1.3); }
+          }
+          @keyframes dustStreakRight {
+            0%, 100% { transform: translateX(0) scale(1); opacity: 0.7; }
+            50%      { transform: translateX(50px) scale(1.1); opacity: 1; }
+          }
+          @keyframes dustStreakLeft {
+            0%, 100% { transform: translateX(0) scale(1); opacity: 0.7; }
+            50%      { transform: translateX(-50px) scale(1.1); opacity: 1; }
+          }
+          @keyframes dustShockwave {
+            0%   { transform: scale(0.3); opacity: 1; }
+            100% { transform: scale(4); opacity: 0; }
+          }
+
+          /* ============ 🌊 WHIRLPOOL BLACK HOLE (cyan vortex pulling debris) ============ */
+          [data-theme="whirlpool"] body {
+            background: radial-gradient(ellipse at center, #0a1f2e 0%, #050f1a 50%, #000510 100%) !important;
+            color: #a5f3fc !important;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace !important;
+            letter-spacing: 0.02em;
+            position: relative;
+            overflow-x: hidden;
+          }
+          [data-theme="whirlpool"] h1,
+          [data-theme="whirlpool"] h2,
+          [data-theme="whirlpool"] h3 {
+            font-family: 'Consolas', 'Monaco', monospace !important;
+            letter-spacing: 0.1em !important;
+            text-transform: uppercase !important;
+            text-shadow: 0 0 20px rgba(34, 211, 238, 0.7) !important;
+          }
+          [data-theme="whirlpool"] body::before {
+            content: '';
+            position: fixed; inset: 0;
+            background: conic-gradient(from 0deg at 50% 50%,
+              transparent 0deg,
+              rgba(34, 211, 238, 0.35) 30deg,
+              rgba(8, 145, 178, 0.25) 90deg,
+              transparent 150deg,
+              rgba(34, 211, 238, 0.30) 210deg,
+              rgba(14, 165, 233, 0.25) 270deg,
+              transparent 330deg,
+              transparent 360deg);
+            animation: whirlpoolSpin 12s linear infinite;
+            pointer-events: none;
+            z-index: 0;
+            filter: blur(6px);
+          }
+          [data-theme="whirlpool"] body::after {
+            content: '';
+            position: fixed; inset: 0;
+            height: 100vh; bottom: 0; z-index: 0;
+            background-image:
+              radial-gradient(1px 1px at 10% 20%, #67e8f9, transparent),
+              radial-gradient(1px 1px at 30% 60%, white, transparent),
+              radial-gradient(1.5px 1.5px at 60% 30%, #22d3ee, transparent),
+              radial-gradient(1px 1px at 85% 70%, white, transparent);
+            background-size: 280px 280px, 320px 320px, 360px 360px, 290px 290px;
+            box-shadow: none;
+            animation: whirlpoolStarsPull 10s linear infinite;
+            opacity: 0.6;
+            pointer-events: none;
+          }
+          [data-theme="whirlpool"] .theme-planet { display: block !important; }
+          /* Center void */
+          [data-theme="whirlpool"] .planet-1 {
+            width: 200px; height: 200px;
+            top: 50%; left: 50%;
+            margin: -100px 0 0 -100px;
+            background: radial-gradient(circle at 50% 50%,
+              #000 50%, rgba(0, 30, 50, 0.8) 70%, transparent 100%);
+            border-radius: 50%;
+            box-shadow:
+              0 0 60px 20px rgba(34, 211, 238, 0.5),
+              inset 0 0 40px rgba(8, 145, 178, 0.6);
+          }
+          /* Debris orbit - large */
+          [data-theme="whirlpool"] .planet-2 {
+            width: 600px; height: 600px;
+            top: 50%; left: 50%;
+            margin: -300px 0 0 -300px;
+            background-image:
+              radial-gradient(2px 2px at 20% 50%, rgba(165, 243, 252, 0.9), transparent),
+              radial-gradient(3px 3px at 80% 50%, rgba(34, 211, 238, 1), transparent),
+              radial-gradient(2px 2px at 50% 20%, rgba(103, 232, 249, 0.9), transparent),
+              radial-gradient(2.5px 2.5px at 50% 80%, white, transparent),
+              radial-gradient(2px 2px at 30% 30%, rgba(165, 243, 252, 0.8), transparent),
+              radial-gradient(2px 2px at 70% 70%, rgba(34, 211, 238, 0.9), transparent);
+            background-size: 100% 100%;
+            border-radius: 50%;
+            animation: whirlpoolDebris 15s linear infinite;
+          }
+          /* Debris orbit - small */
+          [data-theme="whirlpool"] .planet-3 {
+            width: 380px; height: 380px;
+            top: 50%; left: 50%;
+            margin: -190px 0 0 -190px;
+            background-image:
+              radial-gradient(3px 3px at 30% 50%, white, transparent),
+              radial-gradient(2px 2px at 70% 50%, rgba(165, 243, 252, 1), transparent),
+              radial-gradient(2.5px 2.5px at 50% 30%, rgba(34, 211, 238, 1), transparent);
+            background-size: 100% 100%;
+            border-radius: 50%;
+            animation: whirlpoolDebris 8s linear infinite reverse;
+          }
+          [data-theme="whirlpool"] .particle-layer {
+            position: fixed;
+            top: 50%; left: 50%;
+            width: 900px; height: 900px;
+            margin: -450px 0 0 -450px;
+            pointer-events: none;
+            z-index: 1;
+            border-radius: 50%;
+            background: conic-gradient(from 90deg at 50% 50%,
+              transparent 0deg,
+              rgba(34, 211, 238, 0.4) 60deg,
+              transparent 120deg,
+              rgba(8, 145, 178, 0.3) 180deg,
+              transparent 240deg,
+              rgba(34, 211, 238, 0.4) 300deg,
+              transparent 360deg);
+            filter: blur(20px);
+            animation: whirlpoolSpin 8s linear infinite reverse;
+          }
+          @keyframes whirlpoolSpin {
+            from { transform: rotate(0deg); }
+            to   { transform: rotate(360deg); }
+          }
+          @keyframes whirlpoolStarsPull {
+            from { transform: scale(1) rotate(0deg); }
+            to   { transform: scale(0.8) rotate(20deg); }
+          }
+          @keyframes whirlpoolDebris {
+            from { transform: rotate(0deg); }
+            to   { transform: rotate(360deg); }
+          }
+
+          /* ============ 💍 INTERSTELLAR BLACK HOLE (Gargantua-style accretion ring) ============ */
+          [data-theme="interstellar"] body {
+            background: radial-gradient(ellipse at center, #1a0e08 0%, #0a0604 50%, #000 100%) !important;
+            color: #fde68a !important;
+            font-family: 'Georgia', 'Times New Roman', serif !important;
+            letter-spacing: 0.02em;
+            position: relative;
+            overflow-x: hidden;
+          }
+          [data-theme="interstellar"] h1,
+          [data-theme="interstellar"] h2,
+          [data-theme="interstellar"] h3 {
+            font-family: 'Georgia', 'Times New Roman', serif !important;
+            letter-spacing: 0.08em !important;
+            font-weight: 400 !important;
+            text-shadow: 0 0 25px rgba(252, 211, 77, 0.5) !important;
+          }
+          [data-theme="interstellar"] body::before {
+            content: '';
+            position: fixed; inset: 0;
+            background-image:
+              radial-gradient(1px 1px at 10% 15%, #fde68a, transparent),
+              radial-gradient(1px 1px at 25% 60%, white, transparent),
+              radial-gradient(1.5px 1.5px at 45% 25%, #fcd34d, transparent),
+              radial-gradient(1px 1px at 65% 75%, #fde68a, transparent),
+              radial-gradient(1.5px 1.5px at 88% 30%, white, transparent),
+              radial-gradient(1px 1px at 12% 80%, #fcd34d, transparent),
+              radial-gradient(1.5px 1.5px at 80% 88%, #fde68a, transparent);
+            background-size: 300px 300px, 350px 350px, 280px 280px, 320px 320px, 380px 380px, 340px 340px, 360px 360px;
+            opacity: 0.5;
+            animation: interstellarStarsDrift 90s linear infinite;
+            pointer-events: none;
+            z-index: 0;
+          }
+          [data-theme="interstellar"] body::after {
+            /* Vertical light streaks (gravitational lensing) */
+            content: '';
+            position: fixed; inset: 0;
+            height: 100vh; bottom: 0; z-index: 0;
+            background-image:
+              linear-gradient(0deg, transparent 30%, rgba(252, 211, 77, 0.15) 50%, transparent 70%),
+              linear-gradient(0deg, transparent 35%, rgba(245, 158, 11, 0.10) 50%, transparent 65%);
+            background-size: 200% 100%, 250% 100%;
+            background-position: 50% 0, 30% 0;
+            background-repeat: no-repeat;
+            box-shadow: none;
+            opacity: 0.7;
+            pointer-events: none;
+          }
+          [data-theme="interstellar"] .theme-planet { display: block !important; }
+          /* Black hole center */
+          [data-theme="interstellar"] .planet-1 {
+            width: 240px; height: 240px;
+            top: 50%; left: 50%;
+            margin: -120px 0 0 -120px;
+            background: #000;
+            border-radius: 50%;
+            box-shadow:
+              0 0 0 3px rgba(252, 211, 77, 0.8),
+              0 0 60px 25px rgba(245, 158, 11, 0.7),
+              0 0 120px 60px rgba(251, 146, 60, 0.4),
+              inset 0 0 30px rgba(252, 211, 77, 0.6);
+          }
+          /* Big accretion ring (tilted Gargantua style) */
+          [data-theme="interstellar"] .planet-2 {
+            width: 900px; height: 320px;
+            top: 50%; left: 50%;
+            margin: -160px 0 0 -450px;
+            background: radial-gradient(ellipse at center,
+              transparent 32%,
+              rgba(252, 211, 77, 0.3) 35%,
+              rgba(245, 158, 11, 0.7) 42%,
+              rgba(251, 146, 60, 0.85) 48%,
+              rgba(245, 158, 11, 0.7) 54%,
+              rgba(252, 211, 77, 0.3) 65%,
+              transparent 80%);
+            border-radius: 50%;
+            transform: rotateX(72deg) rotateZ(-15deg);
+            filter: blur(3px);
+            animation: interstellarRingSpin 25s linear infinite;
+          }
+          /* Secondary ring (perpendicular for depth) */
+          [data-theme="interstellar"] .planet-3 {
+            width: 850px; height: 280px;
+            top: 50%; left: 50%;
+            margin: -140px 0 0 -425px;
+            background: radial-gradient(ellipse at center,
+              transparent 33%,
+              rgba(252, 211, 77, 0.4) 40%,
+              rgba(251, 146, 60, 0.6) 50%,
+              transparent 70%);
+            border-radius: 50%;
+            transform: rotateX(78deg) rotateZ(15deg);
+            filter: blur(4px);
+            animation: interstellarRingSpin 30s linear infinite reverse;
+            opacity: 0.7;
+          }
+          [data-theme="interstellar"] .jets {
+            position: fixed;
+            top: 0; left: 50%;
+            margin-left: -3px;
+            width: 6px; height: 100vh;
+            background: linear-gradient(180deg,
+              transparent 0%,
+              rgba(252, 211, 77, 0.4) 25%,
+              rgba(245, 158, 11, 0.6) 50%,
+              rgba(252, 211, 77, 0.4) 75%,
+              transparent 100%);
+            filter: blur(6px);
+            animation: interstellarJet 5s ease-in-out infinite;
+            pointer-events: none;
+            z-index: 1;
+          }
+          [data-theme="interstellar"] .particle-layer {
+            position: fixed; inset: 0;
+            pointer-events: none;
+            z-index: 1;
+          }
+          [data-theme="interstellar"] .particle-layer::before {
+            content: '';
+            position: absolute;
+            top: 30%; left: 20%;
+            width: 6px; height: 6px;
+            background: white;
+            border-radius: 50%;
+            box-shadow: 0 0 30px 10px rgba(252, 211, 77, 0.8);
+            animation: interstellarFlare 4s ease-in-out infinite;
+          }
+          [data-theme="interstellar"] .particle-layer::after {
+            content: '';
+            position: absolute;
+            bottom: 25%; right: 25%;
+            width: 5px; height: 5px;
+            background: white;
+            border-radius: 50%;
+            box-shadow: 0 0 25px 8px rgba(245, 158, 11, 0.7);
+            animation: interstellarFlare 5s ease-in-out infinite;
+            animation-delay: 2s;
+          }
+          @keyframes interstellarStarsDrift {
+            0%   { transform: scale(1); }
+            100% { transform: scale(1.05); }
+          }
+          @keyframes interstellarRingSpin {
+            from { transform: rotateX(72deg) rotateZ(-15deg) rotate(0deg); }
+            to   { transform: rotateX(72deg) rotateZ(-15deg) rotate(360deg); }
+          }
+          @keyframes interstellarJet {
+            0%, 100% { opacity: 0.6; transform: scaleY(1); }
+            50%      { opacity: 1; transform: scaleY(1.05); }
+          }
+          @keyframes interstellarFlare {
+            0%, 100% { opacity: 0.7; transform: scale(1); }
+            50%      { opacity: 1; transform: scale(1.4); }
+          }
+
+          /* ============ 🌟 SOLAR SPIRAL GALAXY (bright sun + orbital rings) ============ */
+          [data-theme="solar-spiral"] body {
+            background: radial-gradient(ellipse at center, #2a1a05 0%, #0a0500 60%, #000 100%) !important;
+            color: #fef3c7 !important;
+            font-family: 'Verdana', 'Trebuchet MS', sans-serif !important;
+            letter-spacing: 0.025em;
+            position: relative;
+            overflow-x: hidden;
+          }
+          [data-theme="solar-spiral"] h1,
+          [data-theme="solar-spiral"] h2,
+          [data-theme="solar-spiral"] h3 {
+            font-family: 'Verdana', 'Trebuchet MS', sans-serif !important;
+            font-weight: 700 !important;
+            letter-spacing: 0.04em !important;
+            text-shadow: 0 0 25px rgba(254, 243, 199, 0.6), 0 0 40px rgba(251, 191, 36, 0.4) !important;
+          }
+          [data-theme="solar-spiral"] body::before {
+            /* Spiral arms via conic-gradient */
+            content: '';
+            position: fixed; inset: 0;
+            background: conic-gradient(from 0deg at 50% 50%,
+              transparent 0deg,
+              rgba(254, 243, 199, 0.2) 30deg,
+              rgba(251, 191, 36, 0.3) 60deg,
+              transparent 120deg,
+              rgba(254, 215, 170, 0.2) 180deg,
+              rgba(251, 146, 60, 0.25) 220deg,
+              transparent 280deg,
+              rgba(254, 243, 199, 0.2) 320deg,
+              transparent 360deg);
+            animation: solarSpiralRotate 50s linear infinite;
+            filter: blur(8px);
+            pointer-events: none;
+            z-index: 0;
+          }
+          [data-theme="solar-spiral"] body::after {
+            content: '';
+            position: fixed; inset: 0;
+            height: 100vh; bottom: 0; z-index: 0;
+            background-image:
+              radial-gradient(1px 1px at 10% 20%, white, transparent),
+              radial-gradient(1.5px 1.5px at 30% 50%, #fef3c7, transparent),
+              radial-gradient(1px 1px at 60% 30%, #fcd34d, transparent),
+              radial-gradient(2px 2px at 80% 80%, white, transparent),
+              radial-gradient(1px 1px at 92% 25%, #fde68a, transparent);
+            background-size: 280px 280px, 320px 320px, 350px 350px, 290px 290px, 380px 380px;
+            box-shadow: none;
+            opacity: 0.7;
+            animation: solarStarsTwinkle 16s linear infinite;
+            pointer-events: none;
+          }
+          [data-theme="solar-spiral"] .theme-planet { display: block !important; }
+          /* Bright sun core */
+          [data-theme="solar-spiral"] .planet-1 {
+            width: 280px; height: 280px;
+            top: 50%; left: 50%;
+            margin: -140px 0 0 -140px;
+            background: radial-gradient(circle at 50% 50%,
+              white 0%, #fef3c7 15%, #fde68a 30%,
+              #fcd34d 50%, rgba(245, 158, 11, 0.7) 70%, transparent 100%);
+            border-radius: 50%;
+            box-shadow:
+              0 0 100px 40px rgba(254, 243, 199, 0.7),
+              0 0 200px 80px rgba(251, 191, 36, 0.5),
+              0 0 350px 150px rgba(245, 158, 11, 0.3);
+            filter: blur(2px);
+            animation: solarCorePulse 3s ease-in-out infinite;
+          }
+          /* Outer orbital ring 1 */
+          [data-theme="solar-spiral"] .planet-2 {
+            width: 800px; height: 280px;
+            top: 50%; left: 50%;
+            margin: -140px 0 0 -400px;
+            background: radial-gradient(ellipse at center,
+              transparent 38%,
+              rgba(252, 211, 77, 0.3) 42%,
+              rgba(251, 191, 36, 0.6) 48%,
+              rgba(245, 158, 11, 0.5) 55%,
+              transparent 75%);
+            border-radius: 50%;
+            transform: rotateX(70deg) rotateZ(20deg);
+            filter: blur(2px);
+            animation: solarRingSpin 20s linear infinite;
+          }
+          /* Outer orbital ring 2 (different angle) */
+          [data-theme="solar-spiral"] .planet-3 {
+            width: 1100px; height: 360px;
+            top: 50%; left: 50%;
+            margin: -180px 0 0 -550px;
+            background: radial-gradient(ellipse at center,
+              transparent 40%,
+              rgba(254, 215, 170, 0.2) 44%,
+              rgba(251, 146, 60, 0.4) 50%,
+              rgba(252, 211, 77, 0.3) 56%,
+              transparent 75%);
+            border-radius: 50%;
+            transform: rotateX(75deg) rotateZ(-25deg);
+            filter: blur(3px);
+            animation: solarRingSpin 35s linear infinite reverse;
+            opacity: 0.7;
+          }
+          [data-theme="solar-spiral"] .particle-layer {
+            position: fixed; inset: 0;
+            pointer-events: none;
+            z-index: 1;
+          }
+          /* Lens flare 1 */
+          [data-theme="solar-spiral"] .particle-layer::before {
+            content: '';
+            position: absolute;
+            top: 30%; left: 25%;
+            width: 8px; height: 8px;
+            background: white;
+            border-radius: 50%;
+            box-shadow:
+              0 0 20px 5px white,
+              0 0 50px 15px rgba(252, 211, 77, 0.8),
+              0 0 100px 30px rgba(251, 146, 60, 0.5);
+            animation: solarFlare 4s ease-in-out infinite;
+          }
+          /* Lens flare 2 */
+          [data-theme="solar-spiral"] .particle-layer::after {
+            content: '';
+            position: absolute;
+            bottom: 20%; right: 22%;
+            width: 6px; height: 6px;
+            background: white;
+            border-radius: 50%;
+            box-shadow:
+              0 0 15px 4px white,
+              0 0 40px 12px rgba(254, 240, 138, 0.7),
+              0 0 80px 25px rgba(245, 158, 11, 0.5);
+            animation: solarFlare 5s ease-in-out infinite;
+            animation-delay: 2s;
+          }
+          @keyframes solarSpiralRotate {
+            from { transform: rotate(0deg); }
+            to   { transform: rotate(360deg); }
+          }
+          @keyframes solarStarsTwinkle {
+            0%, 100% { opacity: 0.7; }
+            50%      { opacity: 1; }
+          }
+          @keyframes solarCorePulse {
+            0%, 100% { transform: scale(1); filter: blur(2px) brightness(1); }
+            50%      { transform: scale(1.08); filter: blur(2px) brightness(1.3); }
+          }
+          @keyframes solarRingSpin {
+            from { transform: rotateX(70deg) rotateZ(20deg) rotate(0deg); }
+            to   { transform: rotateX(70deg) rotateZ(20deg) rotate(360deg); }
+          }
+          @keyframes solarFlare {
+            0%, 100% { opacity: 0.8; transform: scale(1); }
+            50%      { opacity: 1; transform: scale(1.5); }
+          }
+
           /* Reduce motion → disable 3D animations */
           @media (prefers-reduced-motion: reduce) {
             .theme-fx-layer { animation: none !important; transform: none !important; }
