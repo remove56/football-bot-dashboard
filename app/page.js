@@ -389,6 +389,8 @@ export default function Home() {
   const [chatViewOnceMode, setChatViewOnceMode] = useState(false); // toggle 🔥 view once
   const chatLocalViewedRef = useRef(new Map()); // id -> { message, attachment_url, ... } konten lokal sebelum di-clear di DB
   const [soundEnabled, setSoundEnabled] = useState(true); // sound notification toggle
+  // Bot Stats data (last 7 days)
+  const [botStatsData, setBotStatsData] = useState({ accounts: [], errors: [], recentFails: [], summary: { totalDone: 0, totalFailed: 0, totalPending: 0, successRate: 0 } });
   // Theme dipaksa cosmic-fusion untuk SEMUA user (single theme system)
   const [appearOffline, setAppearOffline] = useState(false); // user can hide their online status
   const [onlineUsers, setOnlineUsers] = useState({}); // { userId: last_active_at }
@@ -432,6 +434,7 @@ export default function Home() {
   }, []);
 
   useEffect(() => { if (user) { loadData(); loadAutoMasterSwitch(); } }, [user]);
+  useEffect(() => { if (user?.role === 'admin' && tab === 'botstats') loadBotStats(); }, [tab, user]);
   useEffect(() => {
     // Saat user pilih grup di "Buat Tugas Posting", auto-load cycle status hari ini
     if (user?.role === 'admin' && tqGroups.length > 0) loadCycleStatus(tqGroups);
@@ -611,6 +614,70 @@ export default function Home() {
     if (error) { alert('Error: ' + error.message); return; }
     setAutoMasterSwitch(newVal);
   };
+  // ============================================================
+  // BOT STATS — analytics task_queue last 7 days
+  // ============================================================
+  const loadBotStats = async () => {
+    const sevenDaysAgo = new Date(Date.now() - 7 * 86400000).toISOString();
+    const { data: tasks } = await supabase
+      .from('task_queue')
+      .select('account_id, account_name, group_name, club, status, error_message, created_at, completed_at')
+      .gte('created_at', sevenDaysAgo)
+      .order('created_at', { ascending: false });
+    if (!tasks) return;
+
+    // Per-account stats
+    const accountMap = {};
+    for (const t of tasks) {
+      if (!t.account_id) continue;
+      const key = t.account_id;
+      if (!accountMap[key]) accountMap[key] = { account_id: key, account_name: t.account_name || key, total: 0, done: 0, failed: 0, pending: 0 };
+      accountMap[key].total++;
+      if (t.status === 'done') accountMap[key].done++;
+      else if (t.status === 'failed') accountMap[key].failed++;
+      else if (t.status === 'pending' || t.status === 'running') accountMap[key].pending++;
+    }
+    const accounts = Object.values(accountMap)
+      .map(a => ({ ...a, successRate: a.total > 0 ? Math.round((a.done / a.total) * 100) : 0 }))
+      .sort((x, y) => y.total - x.total);
+
+    // Error breakdown — top 5 dari error_message
+    const errorCounts = {};
+    for (const t of tasks) {
+      if (t.status !== 'failed' || !t.error_message) continue;
+      // Normalize: ambil 60 char pertama (after stripping retry/permanent prefix)
+      const msg = t.error_message.replace(/^\[(retry|permanent)[^\]]+\]\s*/, '').substring(0, 60);
+      errorCounts[msg] = (errorCounts[msg] || 0) + 1;
+    }
+    const errors = Object.entries(errorCounts)
+      .map(([msg, count]) => ({ msg, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+
+    // Recent failures — 10 latest
+    const recentFails = tasks
+      .filter(t => t.status === 'failed')
+      .slice(0, 10)
+      .map(t => ({
+        time: t.completed_at || t.created_at,
+        account: t.account_name,
+        group: t.group_name,
+        club: t.club,
+        reason: (t.error_message || '').replace(/^\[(retry|permanent)[^\]]+\]\s*/, '').substring(0, 100),
+      }));
+
+    // Summary
+    const totalDone = tasks.filter(t => t.status === 'done').length;
+    const totalFailed = tasks.filter(t => t.status === 'failed').length;
+    const totalPending = tasks.filter(t => t.status === 'pending' || t.status === 'running').length;
+    const summary = {
+      totalDone, totalFailed, totalPending,
+      successRate: tasks.length > 0 ? Math.round((totalDone / tasks.length) * 100) : 0,
+    };
+
+    setBotStatsData({ accounts, errors, recentFails, summary });
+  };
+
   const setGroupAutoPost = async (groupId, enabled) => {
     await supabase.from('groups').update({ auto_post_enabled: !!enabled }).eq('id', groupId);
     loadData();
@@ -2205,6 +2272,7 @@ export default function Home() {
     { id: 'groups', label: `Grup (${groups.length})` },
     { id: 'users', label: 'Kelola User' },
     { id: 'activity', label: 'Activity Log' },
+    { id: 'botstats', label: '📊 Bot Stats' },
     { id: 'settings', label: '⚙️ Pengaturan' },
   ];
   const memberTabs = [
@@ -5075,6 +5143,133 @@ export default function Home() {
             </>
           );
         })()}
+
+        {/* BOT STATS TAB (admin) */}
+        {tab === 'botstats' && isAdmin && (
+          <>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16,flexWrap:'wrap',gap:8}}>
+              <div>
+                <h3 style={{color:'#67e8f9',fontSize:15,margin:0,fontWeight:800,textTransform:'uppercase',letterSpacing:1}}>📊 Bot Performance — Last 7 Days</h3>
+                <p style={{fontSize:11,color:'#9ca3af',margin:'4px 0 0 0'}}>Stats dari task_queue. Auto-refresh saat buka tab.</p>
+              </div>
+              <button onClick={loadBotStats} style={{...S.btn('#164e63'),padding:'6px 12px',fontSize:11}}>🔄 Refresh</button>
+            </div>
+
+            {/* SUMMARY STATS */}
+            <div className="responsive-stats" style={{marginBottom:20}}>
+              <div style={{...S.stat,border:'1px solid #10b981'}}>
+                <div style={{...S.num,color:'#10b981'}}>{botStatsData.summary.totalDone}</div>
+                <div style={S.label}>✅ Sukses</div>
+              </div>
+              <div style={{...S.stat,border:'1px solid #ef4444'}}>
+                <div style={{...S.num,color:'#ef4444'}}>{botStatsData.summary.totalFailed}</div>
+                <div style={S.label}>❌ Gagal</div>
+              </div>
+              <div style={{...S.stat,border:'1px solid #f59e0b'}}>
+                <div style={{...S.num,color:'#f59e0b'}}>{botStatsData.summary.totalPending}</div>
+                <div style={S.label}>⏳ Pending/Running</div>
+              </div>
+              <div style={{...S.stat,border:'1px solid #67e8f9'}}>
+                <div style={{...S.num,color:'#67e8f9'}}>{botStatsData.summary.successRate}%</div>
+                <div style={S.label}>📈 Success Rate</div>
+              </div>
+            </div>
+
+            {/* SECTION 1: PER-ACCOUNT SUCCESS RATE */}
+            <div style={{...S.box,marginBottom:20}}>
+              <h3 style={{color:'#67e8f9',fontSize:14,margin:'0 0 12px 0',fontWeight:800,textTransform:'uppercase',letterSpacing:1}}>🤖 Per-Akun Success Rate</h3>
+              {botStatsData.accounts.length === 0 ? (
+                <p style={{fontSize:12,color:'#6b7280'}}>Belum ada data 7 hari terakhir.</p>
+              ) : (
+                <div style={{overflowX:'auto'}}>
+                  <table style={{width:'100%',borderCollapse:'collapse',fontSize:12}}>
+                    <thead><tr>
+                      <th style={S.th}>Akun</th>
+                      <th style={S.th}>Total</th>
+                      <th style={S.th}>✅ Done</th>
+                      <th style={S.th}>❌ Failed</th>
+                      <th style={S.th}>⏳ Pending</th>
+                      <th style={S.th}>Success Rate</th>
+                      <th style={S.th}>Visualisasi</th>
+                    </tr></thead>
+                    <tbody>
+                      {botStatsData.accounts.map(a => {
+                        const barColor = a.successRate >= 80 ? '#10b981' : a.successRate >= 50 ? '#f59e0b' : a.successRate > 0 ? '#ef4444' : '#374151';
+                        return (
+                          <tr key={a.account_id}>
+                            <td style={{...S.td,fontWeight:700}}>{a.account_name}</td>
+                            <td style={S.td}>{a.total}</td>
+                            <td style={{...S.td,color:'#10b981'}}>{a.done}</td>
+                            <td style={{...S.td,color:'#ef4444'}}>{a.failed}</td>
+                            <td style={{...S.td,color:'#f59e0b'}}>{a.pending}</td>
+                            <td style={{...S.td,fontWeight:800,color:barColor}}>{a.successRate}%</td>
+                            <td style={{...S.td,minWidth:200}}>
+                              <div style={{position:'relative',height:18,background:'#1f2937',borderRadius:4,overflow:'hidden'}}>
+                                <div style={{position:'absolute',top:0,left:0,height:'100%',width:`${a.successRate}%`,background:barColor,transition:'width 0.3s'}} />
+                                <span style={{position:'absolute',top:0,left:6,fontSize:10,fontWeight:700,color:'#fff',lineHeight:'18px',textShadow:'0 0 4px rgba(0,0,0,0.8)'}}>{a.done}/{a.total}</span>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            {/* SECTION 2: TOP 5 ERROR REASONS */}
+            <div style={{...S.box,marginBottom:20}}>
+              <h3 style={{color:'#67e8f9',fontSize:14,margin:'0 0 12px 0',fontWeight:800,textTransform:'uppercase',letterSpacing:1}}>🔥 Top 5 Error Reasons</h3>
+              {botStatsData.errors.length === 0 ? (
+                <p style={{fontSize:12,color:'#6b7280'}}>Tidak ada error 7 hari terakhir 🎉</p>
+              ) : (
+                <table style={{width:'100%',borderCollapse:'collapse',fontSize:12}}>
+                  <thead><tr><th style={S.th}>Error Message</th><th style={S.th}>Count</th></tr></thead>
+                  <tbody>
+                    {botStatsData.errors.map((e, i) => (
+                      <tr key={i}>
+                        <td style={{...S.td,color:'#fca5a5',fontFamily:'monospace',fontSize:11}}>{e.msg}</td>
+                        <td style={{...S.td,fontWeight:800,color:'#ef4444'}}>{e.count}×</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+
+            {/* SECTION 3: RECENT 10 FAILURES */}
+            <div style={{...S.box}}>
+              <h3 style={{color:'#67e8f9',fontSize:14,margin:'0 0 12px 0',fontWeight:800,textTransform:'uppercase',letterSpacing:1}}>📋 Recent 10 Failures</h3>
+              {botStatsData.recentFails.length === 0 ? (
+                <p style={{fontSize:12,color:'#6b7280'}}>Tidak ada failure 7 hari terakhir 🎉</p>
+              ) : (
+                <div style={{overflowX:'auto'}}>
+                  <table style={{width:'100%',borderCollapse:'collapse',fontSize:12}}>
+                    <thead><tr>
+                      <th style={S.th}>Waktu</th>
+                      <th style={S.th}>Akun</th>
+                      <th style={S.th}>Grup</th>
+                      <th style={S.th}>Klub</th>
+                      <th style={S.th}>Reason</th>
+                    </tr></thead>
+                    <tbody>
+                      {botStatsData.recentFails.map((f, i) => (
+                        <tr key={i}>
+                          <td style={{...S.td,fontSize:11,color:'#9ca3af'}}>{f.time ? new Date(f.time).toLocaleString('id-ID', { dateStyle:'short', timeStyle:'short' }) : '-'}</td>
+                          <td style={{...S.td,fontWeight:700}}>{f.account}</td>
+                          <td style={S.td}>{f.group}</td>
+                          <td style={{...S.td,fontSize:11,color:'#9ca3af'}}>{f.club}</td>
+                          <td style={{...S.td,color:'#fca5a5',fontFamily:'monospace',fontSize:11,maxWidth:300}}>{f.reason}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </>
+        )}
 
         {/* PENGATURAN TAB (admin) */}
         {tab === 'settings' && isAdmin && (
