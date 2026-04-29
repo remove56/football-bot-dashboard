@@ -2727,29 +2727,6 @@ export default function RootLayout({ children }) {
             animation: fusionStarsWarpMid 6s linear infinite;
             pointer-events: none;
           }
-          /* Layer 1 (back): rotating nebula clouds (galaxy3DBack-style) */
-          [data-theme="cosmic-fusion"] .theme-fx-layer.fx-back {
-            background-image:
-              radial-gradient(ellipse at center, rgba(168, 85, 247, 0.30) 0%, transparent 50%),
-              radial-gradient(ellipse 500px 800px at 30% 40%, rgba(236, 72, 153, 0.22) 0%, transparent 60%),
-              radial-gradient(ellipse 600px 400px at 70% 60%, rgba(59, 130, 246, 0.20) 0%, transparent 60%);
-            animation: fusionNebulaRotate 70s linear infinite;
-          }
-          /* Layer 2 (mid): SPIRAL ARMS conic-gradient (spiral theme) */
-          [data-theme="cosmic-fusion"] .theme-fx-layer.fx-mid {
-            background-image:
-              conic-gradient(from 0deg at 50% 50%,
-                transparent 0deg,
-                rgba(168, 85, 247, 0.18) 30deg,
-                transparent 60deg,
-                rgba(34, 211, 238, 0.15) 130deg,
-                transparent 180deg,
-                rgba(168, 85, 247, 0.18) 230deg,
-                transparent 280deg,
-                rgba(34, 211, 238, 0.15) 320deg,
-                transparent 360deg);
-            animation: fusionSpiralRotate 60s linear infinite;
-          }
           /* Layer 3 (front): HYPERSPACE WARP stars (galaxy theme) */
           [data-theme="cosmic-fusion"] .theme-fx-layer.fx-front {
             background-image:
@@ -2863,10 +2840,6 @@ export default function RootLayout({ children }) {
           @keyframes fusionNebulaRotate {
             from { transform: translateZ(-500px) rotate(0deg); }
             to   { transform: translateZ(-500px) rotate(360deg); }
-          }
-          @keyframes fusionSpiralRotate {
-            from { transform: translateZ(-200px) rotate(0deg); }
-            to   { transform: translateZ(-200px) rotate(-360deg); }
           }
           @keyframes fusionWarp {
             0%   { transform: translateZ(-800px) scale(0.05); opacity: 0; }
