@@ -5258,11 +5258,24 @@ export default function Home() {
                           <th style={S.th}>❌ Failed</th>
                           <th style={S.th}>⏳ Pending</th>
                           <th style={S.th}>Success Rate</th>
+                          <th style={S.th} title="Health: ≥80%=Healthy, 50-79%=Warning, <50%=At-Risk (auto-disable threshold)">🩺 Health</th>
                           <th style={S.th}>Visualisasi</th>
                         </tr></thead>
                         <tbody>
                           {data.accounts.map(a => {
                             const barColor = a.successRate >= 80 ? '#10b981' : a.successRate >= 50 ? '#f59e0b' : a.successRate > 0 ? '#ef4444' : '#374151';
+                            // Health computation: insufficient data (<5 task) = N/A,
+                            // ≥80% = Healthy 🟢, 50-79% = Warning 🟡, <50% = At-Risk 🔴
+                            let healthBadge, healthColor, healthLabel;
+                            if (a.total < 5) {
+                              healthBadge = '⚪'; healthColor = '#6b7280'; healthLabel = 'N/A';
+                            } else if (a.successRate >= 80) {
+                              healthBadge = '🟢'; healthColor = '#10b981'; healthLabel = 'Healthy';
+                            } else if (a.successRate >= 50) {
+                              healthBadge = '🟡'; healthColor = '#f59e0b'; healthLabel = 'Warning';
+                            } else {
+                              healthBadge = '🔴'; healthColor = '#ef4444'; healthLabel = 'At-Risk';
+                            }
                             return (
                               <tr key={a.account_id}>
                                 <td style={{...S.td,fontWeight:700}}>{a.account_name}</td>
@@ -5271,6 +5284,9 @@ export default function Home() {
                                 <td style={{...S.td,color:'#ef4444'}}>{a.failed}</td>
                                 <td style={{...S.td,color:'#f59e0b'}}>{a.pending}</td>
                                 <td style={{...S.td,fontWeight:800,color:barColor}}>{a.successRate}%</td>
+                                <td style={{...S.td,fontWeight:700,color:healthColor}} title={a.total < 5 ? 'Belum cukup data (<5 task) untuk dinilai' : `${healthLabel} based on ${a.total} task`}>
+                                  {healthBadge} {healthLabel}
+                                </td>
                                 <td style={{...S.td,minWidth:200}}>
                                   <div style={{position:'relative',height:18,background:'#1f2937',borderRadius:4,overflow:'hidden'}}>
                                     <div style={{position:'absolute',top:0,left:0,height:'100%',width:`${a.successRate}%`,background:barColor,transition:'width 0.3s'}} />
