@@ -338,6 +338,7 @@ export default function Home() {
   // Task queue (admin only)
   const [taskQueue, setTaskQueue] = useState([]);
   const [tqMember, setTqMember] = useState('');
+  const [tqScheduledFor, setTqScheduledFor] = useState(''); // Phase 3.1: schedule task post di future
   const [tqGroups, setTqGroups] = useState([]);
   const [tqType, setTqType] = useState('full');
   const [tqCycle, setTqCycle] = useState('auto'); // 'auto' | 1 | 2 | 3 | 4
@@ -838,6 +839,8 @@ export default function Home() {
     const selectedAcc = botAccounts.find(a => a.account_id === tqAccountId);
 
     const targetCycleVal = tqCycle === 'auto' ? null : Number(tqCycle);
+    // Phase 3.1: scheduled_for — kalau diset, task baru pickup di waktu itu
+    const scheduledForIso = tqScheduledFor ? new Date(tqScheduledFor).toISOString() : null;
     const tasks = tqGroups.map(gid => {
       const grp = groups.find(g => g.id === gid);
       return {
@@ -851,6 +854,7 @@ export default function Home() {
         account_id: tqAccountId,
         account_name: selectedAcc?.account_name || '',
         target_cycle: targetCycleVal,
+        scheduled_for: scheduledForIso,
       };
     });
 
@@ -4374,8 +4378,29 @@ export default function Home() {
                 </div>
               )}
 
+              {/* Phase 3.1: Scheduled Posts — datetime picker (opsional) */}
+              <div style={{marginTop:12,padding:12,background:'#0f172a',borderRadius:6,border:'1px solid #1e293b'}}>
+                <label style={{fontSize:12,color:'#94a3b8',display:'block',marginBottom:6}}>
+                  📅 Schedule untuk Future (kosongkan kalau mau langsung jalan)
+                </label>
+                <div style={{display:'flex',gap:8,alignItems:'center',flexWrap:'wrap'}}>
+                  <input
+                    type="datetime-local"
+                    value={tqScheduledFor}
+                    onChange={e => setTqScheduledFor(e.target.value)}
+                    style={{padding:'6px 10px',background:'#1e293b',color:'#e2e8f0',border:'1px solid #334155',borderRadius:6,fontSize:13}}
+                  />
+                  {tqScheduledFor && (
+                    <button onClick={() => setTqScheduledFor('')} style={{padding:'4px 10px',background:'#7c2d12',color:'#fed7aa',border:'none',borderRadius:6,cursor:'pointer',fontSize:11}}>✕ Clear</button>
+                  )}
+                  <span style={{fontSize:11,color:'#64748b'}}>
+                    {tqScheduledFor ? `Bot tunggu sampai ${new Date(tqScheduledFor).toLocaleString('id-ID')}` : 'Bot pickup task SEKARANG'}
+                  </span>
+                </div>
+              </div>
+
               <div style={{display:'flex',gap:10,marginTop:16,flexWrap:'wrap',alignItems:'center'}}>
-                <button onClick={createTasks} style={{...S.btn('#065f46'),padding:'12px 32px',fontSize:14}}>Buat {tqGroups.length} Tugas {tqCycle !== 'auto' ? `(→ Cycle ${tqCycle})` : ''}</button>
+                <button onClick={createTasks} style={{...S.btn('#065f46'),padding:'12px 32px',fontSize:14}}>Buat {tqGroups.length} Tugas {tqCycle !== 'auto' ? `(→ Cycle ${tqCycle})` : ''} {tqScheduledFor ? '⏰' : ''}</button>
                 <span style={{color:'#6b7280',fontSize:12}}>atau</span>
                 <button
                   onClick={previewBulkTasks}
