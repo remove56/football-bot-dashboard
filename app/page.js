@@ -429,6 +429,9 @@ export default function Home() {
   // Phase 4.1: Group Health state
   const [groupHealth, setGroupHealth] = useState([]);
   const [groupHealthLoading, setGroupHealthLoading] = useState(false);
+  // Phase 4.2: Caption A/B state
+  const [captionAB, setCaptionAB] = useState({ templates: [], promos: [], totalSamples: 0 });
+  const [captionABLoading, setCaptionABLoading] = useState(false);
   // Theme dipaksa cosmic-fusion untuk SEMUA user (single theme system)
   const [appearOffline, setAppearOffline] = useState(false); // user can hide their online status
   const [onlineUsers, setOnlineUsers] = useState({}); // { userId: last_active_at }
@@ -2093,6 +2096,16 @@ export default function Home() {
     finally { setGroupHealthLoading(false); }
   };
 
+  const loadCaptionAB = async () => {
+    setCaptionABLoading(true);
+    try {
+      const res = await fetch('/api/caption-ab');
+      const json = await res.json();
+      setCaptionAB({ templates: json.templates || [], promos: json.promos || [], totalSamples: json.totalSamples || 0 });
+    } catch (e) { /* silent */ }
+    finally { setCaptionABLoading(false); }
+  };
+
   const loadBestTimeData = async (groupId) => {
     if (!groupId) { setBestTimeData({ cells: [], bestHours: [] }); return; }
     setBestTimeLoading(true);
@@ -2389,6 +2402,7 @@ export default function Home() {
     { id: 'botstats', label: '📊 Bot Stats' },
     { id: 'besttime', label: '⏰ Best Time' },
     { id: 'grouphealth', label: '💚 Group Health' },
+    { id: 'captionab', label: '🅰️🅱️ A/B Caption' },
     { id: 'settings', label: '⚙️ Pengaturan' },
   ];
   const memberTabs = [
@@ -3377,7 +3391,7 @@ export default function Home() {
 
       {/* TABS */}
       <div style={S.tabs} className="dash-tabs">
-        {tabs.map(t => <div key={t.id} style={S.tab(tab===t.id)} onClick={() => { setTab(t.id); if(t.id==='weekly') loadWeeklyStats(wsYear, wsMonth); if(t.id==='posttrack') loadPostTracker(ptPeriod); if(t.id==='botqueue') loadTaskQueue(); if(t.id==='users') loadAutoBackups(); if(t.id==='settings') loadSystemStats(); if(t.id==='besttime') { loadBestTimeGroups(); if(bestTimeSelectedGroup) loadBestTimeData(bestTimeSelectedGroup); } if(t.id==='grouphealth') loadGroupHealth(); }}>{t.label}</div>)}
+        {tabs.map(t => <div key={t.id} style={S.tab(tab===t.id)} onClick={() => { setTab(t.id); if(t.id==='weekly') loadWeeklyStats(wsYear, wsMonth); if(t.id==='posttrack') loadPostTracker(ptPeriod); if(t.id==='botqueue') loadTaskQueue(); if(t.id==='users') loadAutoBackups(); if(t.id==='settings') loadSystemStats(); if(t.id==='besttime') { loadBestTimeGroups(); if(bestTimeSelectedGroup) loadBestTimeData(bestTimeSelectedGroup); } if(t.id==='grouphealth') loadGroupHealth(); if(t.id==='captionab') loadCaptionAB(); }}>{t.label}</div>)}
       </div>
 
       <div style={S.main} className="dash-main">
@@ -5627,6 +5641,92 @@ export default function Home() {
                       })}
                     </tbody>
                   </table>
+                </div>
+              )}
+            </>
+          );
+        })()}
+
+        {/* CAPTION A/B TAB (admin) — Phase 4.2 */}
+        {tab === 'captionab' && isAdmin && (() => {
+          const winnerColor = (idx) => idx === 0 ? '#10b981' : idx < 3 ? '#22d3ee' : idx < 10 ? '#94a3b8' : '#64748b';
+          return (
+            <>
+              <div style={{display:'flex',gap:12,alignItems:'center',marginBottom:16,flexWrap:'wrap'}}>
+                <h3 style={{margin:0,color:'#22d3ee'}}>🅰️🅱️ Caption A/B Test Analysis</h3>
+                <button onClick={loadCaptionAB} style={{padding:'6px 14px',background:'#0891b2',color:'#fff',border:'none',borderRadius:6,cursor:'pointer',fontSize:13}}>🔄 Refresh</button>
+                <span style={{fontSize:12,color:'#94a3b8'}}>{captionAB.totalSamples} sampel total (30 hari)</span>
+              </div>
+
+              <p style={{fontSize:13,color:'#94a3b8',marginBottom:16}}>
+                Bot otomatis pilih random dari 50 template + 50 promo. Tabel ini ranking
+                template/promo berdasarkan engagement score (likes + komentar×2 + share×3).
+                Butuh minimal 3 sampel per kombinasi untuk muncul. Data akan akurat setelah 1-2 minggu posting.
+              </p>
+
+              {captionABLoading && <div style={{color:'#94a3b8'}}>Loading...</div>}
+
+              {captionAB.totalSamples === 0 ? (
+                <div style={{padding:24,background:'#0f172a',borderRadius:8,textAlign:'center',color:'#94a3b8'}}>
+                  Belum ada data. Bot harus posting beberapa hari + engagement-tracker scrape data engagement-nya.
+                </div>
+              ) : (
+                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:24}}>
+                  {/* Template ranking */}
+                  <div>
+                    <h4 style={{color:'#22d3ee',marginBottom:8,fontSize:14}}>📋 Template Caption Ranking (50 templates)</h4>
+                    <table style={{width:'100%',borderCollapse:'collapse',fontSize:12}}>
+                      <thead>
+                        <tr style={{background:'#1e293b',color:'#94a3b8'}}>
+                          <th style={{padding:6,textAlign:'left'}}>#</th>
+                          <th style={{padding:6,textAlign:'center'}}>Tpl ID</th>
+                          <th style={{padding:6,textAlign:'center'}}>Score</th>
+                          <th style={{padding:6,textAlign:'center'}}>Sampel</th>
+                          <th style={{padding:6,textAlign:'center'}}>♥</th>
+                          <th style={{padding:6,textAlign:'center'}}>💬</th>
+                          <th style={{padding:6,textAlign:'center'}}>📤</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {captionAB.templates.slice(0, 20).map((t, i) => (
+                          <tr key={t.template_id} style={{borderBottom:'1px solid #1e293b',color:winnerColor(i)}}>
+                            <td style={{padding:6}}>{i+1}{i===0?' 🥇':i===1?' 🥈':i===2?' 🥉':''}</td>
+                            <td style={{padding:6,textAlign:'center',fontFamily:'monospace'}}>#{t.template_id}{t.template_id === -1 ? ' (AI)' : ''}</td>
+                            <td style={{padding:6,textAlign:'center',fontWeight:'bold'}}>{t.avg_engagement}</td>
+                            <td style={{padding:6,textAlign:'center'}}>{t.sample_size}</td>
+                            <td style={{padding:6,textAlign:'center'}}>{t.avg_likes}</td>
+                            <td style={{padding:6,textAlign:'center'}}>{t.avg_comments}</td>
+                            <td style={{padding:6,textAlign:'center'}}>{t.avg_shares}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Promo ranking */}
+                  <div>
+                    <h4 style={{color:'#22d3ee',marginBottom:8,fontSize:14}}>📢 Promo Text Ranking (50 promos)</h4>
+                    <table style={{width:'100%',borderCollapse:'collapse',fontSize:12}}>
+                      <thead>
+                        <tr style={{background:'#1e293b',color:'#94a3b8'}}>
+                          <th style={{padding:6,textAlign:'left'}}>#</th>
+                          <th style={{padding:6,textAlign:'center'}}>Promo ID</th>
+                          <th style={{padding:6,textAlign:'center'}}>Score</th>
+                          <th style={{padding:6,textAlign:'center'}}>Sampel</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {captionAB.promos.slice(0, 20).map((p, i) => (
+                          <tr key={p.promo_id} style={{borderBottom:'1px solid #1e293b',color:winnerColor(i)}}>
+                            <td style={{padding:6}}>{i+1}{i===0?' 🥇':i===1?' 🥈':i===2?' 🥉':''}</td>
+                            <td style={{padding:6,textAlign:'center',fontFamily:'monospace'}}>#{p.promo_id}{p.promo_id === -1 ? ' (AI)' : ''}</td>
+                            <td style={{padding:6,textAlign:'center',fontWeight:'bold'}}>{p.avg_engagement}</td>
+                            <td style={{padding:6,textAlign:'center'}}>{p.sample_size}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               )}
             </>
