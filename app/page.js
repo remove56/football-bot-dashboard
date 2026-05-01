@@ -420,6 +420,11 @@ export default function Home() {
     grup: { accounts: [], errors: [], recentFails: [], summary: { totalDone: 0, totalFailed: 0, totalPending: 0, successRate: 0 } },
     reels: { accounts: [], errors: [], recentFails: [], summary: { totalDone: 0, totalFailed: 0, totalPending: 0, successRate: 0 } },
   });
+  // Phase 2.5: Best Time analyzer state
+  const [bestTimeGroups, setBestTimeGroups] = useState([]); // [{group_id, group_name, post_count}]
+  const [bestTimeSelectedGroup, setBestTimeSelectedGroup] = useState('');
+  const [bestTimeData, setBestTimeData] = useState({ cells: [], bestHours: [] });
+  const [bestTimeLoading, setBestTimeLoading] = useState(false);
   // Theme dipaksa cosmic-fusion untuk SEMUA user (single theme system)
   const [appearOffline, setAppearOffline] = useState(false); // user can hide their online status
   const [onlineUsers, setOnlineUsers] = useState({}); // { userId: last_active_at }
@@ -2057,6 +2062,31 @@ export default function Home() {
     } catch (e) { setSettingsMsg('Error: ' + e.message); }
   };
 
+  // Phase 2.5 Best Time loaders
+  const loadBestTimeGroups = async () => {
+    try {
+      const res = await fetch('/api/engagement-heatmap');
+      const json = await res.json();
+      const list = json.groups || [];
+      setBestTimeGroups(list);
+      // Auto-select grup dengan post_count tertinggi
+      if (!bestTimeSelectedGroup && list.length > 0) {
+        setBestTimeSelectedGroup(list[0].group_id);
+      }
+    } catch (e) { /* silent */ }
+  };
+
+  const loadBestTimeData = async (groupId) => {
+    if (!groupId) { setBestTimeData({ cells: [], bestHours: [] }); return; }
+    setBestTimeLoading(true);
+    try {
+      const res = await fetch('/api/engagement-heatmap?group_id=' + encodeURIComponent(groupId));
+      const json = await res.json();
+      setBestTimeData({ cells: json.cells || [], bestHours: json.bestHours || [] });
+    } catch (e) { /* silent */ }
+    finally { setBestTimeLoading(false); }
+  };
+
   const loadSystemStats = async () => {
     setSettingsMsg('Menghitung statistik...');
     try {
@@ -2340,6 +2370,7 @@ export default function Home() {
     { id: 'users', label: 'Kelola User' },
     { id: 'activity', label: 'Activity Log' },
     { id: 'botstats', label: '📊 Bot Stats' },
+    { id: 'besttime', label: '⏰ Best Time' },
     { id: 'settings', label: '⚙️ Pengaturan' },
   ];
   const memberTabs = [
@@ -3328,7 +3359,7 @@ export default function Home() {
 
       {/* TABS */}
       <div style={S.tabs} className="dash-tabs">
-        {tabs.map(t => <div key={t.id} style={S.tab(tab===t.id)} onClick={() => { setTab(t.id); if(t.id==='weekly') loadWeeklyStats(wsYear, wsMonth); if(t.id==='posttrack') loadPostTracker(ptPeriod); if(t.id==='botqueue') loadTaskQueue(); if(t.id==='users') loadAutoBackups(); if(t.id==='settings') loadSystemStats(); }}>{t.label}</div>)}
+        {tabs.map(t => <div key={t.id} style={S.tab(tab===t.id)} onClick={() => { setTab(t.id); if(t.id==='weekly') loadWeeklyStats(wsYear, wsMonth); if(t.id==='posttrack') loadPostTracker(ptPeriod); if(t.id==='botqueue') loadTaskQueue(); if(t.id==='users') loadAutoBackups(); if(t.id==='settings') loadSystemStats(); if(t.id==='besttime') { loadBestTimeGroups(); if(bestTimeSelectedGroup) loadBestTimeData(bestTimeSelectedGroup); } }}>{t.label}</div>)}
       </div>
 
       <div style={S.main} className="dash-main">
@@ -5368,6 +5399,113 @@ export default function Home() {
 
               {renderBotSection('grup', botStatsData.grup, 'Grup')}
               {renderBotSection('reels', botStatsData.reels, 'Platform')}
+            </>
+          );
+        })()}
+
+        {/* BEST TIME TAB (admin) — Phase 2.5 */}
+        {tab === 'besttime' && isAdmin && (() => {
+          const DOW_LABELS = ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'];
+          const HOUR_RANGES = ['00-03', '04-07', '08-11', '12-15', '16-19', '20-23'];
+          // Buat lookup cell by (hour × dow)
+          const cellMap = {};
+          let maxScore = 0;
+          for (const c of bestTimeData.cells || []) {
+            cellMap[`${c.post_hour}-${c.post_dow}`] = c;
+            if (c.engagement_score > maxScore) maxScore = c.engagement_score;
+          }
+          // Heatmap intensity color (gradien dari abu ke hijau)
+          const cellColor = (score) => {
+            if (!score || maxScore === 0) return '#1f2937'; // empty cell — abu tua
+            const intensity = Math.min(1, score / maxScore);
+            const g = Math.round(50 + intensity * 180);
+            return `rgb(${Math.round(20 + intensity * 30)}, ${g}, ${Math.round(40 + intensity * 30)})`;
+          };
+          return (
+            <>
+              <div style={{display:'flex',gap:12,alignItems:'center',marginBottom:16,flexWrap:'wrap'}}>
+                <h3 style={{margin:0,color:'#22d3ee'}}>⏰ Best Posting Time per Grup</h3>
+                <button onClick={() => loadBestTimeGroups()} style={{padding:'6px 14px',background:'#0891b2',color:'#fff',border:'none',borderRadius:6,cursor:'pointer',fontSize:13}}>🔄 Refresh</button>
+              </div>
+
+              <p style={{fontSize:13,color:'#94a3b8',marginBottom:16}}>
+                Heatmap engagement score (likes + komentar×2 + share×3) per jam × hari.
+                Warna lebih hijau = engagement lebih tinggi. Bot scrape data tiap 6 jam, butuh 1-2 minggu data biar pattern keliatan.
+              </p>
+
+              {bestTimeGroups.length === 0 ? (
+                <div style={{padding:24,background:'#0f172a',borderRadius:8,textAlign:'center',color:'#94a3b8'}}>
+                  Belum ada data engagement. Bot harus posting dulu beberapa hari, lalu engagement-tracker akan scrape otomatis.
+                </div>
+              ) : (
+                <>
+                  <div style={{marginBottom:16}}>
+                    <label style={{fontSize:13,color:'#94a3b8',marginRight:8}}>Pilih Grup:</label>
+                    <select
+                      value={bestTimeSelectedGroup}
+                      onChange={(e) => { setBestTimeSelectedGroup(e.target.value); loadBestTimeData(e.target.value); }}
+                      style={{padding:'6px 12px',background:'#1e293b',color:'#e2e8f0',border:'1px solid #334155',borderRadius:6,minWidth:280}}
+                    >
+                      {bestTimeGroups.map(g => (
+                        <option key={g.group_id} value={g.group_id}>{g.group_name} ({g.post_count} post)</option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {bestTimeLoading && <div style={{color:'#94a3b8'}}>Loading...</div>}
+
+                  {/* Heatmap 24 jam × 7 hari */}
+                  <div style={{overflowX:'auto',marginBottom:24}}>
+                    <table style={{borderCollapse:'collapse',fontSize:11}}>
+                      <thead>
+                        <tr>
+                          <th style={{padding:6,color:'#94a3b8',textAlign:'right'}}>Jam</th>
+                          {DOW_LABELS.map(d => <th key={d} style={{padding:6,color:'#94a3b8',width:50,textAlign:'center'}}>{d}</th>)}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {Array.from({length:24}, (_, h) => (
+                          <tr key={h}>
+                            <td style={{padding:'2px 8px',color:'#64748b',textAlign:'right',fontFamily:'monospace'}}>{String(h).padStart(2,'0')}:00</td>
+                            {Array.from({length:7}, (_, d) => {
+                              const cell = cellMap[`${h}-${d}`];
+                              const score = cell?.engagement_score || 0;
+                              return (
+                                <td key={d} title={cell ? `${cell.post_count} post — likes ${cell.avg_likes} | comments ${cell.avg_comments} | shares ${cell.avg_shares}` : 'No data'} style={{
+                                  padding:0, height:28, width:50, textAlign:'center',
+                                  background: cellColor(score), color:'#fff', fontSize:10, fontFamily:'monospace',
+                                  border:'1px solid #0f172a',
+                                }}>
+                                  {cell ? Math.round(score) : ''}
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Best Hours summary */}
+                  <div style={{padding:16,background:'#0f172a',borderRadius:8,border:'1px solid #164e63'}}>
+                    <h4 style={{margin:'0 0 12px 0',color:'#22d3ee',fontSize:14}}>🏆 Top 3 Jam Terbaik (gabungan semua hari)</h4>
+                    {bestTimeData.bestHours.length === 0 ? (
+                      <p style={{fontSize:13,color:'#94a3b8',margin:0}}>Data belum cukup (butuh min. 3 post per slot jam).</p>
+                    ) : (
+                      <ol style={{margin:0,paddingLeft:24}}>
+                        {bestTimeData.bestHours.map((bh, i) => (
+                          <li key={bh.hour} style={{marginBottom:6,fontSize:13,color:'#e2e8f0'}}>
+                            <strong style={{color:'#10b981'}}>{String(bh.hour).padStart(2,'0')}:00</strong>
+                            {' — engagement score '}
+                            <strong>{bh.engagement_score}</strong>
+                            {' '}<span style={{color:'#64748b'}}>({bh.post_count} post)</span>
+                          </li>
+                        ))}
+                      </ol>
+                    )}
+                  </div>
+                </>
+              )}
             </>
           );
         })()}
