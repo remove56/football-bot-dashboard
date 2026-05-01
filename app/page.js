@@ -425,6 +425,9 @@ export default function Home() {
   const [bestTimeSelectedGroup, setBestTimeSelectedGroup] = useState('');
   const [bestTimeData, setBestTimeData] = useState({ cells: [], bestHours: [] });
   const [bestTimeLoading, setBestTimeLoading] = useState(false);
+  // Phase 4.1: Group Health state
+  const [groupHealth, setGroupHealth] = useState([]);
+  const [groupHealthLoading, setGroupHealthLoading] = useState(false);
   // Theme dipaksa cosmic-fusion untuk SEMUA user (single theme system)
   const [appearOffline, setAppearOffline] = useState(false); // user can hide their online status
   const [onlineUsers, setOnlineUsers] = useState({}); // { userId: last_active_at }
@@ -2076,6 +2079,16 @@ export default function Home() {
     } catch (e) { /* silent */ }
   };
 
+  const loadGroupHealth = async () => {
+    setGroupHealthLoading(true);
+    try {
+      const res = await fetch('/api/group-health');
+      const json = await res.json();
+      setGroupHealth(json.groups || []);
+    } catch (e) { /* silent */ }
+    finally { setGroupHealthLoading(false); }
+  };
+
   const loadBestTimeData = async (groupId) => {
     if (!groupId) { setBestTimeData({ cells: [], bestHours: [] }); return; }
     setBestTimeLoading(true);
@@ -2371,6 +2384,7 @@ export default function Home() {
     { id: 'activity', label: 'Activity Log' },
     { id: 'botstats', label: '📊 Bot Stats' },
     { id: 'besttime', label: '⏰ Best Time' },
+    { id: 'grouphealth', label: '💚 Group Health' },
     { id: 'settings', label: '⚙️ Pengaturan' },
   ];
   const memberTabs = [
@@ -3359,7 +3373,7 @@ export default function Home() {
 
       {/* TABS */}
       <div style={S.tabs} className="dash-tabs">
-        {tabs.map(t => <div key={t.id} style={S.tab(tab===t.id)} onClick={() => { setTab(t.id); if(t.id==='weekly') loadWeeklyStats(wsYear, wsMonth); if(t.id==='posttrack') loadPostTracker(ptPeriod); if(t.id==='botqueue') loadTaskQueue(); if(t.id==='users') loadAutoBackups(); if(t.id==='settings') loadSystemStats(); if(t.id==='besttime') { loadBestTimeGroups(); if(bestTimeSelectedGroup) loadBestTimeData(bestTimeSelectedGroup); } }}>{t.label}</div>)}
+        {tabs.map(t => <div key={t.id} style={S.tab(tab===t.id)} onClick={() => { setTab(t.id); if(t.id==='weekly') loadWeeklyStats(wsYear, wsMonth); if(t.id==='posttrack') loadPostTracker(ptPeriod); if(t.id==='botqueue') loadTaskQueue(); if(t.id==='users') loadAutoBackups(); if(t.id==='settings') loadSystemStats(); if(t.id==='besttime') { loadBestTimeGroups(); if(bestTimeSelectedGroup) loadBestTimeData(bestTimeSelectedGroup); } if(t.id==='grouphealth') loadGroupHealth(); }}>{t.label}</div>)}
       </div>
 
       <div style={S.main} className="dash-main">
@@ -5505,6 +5519,90 @@ export default function Home() {
                     )}
                   </div>
                 </>
+              )}
+            </>
+          );
+        })()}
+
+        {/* GROUP HEALTH TAB (admin) — Phase 4.1 */}
+        {tab === 'grouphealth' && isAdmin && (() => {
+          const colorFor = (cat) => cat === 'healthy' ? '#10b981' : cat === 'warning' ? '#f59e0b' : '#ef4444';
+          const bgFor = (cat) => cat === 'healthy' ? 'rgba(16,185,129,0.1)' : cat === 'warning' ? 'rgba(245,158,11,0.1)' : 'rgba(239,68,68,0.1)';
+          const labelFor = (cat) => cat === 'healthy' ? '✅ Healthy' : cat === 'warning' ? '⚠️ Warning' : '🚨 At-Risk';
+          const summary = {
+            healthy: groupHealth.filter(g => g.category === 'healthy').length,
+            warning: groupHealth.filter(g => g.category === 'warning').length,
+            atRisk: groupHealth.filter(g => g.category === 'at-risk').length,
+          };
+          return (
+            <>
+              <div style={{display:'flex',gap:12,alignItems:'center',marginBottom:16,flexWrap:'wrap'}}>
+                <h3 style={{margin:0,color:'#22d3ee'}}>💚 Group Health Score</h3>
+                <button onClick={loadGroupHealth} style={{padding:'6px 14px',background:'#0891b2',color:'#fff',border:'none',borderRadius:6,cursor:'pointer',fontSize:13}}>🔄 Refresh</button>
+              </div>
+
+              <p style={{fontSize:13,color:'#94a3b8',marginBottom:16}}>
+                Score 0-100 per grup. Komponen: success rate (40%), avg engagement (30%),
+                consistency (15%), recency (15%). Update otomatis tiap 6 jam dari bot worker.
+              </p>
+
+              {/* Summary cards */}
+              <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit, minmax(160px, 1fr))',gap:12,marginBottom:24}}>
+                <div style={{padding:16,background:'rgba(16,185,129,0.1)',borderLeft:'4px solid #10b981',borderRadius:6}}>
+                  <div style={{fontSize:24,fontWeight:'bold',color:'#10b981'}}>{summary.healthy}</div>
+                  <div style={{fontSize:12,color:'#94a3b8'}}>✅ Healthy (≥80)</div>
+                </div>
+                <div style={{padding:16,background:'rgba(245,158,11,0.1)',borderLeft:'4px solid #f59e0b',borderRadius:6}}>
+                  <div style={{fontSize:24,fontWeight:'bold',color:'#f59e0b'}}>{summary.warning}</div>
+                  <div style={{fontSize:12,color:'#94a3b8'}}>⚠️ Warning (50-79)</div>
+                </div>
+                <div style={{padding:16,background:'rgba(239,68,68,0.1)',borderLeft:'4px solid #ef4444',borderRadius:6}}>
+                  <div style={{fontSize:24,fontWeight:'bold',color:'#ef4444'}}>{summary.atRisk}</div>
+                  <div style={{fontSize:12,color:'#94a3b8'}}>🚨 At-Risk (&lt;50)</div>
+                </div>
+              </div>
+
+              {groupHealthLoading && <div style={{color:'#94a3b8'}}>Loading...</div>}
+
+              {/* List grup sorted ascending (at-risk dulu) */}
+              {groupHealth.length === 0 ? (
+                <div style={{padding:24,background:'#0f172a',borderRadius:8,textAlign:'center',color:'#94a3b8'}}>
+                  Belum ada data. Bot health analyzer akan run otomatis 10 menit setelah startup.
+                </div>
+              ) : (
+                <div style={{overflowX:'auto'}}>
+                  <table style={{width:'100%',borderCollapse:'collapse',fontSize:13}}>
+                    <thead>
+                      <tr style={{background:'#1e293b',color:'#94a3b8'}}>
+                        <th style={{padding:10,textAlign:'left'}}>Status</th>
+                        <th style={{padding:10,textAlign:'left'}}>Grup</th>
+                        <th style={{padding:10,textAlign:'left'}}>Club</th>
+                        <th style={{padding:10,textAlign:'center'}}>Score</th>
+                        <th style={{padding:10,textAlign:'center'}}>Success</th>
+                        <th style={{padding:10,textAlign:'center'}}>Engagement</th>
+                        <th style={{padding:10,textAlign:'center'}}>Consistency</th>
+                        <th style={{padding:10,textAlign:'center'}}>Recency</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {groupHealth.map(g => {
+                        const b = g.health_breakdown || {};
+                        return (
+                          <tr key={g.id} style={{background:bgFor(g.category),borderBottom:'1px solid #1e293b'}}>
+                            <td style={{padding:10,color:colorFor(g.category),fontWeight:'bold',fontSize:11}}>{labelFor(g.category)}</td>
+                            <td style={{padding:10,color:'#e2e8f0',maxWidth:220,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}}>{g.name}</td>
+                            <td style={{padding:10,color:'#94a3b8'}}>{g.club || '—'}</td>
+                            <td style={{padding:10,textAlign:'center',fontWeight:'bold',fontSize:18,color:colorFor(g.category)}}>{g.health_score ?? '—'}</td>
+                            <td style={{padding:10,textAlign:'center',color:'#94a3b8'}}>{b.success_rate ?? '—'}</td>
+                            <td style={{padding:10,textAlign:'center',color:'#94a3b8'}}>{b.avg_engagement ?? '—'}</td>
+                            <td style={{padding:10,textAlign:'center',color:'#94a3b8'}}>{b.consistency ?? '—'}</td>
+                            <td style={{padding:10,textAlign:'center',color:'#94a3b8'}}>{b.recency ?? '—'}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </>
           );
