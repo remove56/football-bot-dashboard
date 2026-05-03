@@ -14,40 +14,15 @@ export default function RootLayout({ children }) {
               { id: 'cosmic-3',       label: 'Cosmic 3',video: '/cosmic-bg-3.mp4',  poster: '/cosmic-bg-3.jpg' }
             ];
             window.COSMIC_THEMES = THEMES;
-            // Pakai localStorage cache dulu untuk avoid flash, lalu sync dari API (global theme)
-            var cached = null;
-            try { cached = localStorage.getItem('cosmic-theme'); } catch(e) {}
-            var current = THEMES.find(function(t){ return t.id === cached; }) || THEMES[0];
+            var saved = null;
+            try { saved = localStorage.getItem('cosmic-theme'); } catch(e) {}
+            var current = THEMES.find(function(t){ return t.id === saved; }) || THEMES[0];
+            // Set attribute on html element for CSS hooks
             document.documentElement.setAttribute('data-cosmic-theme', current.id);
-
-            // Helper: cek apakah user yg login adalah admin
-            function getCurrentRole() {
-              try {
-                var u = JSON.parse(localStorage.getItem('fb-dash-user') || '{}');
-                return u.role || 'member';
-              } catch(e) { return 'member'; }
-            }
-
-            // Fetch theme global dari API — admin set, semua user follow
-            function fetchGlobalTheme() {
-              fetch('/api/cosmic-theme', { cache: 'no-store' })
-                .then(function(r){ return r.ok ? r.json() : null; })
-                .then(function(data){
-                  if (!data || !data.theme) return;
-                  var t = THEMES.find(function(x){ return x.id === data.theme; });
-                  if (t && t.id !== current.id) {
-                    current = t;
-                    applyTheme(t);
-                    try { localStorage.setItem('cosmic-theme', t.id); } catch(e) {}
-                  }
-                })
-                .catch(function(){});
-            }
 
             function applyTheme(theme) {
               try { localStorage.setItem('cosmic-theme', theme.id); } catch(e) {}
               document.documentElement.setAttribute('data-cosmic-theme', theme.id);
-              current = theme;
               var v = document.getElementById('cosmic-bg-video-el');
               if (v) {
                 v.poster = theme.poster;
@@ -61,42 +36,21 @@ export default function RootLayout({ children }) {
               if (lbl) lbl.textContent = theme.label;
             }
 
-            // Admin POST ke API — broadcast theme ke semua user
-            function saveThemeToServer(themeId) {
-              try {
-                var u = JSON.parse(localStorage.getItem('fb-dash-user') || '{}');
-                fetch('/api/cosmic-theme', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ theme: themeId, role: u.role || 'member' })
-                }).catch(function(){});
-              } catch(e) {}
-            }
-
             window.switchCosmicTheme = function(id) {
               var t = THEMES.find(function(x){ return x.id === id; });
-              if (t) {
-                applyTheme(t);
-                if (getCurrentRole() === 'admin') saveThemeToServer(t.id);
-              }
+              if (t) applyTheme(t);
             };
             window.cycleCosmicTheme = function() {
-              if (getCurrentRole() !== 'admin') {
-                alert('Cuma admin yang bisa ganti tema. Theme sinkron dari admin ke semua member.');
-                return;
-              }
-              var idx = THEMES.findIndex(function(x){ return x.id === current.id; });
+              var saved = null;
+              try { saved = localStorage.getItem('cosmic-theme'); } catch(e) {}
+              var idx = THEMES.findIndex(function(x){ return x.id === saved; });
               if (idx === -1) idx = 0;
-              var next = THEMES[(idx + 1) % THEMES.length];
-              applyTheme(next);
-              saveThemeToServer(next.id);
+              applyTheme(THEMES[(idx + 1) % THEMES.length]);
             };
 
             // Inject switcher button via DOM (server component gak bisa React onClick)
-            // ADMIN ONLY — member ikut theme yang admin pilih (sinkron via API)
             function injectSwitcher() {
               if (document.getElementById('cosmic-theme-switcher')) return;
-              if (getCurrentRole() !== 'admin') return; // Hide untuk member
               var btn = document.createElement('button');
               btn.id = 'cosmic-theme-switcher';
               btn.setAttribute('aria-label', 'Ganti tema cosmic background');
@@ -130,34 +84,15 @@ export default function RootLayout({ children }) {
             }
 
             // Apply initial theme on first paint (before video element creates)
+            // We need to set src on video AFTER element exists — use DOMContentLoaded
             document.addEventListener('DOMContentLoaded', function() {
               applyTheme(current);
               injectSwitcher();
-              // Sync dari API (global theme yang admin set)
-              fetchGlobalTheme();
             });
             // Fallback for already-loaded
             if (document.readyState !== 'loading') {
-              setTimeout(function(){
-                applyTheme(current);
-                injectSwitcher();
-                fetchGlobalTheme();
-              }, 0);
+              setTimeout(function(){ applyTheme(current); injectSwitcher(); }, 0);
             }
-
-            // Re-check switcher inject setiap 2 detik di awal (in case login terjadi after page load)
-            // Stop checking setelah 30 detik atau button udah muncul
-            var checkCount = 0;
-            var checkInterval = setInterval(function(){
-              checkCount++;
-              injectSwitcher();
-              if (checkCount > 15 || document.getElementById('cosmic-theme-switcher')) {
-                clearInterval(checkInterval);
-              }
-            }, 2000);
-
-            // Re-fetch theme tiap 30 detik (sync kalau admin ubah dari device lain)
-            setInterval(fetchGlobalTheme, 30000);
           })();
         `}} />
         <style dangerouslySetInnerHTML={{ __html: `
