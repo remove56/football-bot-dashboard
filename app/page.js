@@ -976,13 +976,31 @@ export default function Home() {
     setPostTracker(data || []);
   };
 
-  // Load 30 hari terakhir posting_tracker untuk streak, leaderboard, history
+  // Load 30 hari terakhir posting_tracker untuk streak, leaderboard, history.
+  // Pagination loop biar gak kena Supabase default cap 1000 rows.
+  // 39 grup × 4 cycle × 30 hari = potensi >4000 rows.
   const loadPostTrackerHistory = async () => {
     const start = new Date();
     start.setDate(start.getDate() - 30);
     const startDate = localDateString(start);
-    const { data } = await supabase.from('posting_tracker').select('*').gte('period', startDate).order('period', { ascending: false });
-    setPostTrackerHistory(data || []);
+
+    const PAGE_SIZE = 1000;
+    let all = [];
+    let from = 0;
+    while (true) {
+      const { data, error } = await supabase
+        .from('posting_tracker')
+        .select('*')
+        .gte('period', startDate)
+        .order('period', { ascending: false })
+        .range(from, from + PAGE_SIZE - 1);
+      if (error || !data || data.length === 0) break;
+      all = all.concat(data);
+      if (data.length < PAGE_SIZE) break; // last page
+      from += PAGE_SIZE;
+      if (from > 100000) break; // safety cap 100k rows
+    }
+    setPostTrackerHistory(all);
   };
 
   const loadTargetNotes = async () => {
