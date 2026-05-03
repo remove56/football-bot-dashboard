@@ -896,20 +896,48 @@ export default function RootLayout({ children }) {
               0 0 14px rgba(0, 0, 0, 0.7);
           }
 
-          /* Panel/card utama — FULLY TRANSPARENT */
-          [style*="background:#0f172a"]:not(button):not(.dash-tabs):not(.dash-header):not(input):not(select):not(textarea),
-          [style*="background: #0f172a"]:not(button):not(.dash-tabs):not(.dash-header):not(input):not(select):not(textarea),
-          [style*="background:#1e293b"]:not(button):not(input):not(select):not(textarea),
-          [style*="background: #1e293b"]:not(button):not(input):not(select):not(textarea),
-          [style*="background:#020617"]:not(button):not(.dash-tabs):not(input):not(select):not(textarea),
-          [style*="background: #020617"]:not(button):not(.dash-tabs):not(input):not(select):not(textarea),
-          [style*="rgb(15, 23, 42)"]:not(button):not(.dash-tabs):not(.dash-header):not(input):not(select):not(textarea),
-          [style*="rgb(30, 41, 59)"]:not(button):not(input):not(select):not(textarea),
-          [style*="rgb(2, 6, 23)"]:not(button):not(.dash-tabs):not(input):not(select):not(textarea) {
+          /* Panel/card utama — FULLY TRANSPARENT
+             Catch HEX #0f172a / #020617 / #1e293b di posisi MANA AJA dalam attribute style
+             (misal: "background:linear-gradient(135deg,#0f172a 0%,#020617 100%)") */
+          .dash-main div[style*="#0f172a"]:not(button),
+          .dash-main div[style*="#020617"]:not(button),
+          .dash-main div[style*="#1e293b"]:not(button),
+          .dash-main section[style*="#0f172a"],
+          .dash-main section[style*="#020617"],
+          .dash-main section[style*="#1e293b"],
+          .dash-main [style*="rgb(15, 23, 42)"]:not(button):not(input):not(select):not(textarea),
+          .dash-main [style*="rgb(30, 41, 59)"]:not(button):not(input):not(select):not(textarea),
+          .dash-main [style*="rgb(2, 6, 23)"]:not(button):not(input):not(select):not(textarea) {
+            background: transparent !important;
             background-color: transparent !important;
+            background-image: none !important;
             backdrop-filter: none !important;
             -webkit-backdrop-filter: none !important;
-            border: none !important;
+            border-color: rgba(34, 211, 238, 0.15) !important;
+            box-shadow: none !important;
+          }
+
+          /* Tabel header (S.th) pakai linear-gradient dari #0f172a → bikin transparent juga */
+          .dash-main th[style*="#0f172a"],
+          .dash-main th[style*="#020617"] {
+            background: transparent !important;
+            background-image: none !important;
+          }
+
+          /* Input fields override — TETAP semi-solid biar typing kelihatan jelas
+             (Override rule above yg accidentally bikin input juga transparant) */
+          .dash-main input,
+          .dash-main select,
+          .dash-main textarea {
+            background-color: rgba(15, 23, 42, 0.65) !important;
+            backdrop-filter: blur(6px) !important;
+            -webkit-backdrop-filter: blur(6px) !important;
+            border: 1px solid rgba(34, 211, 238, 0.3) !important;
+          }
+          .dash-main input:focus,
+          .dash-main select:focus,
+          .dash-main textarea:focus {
+            background-color: rgba(15, 23, 42, 0.85) !important;
           }
 
           /* Strong text shadow di SEMUA dashboard text untuk readability */
