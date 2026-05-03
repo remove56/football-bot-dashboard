@@ -741,12 +741,10 @@ export default function RootLayout({ children }) {
             object-position: center;
             z-index: -2;
             pointer-events: none;
-            /* Light enhancement only — gak bikin frame drop */
+            /* Light enhancement only — gak bikin frame drop:
+               saturate + brightness ringan, NO sharpen filter (itu penyebab patah-patah) */
             filter: saturate(1.10) brightness(1.02);
-            /* Scale 0.82 → kelihatan "lebih jauh" (planet & streaks lebih kecil)
-               Black bg fill sisanya. translateZ tetap untuk GPU layer */
-            transform: scale(0.82) translateZ(0);
-            transform-origin: center center;
+            transform: translateZ(0); /* GPU layer = playback smooth */
             will-change: transform;
           }
           .cosmic-bg-overlay {
@@ -779,7 +777,7 @@ export default function RootLayout({ children }) {
               display: none;
             }
             body {
-              background: url('/cosmic-bg.jpg') center center / 82% auto no-repeat fixed, #000 !important;
+              background: url('/cosmic-bg.jpg') center bottom / cover no-repeat fixed, #000 !important;
             }
           }
           /* Reduce motion: disable video, pakai poster image */
@@ -788,7 +786,7 @@ export default function RootLayout({ children }) {
               display: none;
             }
             body {
-              background: url('/cosmic-bg.jpg') center center / 82% auto no-repeat fixed, #000 !important;
+              background: url('/cosmic-bg.jpg') center bottom / cover no-repeat fixed, #000 !important;
             }
           }
         `}} />
