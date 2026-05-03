@@ -10,7 +10,8 @@ export default function RootLayout({ children }) {
           (function() {
             var THEMES = [
               { id: 'cosmic-warp',    label: 'Warp',    video: '/cosmic-bg.mp4',    poster: '/cosmic-bg.jpg' },
-              { id: 'cosmic-circuit', label: 'Circuit', video: '/cosmic-bg-2.mp4',  poster: '/cosmic-bg-2.jpg' }
+              { id: 'cosmic-circuit', label: 'Circuit', video: '/cosmic-bg-2.mp4',  poster: '/cosmic-bg-2.jpg' },
+              { id: 'cosmic-3',       label: 'Cosmic 3',video: '/cosmic-bg-3.mp4',  poster: '/cosmic-bg-3.jpg' }
             ];
             window.COSMIC_THEMES = THEMES;
             var saved = null;
@@ -859,6 +860,68 @@ export default function RootLayout({ children }) {
           /* Body background sederhana (di-cover sama video) */
           [data-theme="cosmic-fusion"] body {
             background: #000 !important;
+          }
+
+          /* ============================================================
+             🪟 TRANSPARENCY MODE — panels semi-transparan biar video bg keliatan
+             Strategi: target dark-bg solid panels (pakai inline-style atau class)
+             dan turunin opacity-nya + tambah backdrop-blur. Plus boost text shadow
+             biar OVERVIEW/ANALYTICS/dll tetap kebaca di atas video animated.
+             ============================================================ */
+
+          /* Tab navigation — paling kritis (tempat OVERVIEW, ANALYTICS, dll) */
+          .dash-tabs {
+            background: linear-gradient(180deg, rgba(15, 23, 42, 0.55) 0%, rgba(2, 6, 23, 0.65) 100%) !important;
+            backdrop-filter: blur(12px) saturate(1.2);
+            -webkit-backdrop-filter: blur(12px) saturate(1.2);
+            border-bottom: 1px solid rgba(34, 211, 238, 0.25) !important;
+          }
+          .dash-tabs > div {
+            text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9), 0 0 8px rgba(0, 0, 0, 0.7);
+          }
+
+          /* Header dashboard */
+          .dash-header {
+            background: linear-gradient(180deg, rgba(15, 23, 42, 0.7) 0%, rgba(15, 23, 42, 0.6) 100%) !important;
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border-bottom: 1px solid rgba(34, 211, 238, 0.2);
+          }
+          .dash-header h1, .dash-header * {
+            text-shadow: 0 1px 4px rgba(0, 0, 0, 0.85);
+          }
+
+          /* Panel/card utama dengan inline solid bg #0f172a / #020617 / #1e293b
+             → over-ride jadi semi-transparan dengan blur */
+          [style*="background:#0f172a"]:not(button):not(.dash-tabs):not(.dash-header),
+          [style*="background: #0f172a"]:not(button):not(.dash-tabs):not(.dash-header),
+          [style*="background:#1e293b"]:not(button),
+          [style*="background: #1e293b"]:not(button),
+          [style*="background:#020617"]:not(button):not(.dash-tabs),
+          [style*="background: #020617"]:not(button):not(.dash-tabs) {
+            background-color: rgba(15, 23, 42, 0.55) !important;
+            backdrop-filter: blur(10px) saturate(1.15);
+            -webkit-backdrop-filter: blur(10px) saturate(1.15);
+            border: 1px solid rgba(34, 211, 238, 0.18);
+          }
+
+          /* Strengthen text shadow untuk readability di atas video animated */
+          .dash-main, .dash-main * {
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+          }
+          /* Heading lebih kuat */
+          h1, h2, h3, h4 {
+            text-shadow: 0 2px 6px rgba(0, 0, 0, 0.85), 0 0 14px rgba(0, 0, 0, 0.5) !important;
+          }
+          /* Tabel rows tetap readable */
+          table tbody tr td {
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+          }
+
+          /* Overlay dark gradient lebih intense biar video gak overpower konten */
+          .cosmic-bg-overlay {
+            background:
+              radial-gradient(ellipse at center, rgba(0, 0, 0, 0.15) 0%, rgba(0, 0, 0, 0.45) 70%, rgba(0, 0, 0, 0.65) 100%) !important;
           }
 
           /* Mobile: pakai poster JPG aja (hemat baterai + data) */
