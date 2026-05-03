@@ -869,53 +869,66 @@ export default function RootLayout({ children }) {
              biar OVERVIEW/ANALYTICS/dll tetap kebaca di atas video animated.
              ============================================================ */
 
-          /* Tab navigation — paling kritis (tempat OVERVIEW, ANALYTICS, dll) */
+          /* Tab navigation — TEXT ONLY (no bg, no border) */
           .dash-tabs {
-            background: linear-gradient(180deg, rgba(15, 23, 42, 0.55) 0%, rgba(2, 6, 23, 0.65) 100%) !important;
-            backdrop-filter: blur(12px) saturate(1.2);
-            -webkit-backdrop-filter: blur(12px) saturate(1.2);
-            border-bottom: 1px solid rgba(34, 211, 238, 0.25) !important;
+            background: transparent !important;
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+            border-bottom: none !important;
           }
           .dash-tabs > div {
-            text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9), 0 0 8px rgba(0, 0, 0, 0.7);
+            text-shadow:
+              0 2px 6px rgba(0, 0, 0, 0.95),
+              0 0 14px rgba(0, 0, 0, 0.75),
+              0 0 28px rgba(0, 0, 0, 0.5);
           }
 
-          /* Header dashboard */
+          /* Header dashboard — TEXT ONLY */
           .dash-header {
-            background: linear-gradient(180deg, rgba(15, 23, 42, 0.7) 0%, rgba(15, 23, 42, 0.6) 100%) !important;
-            backdrop-filter: blur(14px);
-            -webkit-backdrop-filter: blur(14px);
-            border-bottom: 1px solid rgba(34, 211, 238, 0.2);
+            background: transparent !important;
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+            border-bottom: none !important;
           }
           .dash-header h1, .dash-header * {
-            text-shadow: 0 1px 4px rgba(0, 0, 0, 0.85);
+            text-shadow:
+              0 2px 6px rgba(0, 0, 0, 0.95),
+              0 0 14px rgba(0, 0, 0, 0.7);
           }
 
-          /* Panel/card utama dengan inline solid bg #0f172a / #020617 / #1e293b
-             → over-ride jadi semi-transparan dengan blur */
-          [style*="background:#0f172a"]:not(button):not(.dash-tabs):not(.dash-header),
-          [style*="background: #0f172a"]:not(button):not(.dash-tabs):not(.dash-header),
-          [style*="background:#1e293b"]:not(button),
-          [style*="background: #1e293b"]:not(button),
-          [style*="background:#020617"]:not(button):not(.dash-tabs),
-          [style*="background: #020617"]:not(button):not(.dash-tabs) {
-            background-color: rgba(15, 23, 42, 0.55) !important;
-            backdrop-filter: blur(10px) saturate(1.15);
-            -webkit-backdrop-filter: blur(10px) saturate(1.15);
-            border: 1px solid rgba(34, 211, 238, 0.18);
+          /* Panel/card utama — FULLY TRANSPARENT */
+          [style*="background:#0f172a"]:not(button):not(.dash-tabs):not(.dash-header):not(input):not(select):not(textarea),
+          [style*="background: #0f172a"]:not(button):not(.dash-tabs):not(.dash-header):not(input):not(select):not(textarea),
+          [style*="background:#1e293b"]:not(button):not(input):not(select):not(textarea),
+          [style*="background: #1e293b"]:not(button):not(input):not(select):not(textarea),
+          [style*="background:#020617"]:not(button):not(.dash-tabs):not(input):not(select):not(textarea),
+          [style*="background: #020617"]:not(button):not(.dash-tabs):not(input):not(select):not(textarea),
+          [style*="rgb(15, 23, 42)"]:not(button):not(.dash-tabs):not(.dash-header):not(input):not(select):not(textarea),
+          [style*="rgb(30, 41, 59)"]:not(button):not(input):not(select):not(textarea),
+          [style*="rgb(2, 6, 23)"]:not(button):not(.dash-tabs):not(input):not(select):not(textarea) {
+            background-color: transparent !important;
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+            border: none !important;
           }
 
-          /* Strengthen text shadow untuk readability di atas video animated */
+          /* Strong text shadow di SEMUA dashboard text untuk readability */
           .dash-main, .dash-main * {
-            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+            text-shadow:
+              0 1px 4px rgba(0, 0, 0, 0.85),
+              0 0 10px rgba(0, 0, 0, 0.55) !important;
           }
-          /* Heading lebih kuat */
           h1, h2, h3, h4 {
-            text-shadow: 0 2px 6px rgba(0, 0, 0, 0.85), 0 0 14px rgba(0, 0, 0, 0.5) !important;
+            text-shadow:
+              0 2px 8px rgba(0, 0, 0, 0.95),
+              0 0 18px rgba(0, 0, 0, 0.65),
+              0 0 36px rgba(0, 0, 0, 0.4) !important;
           }
           /* Tabel rows tetap readable */
           table tbody tr td {
-            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+            text-shadow:
+              0 1px 4px rgba(0, 0, 0, 0.9),
+              0 0 8px rgba(0, 0, 0, 0.5) !important;
           }
 
           /* Overlay dark gradient lebih intense biar video gak overpower konten */
@@ -946,25 +959,25 @@ export default function RootLayout({ children }) {
           .dash-main table {
             background: transparent !important;
             border-collapse: separate !important;
-            border-spacing: 0 2px !important;
+            border-spacing: 0 4px !important;
           }
           .dash-main table thead tr,
           .dash-main table thead th {
-            background: rgba(15, 23, 42, 0.7) !important;
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
+            background: transparent !important;
+            border-bottom: 1px solid rgba(34, 211, 238, 0.3) !important;
+            text-shadow:
+              0 2px 6px rgba(0, 0, 0, 0.95),
+              0 0 12px rgba(0, 0, 0, 0.6) !important;
           }
           .dash-main table tbody tr {
-            background: rgba(15, 23, 42, 0.42) !important;
+            background: transparent !important;
             transition: background 0.15s ease;
           }
           .dash-main table tbody tr:hover {
-            background: rgba(34, 211, 238, 0.12) !important;
+            background: rgba(34, 211, 238, 0.08) !important;
           }
           .dash-main table tbody td {
-            backdrop-filter: blur(4px);
-            -webkit-backdrop-filter: blur(4px);
+            backdrop-filter: none !important;
           }
 
           /* ============================================================
