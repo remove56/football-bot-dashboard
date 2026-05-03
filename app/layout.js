@@ -727,6 +727,131 @@ export default function RootLayout({ children }) {
             /* Shrink planets via zoom (doesn't conflict with transform: rotateX/spin) */
             .theme-planet { zoom: 0.65; }
           }
+
+          /* ============================================================
+             🚀 HYPERSPACE WARP UPGRADE — Pinterest-inspired (cyan-gold streaks)
+             Reference: https://pin.it/4lJL4mhgP (cosmic warp + giant planet glow)
+             Override beberapa element existing untuk match vibe pin:
+             - Body bg: tambah giant planet glow at top-center (cyan-blue ring)
+             - Planet-1: giant blurred orb dengan cyan corona (kayak planet di pin)
+             - Particle-layer: REPLACE shockwave rings dengan radiating light streaks
+                                cyan-electric (utama) + gold (sub-aksen) dari center-bottom
+             ============================================================ */
+          [data-theme="cosmic-fusion"] body {
+            background:
+              radial-gradient(ellipse 1500px 800px at 50% -200px,
+                rgba(34, 211, 238, 0.18) 0%,
+                rgba(59, 130, 246, 0.12) 25%,
+                rgba(15, 23, 42, 0.6) 60%,
+                transparent 85%),
+              radial-gradient(ellipse at 30% 30%, #0a1230 0%, #050818 35%, #020415 70%, #000 100%) !important;
+          }
+
+          /* GIANT PLANET di top-center (override planet-1 yang dulu supernova) */
+          [data-theme="cosmic-fusion"] .planet-1 {
+            width: 1300px !important; height: 1300px !important;
+            top: -780px !important; right: auto !important;
+            left: 50% !important; margin-left: -650px !important;
+            background:
+              radial-gradient(circle at 50% 50%,
+                #0f172a 0%,
+                #0f172a 40%,
+                rgba(34, 211, 238, 0.55) 41.5%,
+                rgba(165, 243, 252, 0.35) 43%,
+                rgba(59, 130, 246, 0.20) 45%,
+                rgba(255, 255, 255, 0.10) 47%,
+                transparent 55%) !important;
+            border-radius: 50% !important;
+            filter: blur(3px) !important;
+            animation: hyperspacePlanetGlow 8s ease-in-out infinite !important;
+          }
+          @keyframes hyperspacePlanetGlow {
+            0%, 100% { opacity: 0.85; filter: blur(3px); }
+            50%      { opacity: 1; filter: blur(2px); }
+          }
+
+          /* HYPERSPACE LIGHT STREAKS — radiating dari center-bottom */
+          [data-theme="cosmic-fusion"] .particle-layer {
+            inset: auto !important;
+            position: fixed !important;
+            top: 0 !important; left: 0 !important;
+            width: 100vw !important; height: 100vh !important;
+            overflow: hidden !important;
+          }
+          [data-theme="cosmic-fusion"] .particle-layer::before {
+            content: '' !important;
+            position: absolute !important;
+            top: auto !important; bottom: 0 !important;
+            left: 50% !important;
+            width: 250vmax !important; height: 250vmax !important;
+            margin: 0 !important;
+            transform: translate(-50%, 50%) !important;
+            border: none !important; border-radius: 0 !important;
+            background:
+              repeating-conic-gradient(from 270deg at 50% 50%,
+                transparent 0deg,
+                rgba(34, 211, 238, 0.45) 0.25deg,
+                transparent 0.8deg,
+                transparent 3deg,
+                rgba(34, 211, 238, 0.30) 3.2deg,
+                transparent 3.8deg,
+                transparent 7deg,
+                rgba(251, 191, 36, 0.32) 7.3deg,
+                transparent 8deg,
+                transparent 11deg,
+                rgba(255, 255, 255, 0.40) 11.2deg,
+                transparent 11.8deg,
+                transparent 14deg) !important;
+            animation: hyperspaceWarpRotate 120s linear infinite !important;
+            opacity: 0.55 !important;
+            mask-image: radial-gradient(ellipse at 50% 100%, #000 0%, #000 35%, transparent 75%);
+            -webkit-mask-image: radial-gradient(ellipse at 50% 100%, #000 0%, #000 35%, transparent 75%);
+          }
+          /* Soft white glow di pusat asal streaks (bottom center) */
+          [data-theme="cosmic-fusion"] .particle-layer::after {
+            content: '' !important;
+            position: absolute !important;
+            top: auto !important; bottom: -150px !important;
+            left: 50% !important;
+            width: 800px !important; height: 300px !important;
+            margin: 0 !important;
+            transform: translateX(-50%) !important;
+            border: none !important; border-radius: 50% !important;
+            background: radial-gradient(ellipse at center,
+              rgba(255, 255, 255, 0.45) 0%,
+              rgba(34, 211, 238, 0.30) 25%,
+              rgba(251, 191, 36, 0.10) 50%,
+              transparent 75%) !important;
+            filter: blur(30px) !important;
+            animation: hyperspacePulse 4s ease-in-out infinite !important;
+            opacity: 1 !important;
+          }
+          @keyframes hyperspaceWarpRotate {
+            from { transform: translate(-50%, 50%) rotate(0deg); }
+            to   { transform: translate(-50%, 50%) rotate(360deg); }
+          }
+          @keyframes hyperspacePulse {
+            0%, 100% { opacity: 0.55; transform: translateX(-50%) scale(1); }
+            50%      { opacity: 0.85; transform: translateX(-50%) scale(1.15); }
+          }
+
+          /* Mobile tweak: streaks sedikit kecilan biar gak overpower */
+          @media (max-width: 768px) {
+            [data-theme="cosmic-fusion"] .particle-layer::before { opacity: 0.4 !important; }
+            [data-theme="cosmic-fusion"] .planet-1 {
+              width: 700px !important; height: 700px !important;
+              top: -400px !important; margin-left: -350px !important;
+            }
+          }
+
+          /* Reduce motion: disable warp rotation */
+          @media (prefers-reduced-motion: reduce) {
+            [data-theme="cosmic-fusion"] .particle-layer::before,
+            [data-theme="cosmic-fusion"] .particle-layer::after,
+            [data-theme="cosmic-fusion"] .planet-1 {
+              animation: none !important;
+            }
+          }
         `}} />
       </head>
       <body style={{
