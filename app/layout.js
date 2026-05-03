@@ -925,6 +925,20 @@ export default function RootLayout({ children }) {
           }
 
           /* ============================================================
+             LOGIN CARD — fully transparent, cuma text + input/button yang muncul
+             Strong text-shadow biar tetap kebaca di atas video animated
+             ============================================================ */
+          .login-card h1,
+          .login-card p,
+          .login-card label,
+          .login-card > div > div {
+            text-shadow:
+              0 2px 8px rgba(0, 0, 0, 0.95),
+              0 0 20px rgba(0, 0, 0, 0.7),
+              0 0 40px rgba(0, 0, 0, 0.5) !important;
+          }
+
+          /* ============================================================
              TRANSPARENCY: TABEL & ROW elements (audit Group Health → terapkan ke semua)
              Dashboard ada banyak <table> di tab Bot Stats, Activity Log, A/B Caption,
              Best Time, Group Health, Tracking Posting, dll.
