@@ -253,12 +253,14 @@ function LoginScreen({ onLogin }) {
 
   return (
     <div style={{display:'flex',justifyContent:'center',alignItems:'center',minHeight:'100vh',position:'relative'}}>
-      <div style={{
-        background:'linear-gradient(135deg,#0f172a 0%,#020617 100%)',
-        border:'2px solid #164e63',
-        borderRadius:8,padding:48,width:400,
-        boxShadow:'0 0 40px rgba(6,182,212,0.3), 0 0 80px rgba(8,145,178,0.15), inset 0 1px 0 rgba(103,232,249,0.1), 0 20px 50px rgba(0,0,0,0.5)',
+      <div className="login-card" style={{
+        background:'linear-gradient(135deg, rgba(15,23,42,0.55) 0%, rgba(2,6,23,0.65) 100%)',
+        border:'2px solid rgba(34,211,238,0.4)',
+        borderRadius:12,padding:48,width:400,
+        boxShadow:'0 0 40px rgba(6,182,212,0.3), 0 0 80px rgba(8,145,178,0.15), inset 0 1px 0 rgba(103,232,249,0.15), 0 20px 50px rgba(0,0,0,0.5)',
         position:'relative',
+        backdropFilter:'blur(16px) saturate(1.2)',
+        WebkitBackdropFilter:'blur(16px) saturate(1.2)',
       }}>
         {/* Crystal edge decoration */}
         <div style={{position:'absolute',top:-2,left:-2,right:-2,height:3,background:'linear-gradient(90deg,transparent,#22d3ee,transparent)',borderRadius:'8px 8px 0 0',boxShadow:'0 0 20px rgba(34,211,238,0.6)'}} />
