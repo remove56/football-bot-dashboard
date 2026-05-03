@@ -738,14 +738,23 @@ export default function RootLayout({ children }) {
             top: 0; left: 0;
             width: 100vw; height: 100vh;
             object-fit: cover;
+            object-position: center;
             z-index: -2;
             pointer-events: none;
+            /* HD enhancement: warna lebih pop + edge lebih crispy (trick CSS) */
+            filter: saturate(1.18) contrast(1.08) brightness(1.03);
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: crisp-edges;
+            transform: translateZ(0); /* GPU layer = anti-tearing */
+            will-change: transform;
           }
           .cosmic-bg-overlay {
             position: fixed;
             top: 0; left: 0; right: 0; bottom: 0;
+            /* Vignette: pinggir gelap → focal point ke center (mata otomatis fokus tengah,
+               distract dari edge yg mungkin blur dari upscaling viewport) */
             background:
-              radial-gradient(ellipse at center, transparent 0%, rgba(0, 0, 0, 0.35) 60%, rgba(0, 0, 0, 0.55) 100%);
+              radial-gradient(ellipse 90% 80% at center, transparent 0%, transparent 30%, rgba(0, 0, 0, 0.30) 65%, rgba(0, 0, 0, 0.65) 100%);
             z-index: -1;
             pointer-events: none;
           }
