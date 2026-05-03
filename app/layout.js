@@ -727,6 +727,60 @@ export default function RootLayout({ children }) {
             /* Shrink planets via zoom (doesn't conflict with transform: rotateX/spin) */
             .theme-planet { zoom: 0.65; }
           }
+
+          /* ============================================================
+             🎬 COSMIC VIDEO BACKGROUND (Pinterest-inspired)
+             Source: pin 817895982372951914 (extracted via ffmpeg)
+             Mode: video looping for desktop, JPG poster fallback for mobile/reduced-motion
+             ============================================================ */
+          .cosmic-bg-video {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            object-fit: cover;
+            z-index: -2;
+            pointer-events: none;
+          }
+          .cosmic-bg-overlay {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background:
+              radial-gradient(ellipse at center, transparent 0%, rgba(0, 0, 0, 0.35) 60%, rgba(0, 0, 0, 0.55) 100%);
+            z-index: -1;
+            pointer-events: none;
+          }
+          /* Hide existing Cosmic Fusion layers — biar gak overlap sama video */
+          [data-theme="cosmic-fusion"] .theme-fx,
+          [data-theme="cosmic-fusion"] .theme-planet,
+          [data-theme="cosmic-fusion"] .particle-layer,
+          [data-theme="cosmic-fusion"] .jets,
+          [data-theme="cosmic-fusion"] body::before,
+          [data-theme="cosmic-fusion"] body::after {
+            display: none !important;
+          }
+          /* Body background sederhana (di-cover sama video) */
+          [data-theme="cosmic-fusion"] body {
+            background: #000 !important;
+          }
+
+          /* Mobile: pakai poster JPG aja (hemat baterai + data) */
+          @media (max-width: 768px) {
+            .cosmic-bg-video {
+              display: none;
+            }
+            body {
+              background: url('/cosmic-bg.jpg') center bottom / cover no-repeat fixed, #000 !important;
+            }
+          }
+          /* Reduce motion: disable video, pakai poster image */
+          @media (prefers-reduced-motion: reduce) {
+            .cosmic-bg-video {
+              display: none;
+            }
+            body {
+              background: url('/cosmic-bg.jpg') center bottom / cover no-repeat fixed, #000 !important;
+            }
+          }
         `}} />
       </head>
       <body style={{
@@ -736,17 +790,30 @@ export default function RootLayout({ children }) {
         minHeight: '100vh',
         position: 'relative',
       }}>
-        {/* 3D parallax layers untuk Cosmic Fusion (back/mid/front + warp + orbital) */}
+        {/* Cosmic video background (Pinterest-inspired) — replace existing layers */}
+        <video
+          className="cosmic-bg-video"
+          autoPlay
+          loop
+          muted
+          playsInline
+          preload="auto"
+          poster="/cosmic-bg.jpg"
+          aria-hidden="true"
+        >
+          <source src="/cosmic-bg.mp4" type="video/mp4" />
+        </video>
+        {/* Subtle dark overlay biar text dashboard tetap readable */}
+        <div className="cosmic-bg-overlay" aria-hidden="true"></div>
+        {/* Existing layers — di-hide oleh CSS .cosmic-bg-video ~ * (lihat layout style) */}
         <div className="theme-fx" aria-hidden="true">
           <div className="theme-fx-layer fx-back"></div>
           <div className="theme-fx-layer fx-mid"></div>
           <div className="theme-fx-layer fx-front"></div>
-          {/* Planets: planet-1 = supernova explosion, planet-2 = mini spiral, planet-3 = hidden */}
           <div className="theme-planet planet-1"></div>
           <div className="theme-planet planet-2"></div>
           <div className="theme-planet planet-3"></div>
         </div>
-        {/* Particle layer untuk shockwave rings */}
         <div className="particle-layer" aria-hidden="true"></div>
         <div className="jets" aria-hidden="true"></div>
         <div style={{ position: 'relative', zIndex: 2 }}>
