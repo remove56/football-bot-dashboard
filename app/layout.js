@@ -924,6 +924,76 @@ export default function RootLayout({ children }) {
               radial-gradient(ellipse at center, rgba(0, 0, 0, 0.15) 0%, rgba(0, 0, 0, 0.45) 70%, rgba(0, 0, 0, 0.65) 100%) !important;
           }
 
+          /* ============================================================
+             TRANSPARENCY: TABEL & ROW elements (audit Group Health → terapkan ke semua)
+             Dashboard ada banyak <table> di tab Bot Stats, Activity Log, A/B Caption,
+             Best Time, Group Health, Tracking Posting, dll.
+             ============================================================ */
+          .dash-main table {
+            background: transparent !important;
+            border-collapse: separate !important;
+            border-spacing: 0 2px !important;
+          }
+          .dash-main table thead tr,
+          .dash-main table thead th {
+            background: rgba(15, 23, 42, 0.7) !important;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.85);
+          }
+          .dash-main table tbody tr {
+            background: rgba(15, 23, 42, 0.42) !important;
+            transition: background 0.15s ease;
+          }
+          .dash-main table tbody tr:hover {
+            background: rgba(34, 211, 238, 0.12) !important;
+          }
+          .dash-main table tbody td {
+            backdrop-filter: blur(4px);
+            -webkit-backdrop-filter: blur(4px);
+          }
+
+          /* ============================================================
+             TRANSPARENCY: FORM elements (input, select, textarea)
+             ============================================================ */
+          input, select, textarea {
+            background-color: rgba(15, 23, 42, 0.65) !important;
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+          }
+          input:focus, select:focus, textarea:focus {
+            background-color: rgba(15, 23, 42, 0.85) !important;
+          }
+
+          /* ============================================================
+             TRANSPARENCY: MODAL/DIALOG (Settings, Chat, Confirm dll)
+             ============================================================ */
+          [role="dialog"],
+          .modal,
+          .responsive-modal-content,
+          .responsive-modal-backdrop > div {
+            background-color: rgba(15, 23, 42, 0.78) !important;
+            backdrop-filter: blur(18px) saturate(1.2);
+            -webkit-backdrop-filter: blur(18px) saturate(1.2);
+            border: 1px solid rgba(34, 211, 238, 0.25);
+          }
+          .responsive-modal-backdrop {
+            background-color: rgba(0, 0, 0, 0.55) !important;
+            backdrop-filter: blur(4px);
+          }
+
+          /* ============================================================
+             TRANSPARENCY: card background dengan rgb format (React render)
+             ============================================================ */
+          [style*="rgb(15, 23, 42)"]:not(button):not(.dash-tabs):not(.dash-header),
+          [style*="rgb(30, 41, 59)"]:not(button),
+          [style*="rgb(2, 6, 23)"]:not(button):not(.dash-tabs) {
+            background-color: rgba(15, 23, 42, 0.55) !important;
+            backdrop-filter: blur(10px) saturate(1.15);
+            -webkit-backdrop-filter: blur(10px) saturate(1.15);
+            border: 1px solid rgba(34, 211, 238, 0.18);
+          }
+
           /* Mobile: pakai poster JPG aja (hemat baterai + data) */
           @media (max-width: 768px) {
             .cosmic-bg-video {
