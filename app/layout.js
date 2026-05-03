@@ -47,14 +47,50 @@ export default function RootLayout({ children }) {
               applyTheme(THEMES[(idx + 1) % THEMES.length]);
             };
 
+            // Inject switcher button via DOM (server component gak bisa React onClick)
+            function injectSwitcher() {
+              if (document.getElementById('cosmic-theme-switcher')) return;
+              var btn = document.createElement('button');
+              btn.id = 'cosmic-theme-switcher';
+              btn.setAttribute('aria-label', 'Ganti tema cosmic background');
+              btn.title = 'Klik untuk ganti tema cosmic background';
+              btn.innerHTML = '🎬 <span id="cosmic-theme-label">' + current.label + '</span>';
+              btn.style.cssText = [
+                'position:fixed', 'top:64px', 'right:16px', 'z-index:99999',
+                'padding:8px 14px', 'border-radius:999px',
+                'background:rgba(15,23,42,0.88)',
+                'border:1px solid rgba(34,211,238,0.6)',
+                'color:#22d3ee', 'cursor:pointer', 'font-size:13px',
+                'font-family:Segoe UI,sans-serif',
+                'backdrop-filter:blur(10px)',
+                '-webkit-backdrop-filter:blur(10px)',
+                'box-shadow:0 4px 12px rgba(34,211,238,0.25)',
+                'transition:all 0.2s ease',
+                'user-select:none'
+              ].join(';');
+              btn.onmouseenter = function() {
+                btn.style.background = 'rgba(15,23,42,0.95)';
+                btn.style.boxShadow = '0 6px 20px rgba(34,211,238,0.5)';
+                btn.style.transform = 'translateY(-1px)';
+              };
+              btn.onmouseleave = function() {
+                btn.style.background = 'rgba(15,23,42,0.88)';
+                btn.style.boxShadow = '0 4px 12px rgba(34,211,238,0.25)';
+                btn.style.transform = 'translateY(0)';
+              };
+              btn.onclick = function() { window.cycleCosmicTheme(); };
+              document.body.appendChild(btn);
+            }
+
             // Apply initial theme on first paint (before video element creates)
             // We need to set src on video AFTER element exists — use DOMContentLoaded
             document.addEventListener('DOMContentLoaded', function() {
               applyTheme(current);
+              injectSwitcher();
             });
             // Fallback for already-loaded
             if (document.readyState !== 'loading') {
-              setTimeout(function(){ applyTheme(current); }, 0);
+              setTimeout(function(){ applyTheme(current); injectSwitcher(); }, 0);
             }
           })();
         `}} />
@@ -864,25 +900,8 @@ export default function RootLayout({ children }) {
           poster="/cosmic-bg.jpg"
           aria-hidden="true"
         />
-        {/* Theme switcher button — fixed top-right (di atas semua tab) */}
-        <button
-          id="cosmic-theme-switcher"
-          aria-label="Ganti tema cosmic background"
-          title="Ganti tema cosmic background"
-          onClick={() => { if (typeof window !== 'undefined' && window.cycleCosmicTheme) window.cycleCosmicTheme(); }}
-          style={{
-            position: 'fixed', top: 12, right: 12, zIndex: 9999,
-            padding: '8px 14px', borderRadius: 999,
-            background: 'rgba(15, 23, 42, 0.85)',
-            border: '1px solid rgba(34, 211, 238, 0.5)',
-            color: '#22d3ee', cursor: 'pointer', fontSize: 13,
-            fontFamily: "'Segoe UI', sans-serif",
-            backdropFilter: 'blur(10px)',
-            transition: 'all 0.2s',
-          }}
-        >
-          🎬 <span id="cosmic-theme-label">Theme</span>
-        </button>
+        {/* Theme switcher button di-inject by inline script di <head> (vanilla JS, biar
+            click handler beneran kerja — server component gak bisa onClick) */}
         {/* Subtle dark overlay biar text dashboard tetap readable */}
         <div className="cosmic-bg-overlay" aria-hidden="true"></div>
         {/* Existing layers — di-hide oleh CSS .cosmic-bg-video ~ * (lihat layout style) */}
