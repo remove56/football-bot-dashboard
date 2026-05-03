@@ -741,14 +741,10 @@ export default function RootLayout({ children }) {
             object-position: center;
             z-index: -2;
             pointer-events: none;
-            /* HD-look enhancement (combined dengan SVG unsharp di atas video):
-               - saturate boost cyan/gold lebih vivid
-               - contrast tighten tone separation
-               - SVG filter unsharp = sharpen perception lebih kuat dari ffmpeg sharpen */
-            filter: url(#cosmic-sharpen) saturate(1.20) contrast(1.10) brightness(1.04);
-            image-rendering: -webkit-optimize-contrast;
-            image-rendering: crisp-edges;
-            transform: translateZ(0);
+            /* Light enhancement only — gak bikin frame drop:
+               saturate + brightness ringan, NO sharpen filter (itu penyebab patah-patah) */
+            filter: saturate(1.10) brightness(1.02);
+            transform: translateZ(0); /* GPU layer = playback smooth */
             will-change: transform;
           }
           .cosmic-bg-overlay {
@@ -802,18 +798,6 @@ export default function RootLayout({ children }) {
         minHeight: '100vh',
         position: 'relative',
       }}>
-        {/* SVG unsharp filter — applied via CSS filter: url(#cosmic-sharpen) ke video */}
-        <svg width="0" height="0" style={{ position: 'absolute' }} aria-hidden="true">
-          <defs>
-            <filter id="cosmic-sharpen">
-              <feConvolveMatrix
-                order="3"
-                kernelMatrix="0 -0.4 0  -0.4 2.6 -0.4  0 -0.4 0"
-                preserveAlpha="true"
-              />
-            </filter>
-          </defs>
-        </svg>
         {/* Cosmic video background (Pinterest-inspired) — replace existing layers */}
         <video
           className="cosmic-bg-video"
