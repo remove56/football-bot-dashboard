@@ -4,6 +4,60 @@ export default function RootLayout({ children }) {
   return (
     <html lang="id">
       <head>
+        {/* Theme switcher logic — read localStorage + bind global helper.
+            Render BEFORE main style biar attribute set sebelum paint. */}
+        <script dangerouslySetInnerHTML={{ __html: `
+          (function() {
+            var THEMES = [
+              { id: 'cosmic-warp',    label: 'Warp',    video: '/cosmic-bg.mp4',    poster: '/cosmic-bg.jpg' },
+              { id: 'cosmic-circuit', label: 'Circuit', video: '/cosmic-bg-2.mp4',  poster: '/cosmic-bg-2.jpg' }
+            ];
+            window.COSMIC_THEMES = THEMES;
+            var saved = null;
+            try { saved = localStorage.getItem('cosmic-theme'); } catch(e) {}
+            var current = THEMES.find(function(t){ return t.id === saved; }) || THEMES[0];
+            // Set attribute on html element for CSS hooks
+            document.documentElement.setAttribute('data-cosmic-theme', current.id);
+
+            function applyTheme(theme) {
+              try { localStorage.setItem('cosmic-theme', theme.id); } catch(e) {}
+              document.documentElement.setAttribute('data-cosmic-theme', theme.id);
+              var v = document.getElementById('cosmic-bg-video-el');
+              if (v) {
+                v.poster = theme.poster;
+                if (v.src.indexOf(theme.video) === -1) {
+                  v.src = theme.video;
+                  v.load();
+                  v.play().catch(function(){});
+                }
+              }
+              var lbl = document.getElementById('cosmic-theme-label');
+              if (lbl) lbl.textContent = theme.label;
+            }
+
+            window.switchCosmicTheme = function(id) {
+              var t = THEMES.find(function(x){ return x.id === id; });
+              if (t) applyTheme(t);
+            };
+            window.cycleCosmicTheme = function() {
+              var saved = null;
+              try { saved = localStorage.getItem('cosmic-theme'); } catch(e) {}
+              var idx = THEMES.findIndex(function(x){ return x.id === saved; });
+              if (idx === -1) idx = 0;
+              applyTheme(THEMES[(idx + 1) % THEMES.length]);
+            };
+
+            // Apply initial theme on first paint (before video element creates)
+            // We need to set src on video AFTER element exists — use DOMContentLoaded
+            document.addEventListener('DOMContentLoaded', function() {
+              applyTheme(current);
+            });
+            // Fallback for already-loaded
+            if (document.readyState !== 'loading') {
+              setTimeout(function(){ applyTheme(current); }, 0);
+            }
+          })();
+        `}} />
         <style dangerouslySetInnerHTML={{ __html: `
           /* ============================================================
              THEME SYSTEM — Single theme: Cosmic Fusion (forced for all users)
@@ -798,8 +852,9 @@ export default function RootLayout({ children }) {
         minHeight: '100vh',
         position: 'relative',
       }}>
-        {/* Cosmic video background (Pinterest-inspired) — replace existing layers */}
+        {/* Cosmic video background — src diatur dynamic oleh inline script di <head> */}
         <video
+          id="cosmic-bg-video-el"
           className="cosmic-bg-video"
           autoPlay
           loop
@@ -808,9 +863,26 @@ export default function RootLayout({ children }) {
           preload="auto"
           poster="/cosmic-bg.jpg"
           aria-hidden="true"
+        />
+        {/* Theme switcher button — fixed top-right (di atas semua tab) */}
+        <button
+          id="cosmic-theme-switcher"
+          aria-label="Ganti tema cosmic background"
+          title="Ganti tema cosmic background"
+          onClick={() => { if (typeof window !== 'undefined' && window.cycleCosmicTheme) window.cycleCosmicTheme(); }}
+          style={{
+            position: 'fixed', top: 12, right: 12, zIndex: 9999,
+            padding: '8px 14px', borderRadius: 999,
+            background: 'rgba(15, 23, 42, 0.85)',
+            border: '1px solid rgba(34, 211, 238, 0.5)',
+            color: '#22d3ee', cursor: 'pointer', fontSize: 13,
+            fontFamily: "'Segoe UI', sans-serif",
+            backdropFilter: 'blur(10px)',
+            transition: 'all 0.2s',
+          }}
         >
-          <source src="/cosmic-bg.mp4" type="video/mp4" />
-        </video>
+          🎬 <span id="cosmic-theme-label">Theme</span>
+        </button>
         {/* Subtle dark overlay biar text dashboard tetap readable */}
         <div className="cosmic-bg-overlay" aria-hidden="true"></div>
         {/* Existing layers — di-hide oleh CSS .cosmic-bg-video ~ * (lihat layout style) */}
