@@ -857,9 +857,11 @@ export default function RootLayout({ children }) {
           [data-theme="cosmic-fusion"] body::after {
             display: none !important;
           }
-          /* Body background sederhana (di-cover sama video) */
+          /* Body background — JPG poster sebagai fallback kalau video MP4 ke-block
+             (Brave Shields, autoplay-policy, CSP strict, dll). Video di-cover overrides JPG saat play.
+             Sebelumnya: pure #000 → user lihat hitam polos kalau video gak load. */
           [data-theme="cosmic-fusion"] body {
-            background: #000 !important;
+            background: #000 url('/cosmic-bg.jpg') center bottom / cover no-repeat fixed !important;
           }
 
           /* ============================================================
