@@ -1075,6 +1075,9 @@ export default function RootLayout({ children }) {
         color: '#e0f2fe',
         minHeight: '100vh',
         position: 'relative',
+        // Fallback static poster — kelihatan kalau video MP4 ke-block Shields/autoplay-policy.
+        // Default theme[0] (cosmic-warp); inline-script bisa override poster untuk theme lain (line 28).
+        background: "#000 url('/cosmic-bg.jpg') center bottom / cover no-repeat fixed",
       }}>
         {/* Cosmic video background — src diatur dynamic oleh inline script di <head> */}
         <video
@@ -1085,6 +1088,7 @@ export default function RootLayout({ children }) {
           muted
           playsInline
           preload="auto"
+          src="/cosmic-bg.mp4"
           poster="/cosmic-bg.jpg"
           aria-hidden="true"
         />
