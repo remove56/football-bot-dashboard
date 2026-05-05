@@ -4425,6 +4425,20 @@ export default function Home() {
                   <h3 style={{color:'#F59E0B',fontSize:16,margin:0}}>Progress Postingan — {new Date(ptPeriod).toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</h3>
                   <input style={{...S.input,width:220,fontSize:11}} placeholder="🔍 Cari grup / member..." value={searchTracking} onChange={e=>setSearchTracking(e.target.value)}/>
                 </div>
+                {(() => {
+                  const badCount = postTracker.reduce((acc, p) => {
+                    if (p.gambar1_link && classifyMediaUrl(p.gambar1_link) === 'video') acc++;
+                    if (p.gambar2_link && classifyMediaUrl(p.gambar2_link) === 'video') acc++;
+                    if (p.video_link && classifyMediaUrl(p.video_link) === 'image') acc++;
+                    return acc;
+                  }, 0);
+                  if (badCount === 0) return null;
+                  return (
+                    <div style={{marginTop:10,padding:'8px 12px',background:'#7f1d1d22',border:'1px solid #ef4444',borderRadius:6,fontSize:12,color:'#fca5a5'}}>
+                      ⚠️ <strong>{badCount} entry mismatch</strong> — kolom merah di tabel = link salah jenis (gambar di V, atau video di G1/G2). Hover badge untuk detail + cara hapus.
+                    </div>
+                  );
+                })()}
               </div>
               <table style={{width:'100%',borderCollapse:'collapse',minWidth:900}}>
                 <thead>
@@ -4459,12 +4473,19 @@ export default function Home() {
                           const g1 = entry?.gambar1_link;
                           const g2 = entry?.gambar2_link;
                           const v = entry?.video_link;
+                          // Phase 4 — flag mismatch: G1/G2 berisi link video, atau V berisi link gambar
+                          const g1Type = g1 ? classifyMediaUrl(g1) : null;
+                          const g2Type = g2 ? classifyMediaUrl(g2) : null;
+                          const vType  = v  ? classifyMediaUrl(v)  : null;
+                          const g1Bad = g1Type === 'video';   // gambar field berisi video
+                          const g2Bad = g2Type === 'video';
+                          const vBad  = vType === 'image';    // video field berisi gambar
                           return (
                             <td key={cycle} style={{...S.td,textAlign:'center',padding:6}}>
                               <div style={{display:'flex',gap:4,justifyContent:'center'}}>
-                                <span title={resolveBotLink(g1)||'Belum'} style={{width:22,height:22,borderRadius:4,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:700,background:g1?'#065f46':'#1f2937',color:g1?'#6ee7b7':'#374151',cursor:g1?'pointer':'default'}} onClick={()=>g1&&window.open(resolveBotLink(g1),'_blank')}>G1</span>
-                                <span title={resolveBotLink(g2)||'Belum'} style={{width:22,height:22,borderRadius:4,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:700,background:g2?'#065f46':'#1f2937',color:g2?'#6ee7b7':'#374151',cursor:g2?'pointer':'default'}} onClick={()=>g2&&window.open(resolveBotLink(g2),'_blank')}>G2</span>
-                                <span title={resolveBotLink(v)||'Belum'} style={{width:22,height:22,borderRadius:4,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:700,background:v?'#3b0764':'#1f2937',color:v?'#c084fc':'#374151',cursor:v?'pointer':'default'}} onClick={()=>v&&window.open(resolveBotLink(v),'_blank')}>V</span>
+                                <span title={g1Bad?`⚠️ MISMATCH: kolom Gambar berisi link VIDEO\n${resolveBotLink(g1)}\n(admin: pilih grup ini + Siklus ${cycle} + Jenis "Gambar 1" → Hapus)`:(resolveBotLink(g1)||'Belum')} style={{width:22,height:22,borderRadius:4,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:700,background:g1Bad?'#7f1d1d':(g1?'#065f46':'#1f2937'),color:g1Bad?'#fca5a5':(g1?'#6ee7b7':'#374151'),cursor:g1?'pointer':'default',border:g1Bad?'1px solid #ef4444':'none'}} onClick={()=>g1&&window.open(resolveBotLink(g1),'_blank')}>{g1Bad?'⚠':'G1'}</span>
+                                <span title={g2Bad?`⚠️ MISMATCH: kolom Gambar berisi link VIDEO\n${resolveBotLink(g2)}\n(admin: pilih grup ini + Siklus ${cycle} + Jenis "Gambar 2" → Hapus)`:(resolveBotLink(g2)||'Belum')} style={{width:22,height:22,borderRadius:4,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:700,background:g2Bad?'#7f1d1d':(g2?'#065f46':'#1f2937'),color:g2Bad?'#fca5a5':(g2?'#6ee7b7':'#374151'),cursor:g2?'pointer':'default',border:g2Bad?'1px solid #ef4444':'none'}} onClick={()=>g2&&window.open(resolveBotLink(g2),'_blank')}>{g2Bad?'⚠':'G2'}</span>
+                                <span title={vBad?`⚠️ MISMATCH: kolom Video berisi link GAMBAR\n${resolveBotLink(v)}\n(admin: pilih grup ini + Siklus ${cycle} + Jenis "Video" → Hapus)`:(resolveBotLink(v)||'Belum')} style={{width:22,height:22,borderRadius:4,display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:10,fontWeight:700,background:vBad?'#7f1d1d':(v?'#3b0764':'#1f2937'),color:vBad?'#fca5a5':(v?'#c084fc':'#374151'),cursor:v?'pointer':'default',border:vBad?'1px solid #ef4444':'none'}} onClick={()=>v&&window.open(resolveBotLink(v),'_blank')}>{vBad?'⚠':'V'}</span>
                               </div>
                             </td>
                           );
