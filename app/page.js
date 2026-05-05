@@ -252,33 +252,52 @@ function LoginScreen({ onLogin }) {
   };
 
   return (
-    <div style={{display:'flex',justifyContent:'center',alignItems:'center',minHeight:'100vh',position:'relative'}}>
+    <div style={{display:'flex',justifyContent:'center',alignItems:'center',minHeight:'100vh',padding:24,background:'#020617'}}>
       <div className="login-card" style={{
-        background:'transparent',
-        border:'none',
-        borderRadius:0,padding:48,width:400,
-        boxShadow:'none',
-        position:'relative',
+        background:'#0f172a',
+        border:'1px solid #1e293b',
+        borderRadius:12,
+        padding:40,
+        width:400,
+        maxWidth:'100%',
+        boxShadow:'0 8px 32px rgba(0,0,0,0.45)',
       }}>
-        {/* Crystal edge decoration removed — card fully transparent */}
-        <div style={{textAlign:'center',fontSize:40,marginBottom:12,filter:'drop-shadow(0 0 10px rgba(103,232,249,0.5))'}}>❄⚽❄</div>
-        <h1 style={{...S.h1,fontSize:28,textAlign:'center',marginBottom:8,letterSpacing:1}}>Football Bot Dashboard</h1>
-        <p style={{color:'#64748b',fontSize:12,textAlign:'center',marginBottom:32,textTransform:'uppercase',letterSpacing:2,fontWeight:700}}>ACCESS TERMINAL</p>
-        {err && <div style={{background:'linear-gradient(135deg,#7f1d1d 0%,#991b1b 100%)',color:'#fca5a5',padding:10,borderRadius:4,textAlign:'center',marginBottom:16,fontSize:13,border:'1px solid #ef4444',textTransform:'uppercase',letterSpacing:0.5,fontWeight:700}}>{err}</div>}
-        <div style={{marginBottom:20}}>
-          <label style={{display:'block',fontSize:11,color:'#22d3ee',marginBottom:6,fontWeight:800,textTransform:'uppercase',letterSpacing:1.5}}>Username</label>
-          <input style={S.input} value={u} onChange={e=>setU(e.target.value)} onKeyDown={e=>e.key==='Enter'&&login()} />
+        <div style={{textAlign:'center',marginBottom:28}}>
+          <div style={{
+            display:'inline-flex',alignItems:'center',justifyContent:'center',
+            width:56,height:56,marginBottom:16,
+            background:'rgba(34,211,238,0.10)',border:'1px solid rgba(34,211,238,0.25)',
+            borderRadius:12,fontSize:28,
+          }}>⚽</div>
+          <h1 style={{margin:0,fontSize:22,fontWeight:700,letterSpacing:-0.3,color:'#e0f2fe'}}>Football Bot Dashboard</h1>
+          <p style={{margin:'6px 0 0',color:'#64748b',fontSize:13}}>Sign in to your admin account</p>
         </div>
-        <div style={{marginBottom:28}}>
-          <label style={{display:'block',fontSize:11,color:'#22d3ee',marginBottom:6,fontWeight:800,textTransform:'uppercase',letterSpacing:1.5}}>Password</label>
-          <input style={S.input} type="password" value={p} onChange={e=>setP(e.target.value)} onKeyDown={e=>e.key==='Enter'&&login()} />
+        {err && (
+          <div style={{
+            background:'rgba(239,68,68,0.10)',color:'#fca5a5',padding:'10px 12px',
+            borderRadius:6,marginBottom:16,fontSize:13,border:'1px solid rgba(239,68,68,0.3)',
+          }}>{err}</div>
+        )}
+        <div style={{marginBottom:16}}>
+          <label style={{display:'block',fontSize:12,color:'#94a3b8',marginBottom:6,fontWeight:500}}>Username</label>
+          <input
+            style={{...S.input,background:'#0a1224',border:'1px solid #1e293b',borderRadius:6,padding:'10px 12px',width:'100%'}}
+            value={u} onChange={e=>setU(e.target.value)} onKeyDown={e=>e.key==='Enter'&&login()}
+          />
+        </div>
+        <div style={{marginBottom:24}}>
+          <label style={{display:'block',fontSize:12,color:'#94a3b8',marginBottom:6,fontWeight:500}}>Password</label>
+          <input
+            style={{...S.input,background:'#0a1224',border:'1px solid #1e293b',borderRadius:6,padding:'10px 12px',width:'100%'}}
+            type="password" value={p} onChange={e=>setP(e.target.value)} onKeyDown={e=>e.key==='Enter'&&login()}
+          />
         </div>
         <button onClick={login} style={{
-          width:'100%',padding:14,
-          background:'linear-gradient(135deg,#22d3ee 0%,#06b6d4 30%,#0891b2 70%,#164e63 100%)',
-          border:'1px solid #67e8f9',borderRadius:4,color:'#020617',fontSize:15,fontWeight:900,cursor:'pointer',
-          boxShadow:'0 4px 24px rgba(6,182,212,0.5), inset 0 1px 0 rgba(207,250,254,0.4)',textTransform:'uppercase',letterSpacing:3,
-        }}>❄ ENTER ❄</button>
+          width:'100%',padding:'12px 16px',
+          background:'#22d3ee',
+          border:'none',borderRadius:6,color:'#020617',fontSize:14,fontWeight:600,cursor:'pointer',
+          letterSpacing:0.2,
+        }}>Sign In</button>
       </div>
     </div>
   );
@@ -1828,13 +1847,11 @@ export default function Home() {
     const saved = localStorage.getItem('fb-dash-sound-enabled');
     if (saved !== null) setSoundEnabled(saved === 'true');
 
-    // FORCE cosmic-fusion untuk semua user (single theme system).
-    // Ignore localStorage — kalau user lama punya tema lain saved, tetep pake cosmic-fusion.
-    if (typeof document !== 'undefined') {
-      document.documentElement.setAttribute('data-theme', 'cosmic-fusion');
-    }
-    // Hapus old localStorage entry biar gak nyangkut
-    try { localStorage.removeItem('fb-dash-theme'); } catch (e) { /* silent */ }
+    // Cleanup legacy theme localStorage entries (cosmic theme system removed Phase 1).
+    try {
+      localStorage.removeItem('fb-dash-theme');
+      localStorage.removeItem('cosmic-theme');
+    } catch (e) { /* silent */ }
 
     // Pre-load audio files
     if (typeof Audio !== 'undefined') {

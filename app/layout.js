@@ -4,241 +4,144 @@ export default function RootLayout({ children }) {
   return (
     <html lang="id">
       <head>
-        {/* Theme switcher logic — read localStorage + bind global helper.
-            Render BEFORE main style biar attribute set sebelum paint. */}
-        <script dangerouslySetInnerHTML={{ __html: `
-          (function() {
-            var THEMES = [
-              { id: 'cosmic-warp',    label: 'Warp',    video: '/cosmic-bg.mp4',    poster: '/cosmic-bg.jpg' },
-              { id: 'cosmic-circuit', label: 'Circuit', video: '/cosmic-bg-2.mp4',  poster: '/cosmic-bg-2.jpg' },
-              { id: 'cosmic-3',       label: 'Cosmic 3',video: '/cosmic-bg-3.mp4',  poster: '/cosmic-bg-3.jpg' }
-            ];
-            window.COSMIC_THEMES = THEMES;
-            var saved = null;
-            try { saved = localStorage.getItem('cosmic-theme'); } catch(e) {}
-            var current = THEMES.find(function(t){ return t.id === saved; }) || THEMES[0];
-            // Set attribute on html element for CSS hooks
-            document.documentElement.setAttribute('data-cosmic-theme', current.id);
-
-            function applyTheme(theme) {
-              try { localStorage.setItem('cosmic-theme', theme.id); } catch(e) {}
-              document.documentElement.setAttribute('data-cosmic-theme', theme.id);
-              var v = document.getElementById('cosmic-bg-video-el');
-              if (v) {
-                v.poster = theme.poster;
-                if (v.src.indexOf(theme.video) === -1) {
-                  v.src = theme.video;
-                  v.load();
-                  v.play().catch(function(){});
-                }
-              }
-              var lbl = document.getElementById('cosmic-theme-label');
-              if (lbl) lbl.textContent = theme.label;
-            }
-
-            window.switchCosmicTheme = function(id) {
-              var t = THEMES.find(function(x){ return x.id === id; });
-              if (t) applyTheme(t);
-            };
-            window.cycleCosmicTheme = function() {
-              var saved = null;
-              try { saved = localStorage.getItem('cosmic-theme'); } catch(e) {}
-              var idx = THEMES.findIndex(function(x){ return x.id === saved; });
-              if (idx === -1) idx = 0;
-              applyTheme(THEMES[(idx + 1) % THEMES.length]);
-            };
-
-            // Inject switcher button via DOM (server component gak bisa React onClick)
-            function injectSwitcher() {
-              if (document.getElementById('cosmic-theme-switcher')) return;
-              var btn = document.createElement('button');
-              btn.id = 'cosmic-theme-switcher';
-              btn.setAttribute('aria-label', 'Ganti tema cosmic background');
-              btn.title = 'Klik untuk ganti tema cosmic background';
-              btn.innerHTML = '🎬 <span id="cosmic-theme-label">' + current.label + '</span>';
-              btn.style.cssText = [
-                'position:fixed', 'top:64px', 'right:16px', 'z-index:99999',
-                'padding:8px 14px', 'border-radius:999px',
-                'background:rgba(15,23,42,0.88)',
-                'border:1px solid rgba(34,211,238,0.6)',
-                'color:#22d3ee', 'cursor:pointer', 'font-size:13px',
-                'font-family:Segoe UI,sans-serif',
-                'backdrop-filter:blur(10px)',
-                '-webkit-backdrop-filter:blur(10px)',
-                'box-shadow:0 4px 12px rgba(34,211,238,0.25)',
-                'transition:all 0.2s ease',
-                'user-select:none'
-              ].join(';');
-              btn.onmouseenter = function() {
-                btn.style.background = 'rgba(15,23,42,0.95)';
-                btn.style.boxShadow = '0 6px 20px rgba(34,211,238,0.5)';
-                btn.style.transform = 'translateY(-1px)';
-              };
-              btn.onmouseleave = function() {
-                btn.style.background = 'rgba(15,23,42,0.88)';
-                btn.style.boxShadow = '0 4px 12px rgba(34,211,238,0.25)';
-                btn.style.transform = 'translateY(0)';
-              };
-              btn.onclick = function() { window.cycleCosmicTheme(); };
-              document.body.appendChild(btn);
-            }
-
-            // Apply initial theme on first paint (before video element creates)
-            // We need to set src on video AFTER element exists — use DOMContentLoaded
-            document.addEventListener('DOMContentLoaded', function() {
-              applyTheme(current);
-              injectSwitcher();
-            });
-            // Fallback for already-loaded
-            if (document.readyState !== 'loading') {
-              setTimeout(function(){ applyTheme(current); injectSwitcher(); }, 0);
-            }
-
-            // Brave/Chrome strict autoplay-policy workaround: video autoplay kadang
-            // ke-block sampai ada user gesture (bahkan walau muted+playsinline).
-            // Listener ini call play() lagi pas first user interaction (click/touch/keydown
-            // di mana aja), terus self-cleanup via { once: true }. No-op kalau video
-            // udah playing. Ref: https://developer.chrome.com/blog/autoplay/
-            ['click','touchstart','keydown'].forEach(function(evt) {
-              document.addEventListener(evt, function() {
-                var v = document.getElementById('cosmic-bg-video-el');
-                if (v) v.play().catch(function(){});
-              }, { once: true, passive: true });
-            });
-          })();
-        `}} />
         <style dangerouslySetInnerHTML={{ __html: `
           /* ============================================================
-             THEME SYSTEM — Single theme: Cosmic Fusion (forced for all users)
+             DESIGN TOKENS — Horizon/shadcn-modern, slate base + cyan accent.
+             Phase 1 foundation: clean dark, no video bg, solid surfaces.
              ============================================================ */
-
-          /* Default body bg + before/after wrappers (semua tema share struktur) */
-          body::before {
-            content: '';
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            pointer-events: none;
-            z-index: 0;
+          :root {
+            --bg-base:        #020617;  /* slate-950 — body */
+            --bg-surface:     #0f172a;  /* slate-900 — cards */
+            --bg-surface-2:   #1e293b;  /* slate-800 — elevated */
+            --bg-input:       #0a1224;  /* deeper for form fields */
+            --border:         #1e293b;  /* slate-800 */
+            --border-strong:  #334155;  /* slate-700 */
+            --border-accent:  rgba(34, 211, 238, 0.25);
+            --text-primary:   #e0f2fe;  /* sky-100 */
+            --text-secondary: #94a3b8;  /* slate-400 */
+            --text-muted:     #64748b;  /* slate-500 */
+            --accent:         #22d3ee;  /* cyan-400 */
+            --accent-hover:   #06b6d4;  /* cyan-500 */
+            --accent-bg:      rgba(34, 211, 238, 0.10);
+            --success:        #10b981;  /* emerald-500 */
+            --warning:        #f59e0b;  /* amber-500 */
+            --danger:         #ef4444;  /* red-500 */
+            --radius-sm:      4px;
+            --radius:         8px;
+            --radius-lg:      12px;
+            --shadow-sm:      0 1px 2px rgba(0, 0, 0, 0.3);
+            --shadow:         0 4px 16px rgba(0, 0, 0, 0.35);
+            --shadow-lg:      0 8px 32px rgba(0, 0, 0, 0.45);
           }
-          body::after {
-            content: '';
-            position: fixed;
-            top: 0; left: 0; right: 0;
-            height: 2px;
-            pointer-events: none;
-            z-index: 99;
+
+          /* ============================================================
+             RESET & BASE
+             ============================================================ */
+          *, *::before, *::after { box-sizing: border-box; }
+          html, body {
+            margin: 0;
+            padding: 0;
+            background: var(--bg-base);
+            color: var(--text-primary);
+            font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-size: 14px;
+            line-height: 1.5;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            min-height: 100vh;
           }
 
-
-          /* Reduce motion preference — disable theme animations */
-          @media (prefers-reduced-motion: reduce) {
-            body::before, body::after { animation: none !important; }
-          }
-
-
-          /* Scrollbar — kristal es */
+          /* Scrollbar — minimal, slate-themed */
           ::-webkit-scrollbar { width: 10px; height: 10px; }
-          ::-webkit-scrollbar-track { background: #020617; border-left: 1px solid #0f172a; }
+          ::-webkit-scrollbar-track { background: var(--bg-base); }
           ::-webkit-scrollbar-thumb {
-            background: linear-gradient(180deg, #0e7490, #164e63);
-            border-radius: 2px;
-            border: 1px solid #0f172a;
+            background: var(--bg-surface-2);
+            border-radius: var(--radius-sm);
           }
-          ::-webkit-scrollbar-thumb:hover {
-            background: linear-gradient(180deg, #06b6d4, #0891b2);
-            box-shadow: 0 0 10px rgba(6, 182, 212, 0.5);
-          }
-          ::-webkit-scrollbar-corner { background: #020617; }
+          ::-webkit-scrollbar-thumb:hover { background: var(--border-strong); }
+          ::-webkit-scrollbar-corner { background: var(--bg-base); }
 
-          /* Input focus — icy glow */
+          /* Focus ring — accessible + branded */
+          :focus-visible {
+            outline: 2px solid var(--accent);
+            outline-offset: 2px;
+            border-radius: var(--radius-sm);
+          }
           input:focus, select:focus, textarea:focus {
-            border-color: #06b6d4 !important;
-            box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.2), 0 0 15px rgba(103, 232, 249, 0.2) !important;
+            border-color: var(--accent) !important;
+            box-shadow: 0 0 0 3px var(--accent-bg) !important;
+            outline: none;
           }
 
-          /* Button hover — sharp response */
-          button:hover, [role="button"]:hover {
-            filter: brightness(1.2);
-            transform: translateY(-1px);
-            box-shadow: 0 4px 20px rgba(6, 182, 212, 0.4) !important;
-          }
-
-          /* Selection — ice highlight */
+          /* Selection */
           ::selection {
-            background: rgba(6, 182, 212, 0.4);
-            color: #e0f2fe;
+            background: var(--accent-bg);
+            color: var(--text-primary);
           }
 
-          /* Bell/chat pulse animation — saat ada unread */
+          /* Subtle button hover (no garish glow) */
+          button:not(:disabled):hover, [role="button"]:not(:disabled):hover {
+            filter: brightness(1.1);
+          }
+          button:not(:disabled):active, [role="button"]:not(:disabled):active {
+            transform: translateY(1px);
+          }
+
+          /* ============================================================
+             ANIMATIONS — keep features-used keyframes
+             ============================================================ */
           @keyframes bellPulse {
             0%, 100% { transform: scale(1); }
             50% { transform: scale(1.15); }
           }
-
-          /* Recording pulse — tombol record voice */
           @keyframes recordPulse {
             0%, 100% { background-color: #991b1b; box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
             50% { background-color: #dc2626; box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
           }
-
-          /* Chat message delete button — show on hover */
-          .chat-message-row:hover .msg-delete-btn {
-            opacity: 1 !important;
-          }
-
-          /* Online dot pulse animation */
           @keyframes onlinePulse {
             0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
             50% { box-shadow: 0 0 0 4px rgba(16, 185, 129, 0); }
           }
+          .chat-message-row:hover .msg-delete-btn { opacity: 1 !important; }
 
           /* ============================================================
-             MOBILE RESPONSIVE — breakpoint 768px (tablet/HP)
+             LAYOUT HELPERS — used by page.js dashboard markup
              ============================================================ */
-
-          /* Header row: wrap kalau kepenuhan di mobile */
           .dash-header {
             flex-wrap: wrap;
             gap: 10px;
           }
-
-          /* Tab navigation: horizontal scroll di mobile */
           .dash-tabs {
             overflow-x: auto;
             -webkit-overflow-scrolling: touch;
             scrollbar-width: thin;
           }
           .dash-tabs::-webkit-scrollbar { height: 4px; }
-          .dash-tabs::-webkit-scrollbar-thumb { background: #0891b2; }
+          .dash-tabs::-webkit-scrollbar-thumb { background: var(--accent); }
+          .dash-main { padding: 24px; }
 
-          /* Main content: padding lebih kecil di mobile */
-          .dash-main {
-            padding: 24px;
-          }
-
-          /* Grid form: default 2-3 kolom */
           .responsive-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
           .responsive-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-
-          /* Stat cards grid */
-          .responsive-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; }
-
-          /* Modal base — full screen di mobile */
-          .responsive-modal-backdrop {
-            padding: 20px;
+          .responsive-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 14px;
           }
+
+          .responsive-modal-backdrop { padding: 20px; }
           .responsive-modal-content {
             max-width: 900px;
             width: 100%;
             max-height: 90vh;
           }
 
-          /* Chat modal specific — sidebar fixed 220px di desktop */
           .chat-sidebar { width: 220px; min-width: 220px; }
           .chat-main-area { flex: 1; }
 
+          /* ============================================================
+             MOBILE RESPONSIVE — breakpoint 768px (tablet/HP)
+             ============================================================ */
           @media (max-width: 768px) {
-            /* Header: font logo lebih kecil, icons wrap */
             .dash-header h1 { font-size: 16px !important; }
             .dash-header {
               gap: 6px;
@@ -246,10 +149,7 @@ export default function RootLayout({ children }) {
             }
             .dash-header a { font-size: 14px !important; }
 
-            /* Tabs: font lebih kecil, padding kompak */
-            .dash-tabs {
-              padding: 0 10px !important;
-            }
+            .dash-tabs { padding: 0 10px !important; }
             .dash-tabs > div {
               padding: 10px 12px !important;
               font-size: 11px !important;
@@ -257,27 +157,18 @@ export default function RootLayout({ children }) {
               flex-shrink: 0;
             }
 
-            /* Main content padding kecilin */
-            .dash-main {
-              padding: 14px 10px !important;
-            }
+            .dash-main { padding: 14px 10px !important; }
 
-            /* Grid forms stack jadi 1 kolom */
             .responsive-grid-3,
             .responsive-grid-2 {
               grid-template-columns: 1fr !important;
             }
-
-            /* Stat cards: minimum 130px */
             .responsive-stats {
               grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)) !important;
               gap: 8px !important;
             }
 
-            /* Modal — hampir full screen di mobile */
-            .responsive-modal-backdrop {
-              padding: 0 !important;
-            }
+            .responsive-modal-backdrop { padding: 0 !important; }
             .responsive-modal-content {
               max-height: 100vh !important;
               max-width: 100% !important;
@@ -286,844 +177,38 @@ export default function RootLayout({ children }) {
               border: none !important;
             }
 
-            /* Chat modal: sidebar collapsible */
             .chat-sidebar {
               width: 100% !important;
               min-width: 100% !important;
               max-height: 180px;
               overflow-y: auto;
               border-right: none !important;
-              border-bottom: 1px solid #1f2937;
+              border-bottom: 1px solid var(--border);
             }
-            .chat-body-flex {
-              flex-direction: column !important;
-            }
+            .chat-body-flex { flex-direction: column !important; }
 
-            /* Tables: force horizontal scroll */
-            table {
-              min-width: auto !important;
-            }
-
-            /* Hide some text di mobile, icon only */
-            .mobile-hide-text {
-              display: none !important;
-            }
+            table { min-width: auto !important; }
+            .mobile-hide-text { display: none !important; }
           }
 
           @media (max-width: 480px) {
-            /* Extra small phones */
             .dash-header h1 { font-size: 14px !important; }
-            .dash-header {
-              padding: 8px 10px !important;
-            }
-            .responsive-stats {
-              grid-template-columns: 1fr 1fr !important;
-            }
+            .dash-header { padding: 8px 10px !important; }
+            .responsive-stats { grid-template-columns: 1fr 1fr !important; }
           }
 
-          /* ============================================================
-             3D PARALLAX LAYERS — per-theme depth animation
-             3 layer (back/mid/front) dengan perspective + translateZ
-             ============================================================ */
-
-          .theme-fx {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            pointer-events: none;
-            z-index: 1;
-            perspective: 1200px;
-            perspective-origin: 50% 50%;
-            overflow: hidden;
-            transform-style: preserve-3d;
-          }
-          .theme-fx-layer {
-            position: absolute;
-            top: -10%; left: -10%;
-            width: 120%;
-            height: 120%;
-            transform-style: preserve-3d;
-            backface-visibility: hidden;
-          }
-
-
-          /* ============================================================
-             🌠 COSMIC FUSION — kombinasi Galaxy + Spiral + Supernova
-             User minta gabungkan 3 tema favorit jadi 1 mega-cosmic.
-             ============================================================ */
-
-          [data-theme="cosmic-fusion"] body {
-            background: radial-gradient(ellipse at 30% 30%, #1a0a3e 0%, #0a0420 35%, #0a0010 70%, #000 100%) !important;
-            color: #fef3c7 !important;
-            font-family: 'Georgia', 'Times New Roman', serif !important;
-            letter-spacing: 0.025em;
-          }
-          [data-theme="cosmic-fusion"] h1,
-          [data-theme="cosmic-fusion"] h2,
-          [data-theme="cosmic-fusion"] h3 {
-            font-family: 'Impact', 'Arial Black', sans-serif !important;
-            text-transform: uppercase !important;
-            letter-spacing: 0.07em !important;
-            text-shadow:
-              0 0 25px rgba(254, 243, 199, 0.6),
-              0 0 45px rgba(168, 85, 247, 0.5),
-              0 0 70px rgba(251, 146, 60, 0.4) !important;
-          }
-          /* Multi-color nebula background — DIMMED biar gak overpower stars */
-          [data-theme="cosmic-fusion"] body::before {
-            content: '';
-            position: fixed; inset: 0;
-            background-image:
-              radial-gradient(ellipse 1000px 600px at 25% 30%, rgba(168, 85, 247, 0.15) 0%, transparent 60%),
-              radial-gradient(ellipse 800px 500px at 75% 60%, rgba(236, 72, 153, 0.12) 0%, transparent 60%),
-              radial-gradient(ellipse 700px 400px at 50% 70%, rgba(59, 130, 246, 0.10) 0%, transparent 60%),
-              radial-gradient(ellipse 600px 400px at 80% 25%, rgba(251, 146, 60, 0.10) 0%, transparent 65%);
-            animation: fusionNebulaShift 25s ease-in-out infinite;
-            pointer-events: none;
-            z-index: 0;
-          }
-          /* Stars layer STATIC (60 stars, always visible, gentle twinkle) — bukan warp lagi */
-          [data-theme="cosmic-fusion"] body::after {
-            content: '';
-            position: fixed; inset: 0;
-            height: 100vh; bottom: 0; z-index: 0;
-            background-image:
-              radial-gradient(1.5px 1.5px at 3% 5%, rgba(255, 255, 255, 0.70), transparent),
-              radial-gradient(1.5px 1.5px at 7% 18%, rgba(165, 243, 252, 0.65), transparent),
-              radial-gradient(1.5px 1.5px at 11% 32%, rgba(254, 240, 138, 0.70), transparent),
-              radial-gradient(1.5px 1.5px at 15% 47%, rgba(255, 255, 255, 0.75), transparent),
-              radial-gradient(1.5px 1.5px at 19% 61%, rgba(167, 139, 250, 0.70), transparent),
-              radial-gradient(1.5px 1.5px at 23% 76%, rgba(252, 165, 165, 0.65), transparent),
-              radial-gradient(1.5px 1.5px at 27% 9%, rgba(255, 255, 255, 0.65), transparent),
-              radial-gradient(1.5px 1.5px at 31% 23%, rgba(96, 165, 250, 0.70), transparent),
-              radial-gradient(1.5px 1.5px at 35% 38%, rgba(254, 243, 199, 0.75), transparent),
-              radial-gradient(1.5px 1.5px at 39% 54%, rgba(165, 243, 252, 0.65), transparent),
-              radial-gradient(1.5px 1.5px at 43% 69%, rgba(255, 255, 255, 0.70), transparent),
-              radial-gradient(1.5px 1.5px at 47% 84%, rgba(254, 240, 138, 0.65), transparent),
-              radial-gradient(1.5px 1.5px at 51% 14%, rgba(167, 139, 250, 0.70), transparent),
-              radial-gradient(1.5px 1.5px at 55% 28%, rgba(255, 255, 255, 0.65), transparent),
-              radial-gradient(1.5px 1.5px at 59% 43%, rgba(252, 165, 165, 0.70), transparent),
-              radial-gradient(1.5px 1.5px at 63% 58%, rgba(96, 165, 250, 0.65), transparent),
-              radial-gradient(1.5px 1.5px at 67% 72%, rgba(255, 255, 255, 0.75), transparent),
-              radial-gradient(1.5px 1.5px at 71% 88%, rgba(254, 243, 199, 0.70), transparent),
-              radial-gradient(1.5px 1.5px at 75% 18%, rgba(165, 243, 252, 0.65), transparent),
-              radial-gradient(1.5px 1.5px at 79% 33%, rgba(255, 255, 255, 0.70), transparent),
-              radial-gradient(1.5px 1.5px at 83% 48%, rgba(167, 139, 250, 0.65), transparent),
-              radial-gradient(1.5px 1.5px at 87% 62%, rgba(254, 240, 138, 0.70), transparent),
-              radial-gradient(1.5px 1.5px at 91% 78%, rgba(255, 255, 255, 0.65), transparent),
-              radial-gradient(1.5px 1.5px at 95% 92%, rgba(252, 165, 165, 0.70), transparent),
-              radial-gradient(1.5px 1.5px at 99% 25%, rgba(96, 165, 250, 0.70), transparent),
-              radial-gradient(1.5px 1.5px at 5% 96%, rgba(255, 255, 255, 0.65), transparent),
-              radial-gradient(1.5px 1.5px at 9% 80%, rgba(254, 243, 199, 0.70), transparent),
-              radial-gradient(1.5px 1.5px at 13% 67%, rgba(165, 243, 252, 0.65), transparent),
-              radial-gradient(1.5px 1.5px at 17% 11%, rgba(255, 255, 255, 0.75), transparent),
-              radial-gradient(1.5px 1.5px at 21% 54%, rgba(167, 139, 250, 0.65), transparent),
-              radial-gradient(1.5px 1.5px at 25% 41%, rgba(252, 165, 165, 0.70), transparent),
-              radial-gradient(1.5px 1.5px at 29% 87%, rgba(255, 255, 255, 0.65), transparent),
-              radial-gradient(1.5px 1.5px at 33% 6%, rgba(96, 165, 250, 0.70), transparent),
-              radial-gradient(1.5px 1.5px at 37% 78%, rgba(254, 240, 138, 0.70), transparent),
-              radial-gradient(1.5px 1.5px at 41% 25%, rgba(255, 255, 255, 0.65), transparent),
-              radial-gradient(1.5px 1.5px at 45% 50%, rgba(165, 243, 252, 0.75), transparent),
-              radial-gradient(1.5px 1.5px at 49% 95%, rgba(167, 139, 250, 0.65), transparent),
-              radial-gradient(1.5px 1.5px at 53% 65%, rgba(255, 255, 255, 0.70), transparent),
-              radial-gradient(1.5px 1.5px at 57% 8%, rgba(254, 243, 199, 0.70), transparent),
-              radial-gradient(1.5px 1.5px at 61% 35%, rgba(252, 165, 165, 0.65), transparent),
-              radial-gradient(1.5px 1.5px at 65% 90%, rgba(255, 255, 255, 0.65), transparent),
-              radial-gradient(1.5px 1.5px at 69% 49%, rgba(96, 165, 250, 0.70), transparent),
-              radial-gradient(1.5px 1.5px at 73% 76%, rgba(165, 243, 252, 0.65), transparent),
-              radial-gradient(1.5px 1.5px at 77% 4%, rgba(255, 255, 255, 0.75), transparent),
-              radial-gradient(1.5px 1.5px at 81% 22%, rgba(167, 139, 250, 0.70), transparent),
-              radial-gradient(1.5px 1.5px at 85% 38%, rgba(254, 240, 138, 0.65), transparent),
-              radial-gradient(1.5px 1.5px at 89% 55%, rgba(252, 165, 165, 0.70), transparent),
-              radial-gradient(1.5px 1.5px at 93% 71%, rgba(255, 255, 255, 0.65), transparent),
-              radial-gradient(1.5px 1.5px at 97% 88%, rgba(96, 165, 250, 0.75), transparent),
-              radial-gradient(1.5px 1.5px at 6% 50%, rgba(255, 255, 255, 0.65), transparent),
-              radial-gradient(1.5px 1.5px at 14% 88%, rgba(254, 243, 199, 0.70), transparent),
-              radial-gradient(1.5px 1.5px at 22% 5%, rgba(165, 243, 252, 0.65), transparent),
-              radial-gradient(1.5px 1.5px at 30% 92%, rgba(167, 139, 250, 0.75), transparent),
-              radial-gradient(1.5px 1.5px at 38% 16%, rgba(255, 255, 255, 0.65), transparent),
-              radial-gradient(1.5px 1.5px at 46% 73%, rgba(252, 165, 165, 0.70), transparent),
-              radial-gradient(1.5px 1.5px at 54% 45%, rgba(254, 240, 138, 0.65), transparent),
-              radial-gradient(1.5px 1.5px at 62% 12%, rgba(255, 255, 255, 0.70), transparent),
-              radial-gradient(1.5px 1.5px at 70% 82%, rgba(96, 165, 250, 0.65), transparent),
-              radial-gradient(1.5px 1.5px at 78% 59%, rgba(165, 243, 252, 0.70), transparent),
-              radial-gradient(1.5px 1.5px at 86% 16%, rgba(254, 243, 199, 0.65), transparent),
-              radial-gradient(1.5px 1.5px at 94% 47%, rgba(255, 255, 255, 0.75), transparent),
-              radial-gradient(2px 2px at 8% 28%, rgba(255, 255, 255, 0.75), transparent),
-              radial-gradient(2px 2px at 16% 70%, rgba(165, 243, 252, 0.70), transparent),
-              radial-gradient(2px 2px at 24% 14%, rgba(254, 240, 138, 0.75), transparent),
-              radial-gradient(2px 2px at 32% 82%, rgba(167, 139, 250, 0.70), transparent),
-              radial-gradient(2px 2px at 40% 30%, rgba(252, 165, 165, 0.75), transparent),
-              radial-gradient(2px 2px at 48% 58%, rgba(96, 165, 250, 0.70), transparent),
-              radial-gradient(2px 2px at 56% 88%, rgba(254, 243, 199, 0.75), transparent),
-              radial-gradient(2px 2px at 64% 22%, rgba(255, 255, 255, 0.70), transparent),
-              radial-gradient(2px 2px at 72% 64%, rgba(165, 243, 252, 0.75), transparent),
-              radial-gradient(2px 2px at 80% 36%, rgba(167, 139, 250, 0.70), transparent),
-              radial-gradient(2px 2px at 88% 80%, rgba(252, 165, 165, 0.75), transparent),
-              radial-gradient(2px 2px at 96% 14%, rgba(254, 240, 138, 0.70), transparent),
-              radial-gradient(2px 2px at 4% 60%, rgba(255, 255, 255, 0.75), transparent),
-              radial-gradient(2px 2px at 12% 4%, rgba(96, 165, 250, 0.70), transparent),
-              radial-gradient(2px 2px at 20% 92%, rgba(165, 243, 252, 0.75), transparent),
-              radial-gradient(2px 2px at 28% 46%, rgba(254, 243, 199, 0.70), transparent),
-              radial-gradient(2px 2px at 36% 6%, rgba(167, 139, 250, 0.75), transparent),
-              radial-gradient(2px 2px at 44% 84%, rgba(255, 255, 255, 0.70), transparent),
-              radial-gradient(2px 2px at 52% 26%, rgba(252, 165, 165, 0.75), transparent),
-              radial-gradient(2px 2px at 60% 70%, rgba(254, 240, 138, 0.70), transparent);
-            background-size: 100% 100%;
-            box-shadow: none;
-            animation: fusionStarsTwinkle 4s ease-in-out infinite;
-            opacity: 0.85;
-            pointer-events: none;
-          }
-          /* WARP FAR STARS — bintang jauh zoom slow (galaxy hyperspace, slowest) */
-          [data-theme="cosmic-fusion"] .theme-fx-layer.fx-back {
-            background-image:
-              radial-gradient(1.5px 1.5px at 5% 10%, rgba(255, 255, 255, 0.85), transparent),
-              radial-gradient(1.5px 1.5px at 12% 22%, rgba(165, 243, 252, 0.80), transparent),
-              radial-gradient(1.5px 1.5px at 19% 35%, rgba(254, 240, 138, 0.85), transparent),
-              radial-gradient(1.5px 1.5px at 26% 48%, rgba(255, 255, 255, 0.80), transparent),
-              radial-gradient(2px 2px at 33% 61%, rgba(167, 139, 250, 0.85), transparent),
-              radial-gradient(1.5px 1.5px at 40% 74%, rgba(252, 165, 165, 0.80), transparent),
-              radial-gradient(1.5px 1.5px at 47% 87%, rgba(255, 255, 255, 0.85), transparent),
-              radial-gradient(2px 2px at 54% 12%, rgba(96, 165, 250, 0.80), transparent),
-              radial-gradient(1.5px 1.5px at 61% 25%, rgba(254, 243, 199, 0.85), transparent),
-              radial-gradient(1.5px 1.5px at 68% 38%, rgba(165, 243, 252, 0.80), transparent),
-              radial-gradient(2px 2px at 75% 51%, rgba(255, 255, 255, 0.85), transparent),
-              radial-gradient(1.5px 1.5px at 82% 64%, rgba(167, 139, 250, 0.80), transparent),
-              radial-gradient(1.5px 1.5px at 89% 77%, rgba(252, 165, 165, 0.85), transparent),
-              radial-gradient(2px 2px at 96% 90%, rgba(254, 240, 138, 0.80), transparent),
-              radial-gradient(1.5px 1.5px at 8% 65%, rgba(255, 255, 255, 0.85), transparent),
-              radial-gradient(1.5px 1.5px at 16% 82%, rgba(96, 165, 250, 0.80), transparent),
-              radial-gradient(1.5px 1.5px at 24% 95%, rgba(254, 243, 199, 0.85), transparent),
-              radial-gradient(2px 2px at 32% 8%, rgba(165, 243, 252, 0.80), transparent),
-              radial-gradient(1.5px 1.5px at 38% 19%, rgba(255, 255, 255, 0.85), transparent),
-              radial-gradient(1.5px 1.5px at 44% 32%, rgba(252, 165, 165, 0.80), transparent),
-              radial-gradient(1.5px 1.5px at 50% 45%, rgba(167, 139, 250, 0.85), transparent),
-              radial-gradient(2px 2px at 56% 58%, rgba(255, 255, 255, 0.80), transparent),
-              radial-gradient(1.5px 1.5px at 62% 71%, rgba(254, 240, 138, 0.85), transparent),
-              radial-gradient(1.5px 1.5px at 68% 84%, rgba(96, 165, 250, 0.80), transparent),
-              radial-gradient(1.5px 1.5px at 74% 5%, rgba(165, 243, 252, 0.85), transparent),
-              radial-gradient(2px 2px at 80% 18%, rgba(255, 255, 255, 0.85), transparent),
-              radial-gradient(1.5px 1.5px at 86% 31%, rgba(254, 243, 199, 0.80), transparent),
-              radial-gradient(1.5px 1.5px at 92% 44%, rgba(167, 139, 250, 0.85), transparent),
-              radial-gradient(1.5px 1.5px at 98% 57%, rgba(252, 165, 165, 0.80), transparent),
-              radial-gradient(2px 2px at 4% 38%, rgba(255, 255, 255, 0.85), transparent),
-              radial-gradient(1.5px 1.5px at 10% 51%, rgba(254, 240, 138, 0.80), transparent),
-              radial-gradient(1.5px 1.5px at 18% 76%, rgba(96, 165, 250, 0.85), transparent),
-              radial-gradient(2px 2px at 28% 14%, rgba(165, 243, 252, 0.85), transparent),
-              radial-gradient(1.5px 1.5px at 36% 29%, rgba(254, 243, 199, 0.80), transparent),
-              radial-gradient(1.5px 1.5px at 42% 52%, rgba(167, 139, 250, 0.85), transparent),
-              radial-gradient(1.5px 1.5px at 48% 75%, rgba(252, 165, 165, 0.80), transparent),
-              radial-gradient(2px 2px at 54% 92%, rgba(255, 255, 255, 0.85), transparent),
-              radial-gradient(1.5px 1.5px at 60% 16%, rgba(96, 165, 250, 0.80), transparent),
-              radial-gradient(1.5px 1.5px at 66% 39%, rgba(254, 240, 138, 0.85), transparent),
-              radial-gradient(2px 2px at 72% 62%, rgba(165, 243, 252, 0.80), transparent),
-              radial-gradient(1.5px 1.5px at 78% 85%, rgba(255, 255, 255, 0.85), transparent),
-              radial-gradient(1.5px 1.5px at 84% 9%, rgba(167, 139, 250, 0.80), transparent),
-              radial-gradient(1.5px 1.5px at 90% 22%, rgba(254, 243, 199, 0.85), transparent),
-              radial-gradient(2px 2px at 96% 35%, rgba(252, 165, 165, 0.80), transparent),
-              radial-gradient(1.5px 1.5px at 14% 47%, rgba(255, 255, 255, 0.80), transparent),
-              radial-gradient(1.5px 1.5px at 22% 68%, rgba(96, 165, 250, 0.85), transparent),
-              radial-gradient(1.5px 1.5px at 30% 91%, rgba(165, 243, 252, 0.80), transparent),
-              radial-gradient(2px 2px at 46% 6%, rgba(254, 243, 199, 0.85), transparent),
-              radial-gradient(1.5px 1.5px at 58% 28%, rgba(167, 139, 250, 0.80), transparent),
-              radial-gradient(1.5px 1.5px at 70% 49%, rgba(252, 165, 165, 0.85), transparent);
-            background-size: 100% 100%;
-            animation: fusionStarsWarpFar 12s linear infinite;
-          }
-          /* Bintang ORBIT memutar sekitar pusat (50 stars, very dim alpha 0.25-0.35) */
-          [data-theme="cosmic-fusion"] .theme-fx-layer.fx-mid {
-            background-image:
-              radial-gradient(1.5px 1.5px at 4% 6%, rgba(255, 255, 255, 0.70), transparent),
-              radial-gradient(1.5px 1.5px at 10% 18%, rgba(165, 243, 252, 0.65), transparent),
-              radial-gradient(1.5px 1.5px at 16% 32%, rgba(254, 240, 138, 0.70), transparent),
-              radial-gradient(1.5px 1.5px at 22% 46%, rgba(167, 139, 250, 0.65), transparent),
-              radial-gradient(1.5px 1.5px at 28% 60%, rgba(255, 255, 255, 0.75), transparent),
-              radial-gradient(1.5px 1.5px at 34% 74%, rgba(252, 165, 165, 0.65), transparent),
-              radial-gradient(1.5px 1.5px at 40% 88%, rgba(96, 165, 250, 0.70), transparent),
-              radial-gradient(1.5px 1.5px at 46% 8%, rgba(255, 255, 255, 0.65), transparent),
-              radial-gradient(1.5px 1.5px at 52% 22%, rgba(254, 243, 199, 0.70), transparent),
-              radial-gradient(1.5px 1.5px at 58% 36%, rgba(165, 243, 252, 0.75), transparent),
-              radial-gradient(1.5px 1.5px at 64% 50%, rgba(255, 255, 255, 0.65), transparent),
-              radial-gradient(1.5px 1.5px at 70% 64%, rgba(167, 139, 250, 0.70), transparent),
-              radial-gradient(1.5px 1.5px at 76% 78%, rgba(252, 165, 165, 0.65), transparent),
-              radial-gradient(1.5px 1.5px at 82% 14%, rgba(255, 255, 255, 0.70), transparent),
-              radial-gradient(1.5px 1.5px at 88% 28%, rgba(96, 165, 250, 0.75), transparent),
-              radial-gradient(1.5px 1.5px at 94% 42%, rgba(254, 240, 138, 0.65), transparent),
-              radial-gradient(1.5px 1.5px at 8% 88%, rgba(255, 255, 255, 0.70), transparent),
-              radial-gradient(1.5px 1.5px at 14% 56%, rgba(165, 243, 252, 0.65), transparent),
-              radial-gradient(1.5px 1.5px at 20% 12%, rgba(167, 139, 250, 0.75), transparent),
-              radial-gradient(1.5px 1.5px at 26% 78%, rgba(255, 255, 255, 0.65), transparent),
-              radial-gradient(1.5px 1.5px at 32% 38%, rgba(254, 243, 199, 0.70), transparent),
-              radial-gradient(1.5px 1.5px at 38% 24%, rgba(252, 165, 165, 0.70), transparent),
-              radial-gradient(1.5px 1.5px at 44% 64%, rgba(255, 255, 255, 0.65), transparent),
-              radial-gradient(1.5px 1.5px at 50% 92%, rgba(96, 165, 250, 0.70), transparent),
-              radial-gradient(1.5px 1.5px at 56% 4%, rgba(165, 243, 252, 0.65), transparent),
-              radial-gradient(1.5px 1.5px at 62% 28%, rgba(255, 255, 255, 0.75), transparent),
-              radial-gradient(1.5px 1.5px at 68% 84%, rgba(167, 139, 250, 0.65), transparent),
-              radial-gradient(1.5px 1.5px at 74% 42%, rgba(254, 240, 138, 0.70), transparent),
-              radial-gradient(1.5px 1.5px at 80% 96%, rgba(255, 255, 255, 0.65), transparent),
-              radial-gradient(1.5px 1.5px at 86% 56%, rgba(252, 165, 165, 0.70), transparent),
-              radial-gradient(1.5px 1.5px at 92% 70%, rgba(254, 243, 199, 0.65), transparent),
-              radial-gradient(1.5px 1.5px at 98% 84%, rgba(96, 165, 250, 0.70), transparent),
-              radial-gradient(1.5px 1.5px at 2% 24%, rgba(255, 255, 255, 0.65), transparent),
-              radial-gradient(1.5px 1.5px at 6% 42%, rgba(165, 243, 252, 0.70), transparent),
-              radial-gradient(1.5px 1.5px at 12% 68%, rgba(167, 139, 250, 0.65), transparent),
-              radial-gradient(1.5px 1.5px at 18% 84%, rgba(255, 255, 255, 0.75), transparent),
-              radial-gradient(1.5px 1.5px at 24% 4%, rgba(254, 240, 138, 0.65), transparent),
-              radial-gradient(1.5px 1.5px at 30% 16%, rgba(96, 165, 250, 0.70), transparent),
-              radial-gradient(1.5px 1.5px at 36% 50%, rgba(252, 165, 165, 0.65), transparent),
-              radial-gradient(1.5px 1.5px at 42% 92%, rgba(255, 255, 255, 0.70), transparent),
-              radial-gradient(1.5px 1.5px at 48% 36%, rgba(254, 243, 199, 0.65), transparent),
-              radial-gradient(1.5px 1.5px at 54% 76%, rgba(165, 243, 252, 0.70), transparent),
-              radial-gradient(1.5px 1.5px at 60% 16%, rgba(167, 139, 250, 0.65), transparent),
-              radial-gradient(1.5px 1.5px at 66% 42%, rgba(255, 255, 255, 0.75), transparent),
-              radial-gradient(1.5px 1.5px at 72% 96%, rgba(96, 165, 250, 0.65), transparent),
-              radial-gradient(1.5px 1.5px at 78% 22%, rgba(254, 240, 138, 0.70), transparent),
-              radial-gradient(1.5px 1.5px at 84% 70%, rgba(255, 255, 255, 0.65), transparent),
-              radial-gradient(1.5px 1.5px at 90% 6%, rgba(252, 165, 165, 0.70), transparent),
-              radial-gradient(1.5px 1.5px at 96% 96%, rgba(165, 243, 252, 0.65), transparent),
-              radial-gradient(1.5px 1.5px at 0% 60%, rgba(254, 243, 199, 0.70), transparent);
-            background-size: 100% 100%;
-            animation: fusionStarsOrbit 80s linear infinite;
-          }
-          /* Tambahkan medium warp stars layer pakai planet-2 background-image trick — tapi planet-2 udah dipakai mini spiral.
-             Solusi: pakai pseudo ::before/::after di .theme-fx-layer.fx-mid untuk medium warp */
-          [data-theme="cosmic-fusion"] .theme-fx-layer.fx-mid::before {
-            content: '';
-            position: absolute; inset: 0;
-            background-image:
-              radial-gradient(2px 2px at 5% 8%, rgba(255, 255, 255, 0.85), transparent),
-              radial-gradient(2px 2px at 12% 22%, rgba(165, 243, 252, 0.80), transparent),
-              radial-gradient(2.5px 2.5px at 19% 36%, rgba(254, 240, 138, 0.85), transparent),
-              radial-gradient(2px 2px at 26% 50%, rgba(255, 255, 255, 0.80), transparent),
-              radial-gradient(2.5px 2.5px at 33% 64%, rgba(167, 139, 250, 0.85), transparent),
-              radial-gradient(2px 2px at 40% 78%, rgba(252, 165, 165, 0.80), transparent),
-              radial-gradient(2px 2px at 47% 92%, rgba(96, 165, 250, 0.85), transparent),
-              radial-gradient(2.5px 2.5px at 54% 6%, rgba(255, 255, 255, 0.80), transparent),
-              radial-gradient(2px 2px at 61% 20%, rgba(254, 243, 199, 0.85), transparent),
-              radial-gradient(2.5px 2.5px at 68% 34%, rgba(165, 243, 252, 0.80), transparent),
-              radial-gradient(2px 2px at 75% 48%, rgba(167, 139, 250, 0.85), transparent),
-              radial-gradient(2.5px 2.5px at 82% 62%, rgba(255, 255, 255, 0.85), transparent),
-              radial-gradient(2px 2px at 89% 76%, rgba(254, 240, 138, 0.80), transparent),
-              radial-gradient(2.5px 2.5px at 96% 90%, rgba(252, 165, 165, 0.85), transparent),
-              radial-gradient(2px 2px at 8% 50%, rgba(255, 255, 255, 0.80), transparent),
-              radial-gradient(2px 2px at 16% 75%, rgba(96, 165, 250, 0.85), transparent),
-              radial-gradient(2.5px 2.5px at 24% 12%, rgba(254, 243, 199, 0.85), transparent),
-              radial-gradient(2px 2px at 32% 88%, rgba(165, 243, 252, 0.80), transparent),
-              radial-gradient(2.5px 2.5px at 44% 28%, rgba(167, 139, 250, 0.85), transparent),
-              radial-gradient(2px 2px at 52% 56%, rgba(252, 165, 165, 0.80), transparent),
-              radial-gradient(2px 2px at 60% 80%, rgba(255, 255, 255, 0.85), transparent),
-              radial-gradient(2.5px 2.5px at 68% 8%, rgba(254, 240, 138, 0.80), transparent),
-              radial-gradient(2px 2px at 76% 30%, rgba(96, 165, 250, 0.85), transparent),
-              radial-gradient(2.5px 2.5px at 84% 56%, rgba(167, 139, 250, 0.80), transparent),
-              radial-gradient(2px 2px at 92% 32%, rgba(255, 255, 255, 0.85), transparent),
-              radial-gradient(2.5px 2.5px at 4% 70%, rgba(254, 243, 199, 0.80), transparent),
-              radial-gradient(2px 2px at 14% 42%, rgba(165, 243, 252, 0.85), transparent),
-              radial-gradient(2px 2px at 28% 60%, rgba(255, 255, 255, 0.80), transparent),
-              radial-gradient(2.5px 2.5px at 38% 18%, rgba(167, 139, 250, 0.85), transparent),
-              radial-gradient(2px 2px at 48% 70%, rgba(252, 165, 165, 0.80), transparent),
-              radial-gradient(2.5px 2.5px at 58% 38%, rgba(254, 240, 138, 0.85), transparent),
-              radial-gradient(2px 2px at 72% 88%, rgba(255, 255, 255, 0.85), transparent),
-              radial-gradient(2px 2px at 88% 8%, rgba(96, 165, 250, 0.80), transparent),
-              radial-gradient(2.5px 2.5px at 22% 4%, rgba(165, 243, 252, 0.85), transparent),
-              radial-gradient(2px 2px at 64% 96%, rgba(254, 243, 199, 0.80), transparent);
-            background-size: 100% 100%;
-            animation: fusionStarsWarpMid 6s linear infinite;
-            pointer-events: none;
-          }
-          /* Layer 3 (front): HYPERSPACE WARP stars FRONT — paling cepat, paling dekat */
-          [data-theme="cosmic-fusion"] .theme-fx-layer.fx-front {
-            background-image:
-              radial-gradient(2.5px 2.5px at 5% 10%, rgba(255, 255, 255, 0.95), transparent),
-              radial-gradient(2.5px 2.5px at 14% 23%, rgba(147, 197, 253, 0.90), transparent),
-              radial-gradient(3px 3px at 22% 36%, rgba(253, 230, 138, 0.95), transparent),
-              radial-gradient(2.5px 2.5px at 30% 49%, rgba(255, 255, 255, 0.90), transparent),
-              radial-gradient(3px 3px at 38% 62%, rgba(196, 181, 253, 0.95), transparent),
-              radial-gradient(2.5px 2.5px at 46% 75%, rgba(253, 164, 175, 0.90), transparent),
-              radial-gradient(3px 3px at 54% 88%, rgba(255, 255, 255, 0.95), transparent),
-              radial-gradient(2.5px 2.5px at 62% 5%, rgba(165, 243, 252, 0.90), transparent),
-              radial-gradient(3px 3px at 70% 18%, rgba(254, 243, 199, 0.95), transparent),
-              radial-gradient(2.5px 2.5px at 78% 31%, rgba(167, 139, 250, 0.90), transparent),
-              radial-gradient(3px 3px at 86% 44%, rgba(255, 255, 255, 0.95), transparent),
-              radial-gradient(2.5px 2.5px at 94% 57%, rgba(252, 165, 165, 0.90), transparent),
-              radial-gradient(3px 3px at 8% 70%, rgba(255, 255, 255, 0.95), transparent),
-              radial-gradient(2.5px 2.5px at 18% 83%, rgba(96, 165, 250, 0.90), transparent),
-              radial-gradient(3px 3px at 28% 96%, rgba(254, 240, 138, 0.95), transparent),
-              radial-gradient(2.5px 2.5px at 38% 8%, rgba(165, 243, 252, 0.90), transparent),
-              radial-gradient(3px 3px at 48% 21%, rgba(255, 255, 255, 0.95), transparent),
-              radial-gradient(2.5px 2.5px at 58% 34%, rgba(167, 139, 250, 0.90), transparent),
-              radial-gradient(3px 3px at 68% 47%, rgba(252, 165, 165, 0.95), transparent),
-              radial-gradient(2.5px 2.5px at 78% 60%, rgba(254, 243, 199, 0.90), transparent),
-              radial-gradient(3px 3px at 88% 73%, rgba(255, 255, 255, 0.95), transparent),
-              radial-gradient(2.5px 2.5px at 98% 86%, rgba(96, 165, 250, 0.90), transparent),
-              radial-gradient(2.5px 2.5px at 12% 38%, rgba(255, 255, 255, 0.90), transparent),
-              radial-gradient(3px 3px at 22% 56%, rgba(254, 240, 138, 0.95), transparent),
-              radial-gradient(2.5px 2.5px at 32% 74%, rgba(196, 181, 253, 0.90), transparent),
-              radial-gradient(3px 3px at 42% 92%, rgba(165, 243, 252, 0.95), transparent),
-              radial-gradient(2.5px 2.5px at 52% 6%, rgba(255, 255, 255, 0.90), transparent),
-              radial-gradient(3px 3px at 62% 24%, rgba(252, 165, 165, 0.95), transparent),
-              radial-gradient(2.5px 2.5px at 72% 42%, rgba(167, 139, 250, 0.90), transparent),
-              radial-gradient(3px 3px at 82% 60%, rgba(254, 243, 199, 0.95), transparent),
-              radial-gradient(2.5px 2.5px at 92% 78%, rgba(255, 255, 255, 0.90), transparent),
-              radial-gradient(3px 3px at 6% 26%, rgba(165, 243, 252, 0.90), transparent),
-              radial-gradient(2.5px 2.5px at 26% 14%, rgba(96, 165, 250, 0.95), transparent),
-              radial-gradient(3px 3px at 56% 46%, rgba(254, 240, 138, 0.90), transparent),
-              radial-gradient(2.5px 2.5px at 76% 86%, rgba(255, 255, 255, 0.95), transparent),
-              radial-gradient(3px 3px at 18% 12%, rgba(255, 255, 255, 0.95), transparent),
-              radial-gradient(2.5px 2.5px at 34% 24%, rgba(165, 243, 252, 0.90), transparent),
-              radial-gradient(3px 3px at 50% 38%, rgba(254, 240, 138, 0.95), transparent),
-              radial-gradient(2.5px 2.5px at 66% 52%, rgba(167, 139, 250, 0.90), transparent),
-              radial-gradient(3px 3px at 82% 14%, rgba(252, 165, 165, 0.95), transparent),
-              radial-gradient(2.5px 2.5px at 14% 76%, rgba(96, 165, 250, 0.90), transparent),
-              radial-gradient(3px 3px at 30% 88%, rgba(254, 243, 199, 0.95), transparent),
-              radial-gradient(2.5px 2.5px at 46% 4%, rgba(255, 255, 255, 0.90), transparent),
-              radial-gradient(3px 3px at 62% 92%, rgba(165, 243, 252, 0.95), transparent),
-              radial-gradient(2.5px 2.5px at 78% 28%, rgba(254, 240, 138, 0.90), transparent),
-              radial-gradient(3px 3px at 94% 64%, rgba(167, 139, 250, 0.95), transparent),
-              radial-gradient(2.5px 2.5px at 10% 50%, rgba(252, 165, 165, 0.90), transparent),
-              radial-gradient(3px 3px at 22% 32%, rgba(255, 255, 255, 0.95), transparent),
-              radial-gradient(2.5px 2.5px at 38% 66%, rgba(96, 165, 250, 0.90), transparent),
-              radial-gradient(3px 3px at 86% 42%, rgba(254, 243, 199, 0.95), transparent);
-            background-size: 100% 100%;
-            animation: fusionWarp 4s linear infinite;
-          }
-          [data-theme="cosmic-fusion"] .theme-planet { display: block !important; }
-          /* SUPERNOVA explosion at top-right — DIMMED (sebelumnya bikin tengah terang) */
-          [data-theme="cosmic-fusion"] .planet-1 {
-            width: 900px; height: 900px;
-            top: -250px; right: -350px;
-            background: radial-gradient(circle at center,
-              rgba(255, 250, 230, 0.40) 0%,
-              rgba(255, 209, 102, 0.22) 10%,
-              rgba(255, 134, 51, 0.15) 25%,
-              rgba(186, 51, 26, 0.08) 50%,
-              transparent 75%);
-            border-radius: 50%;
-            filter: blur(8px);
-            animation: fusionSupernovaBreath 8s ease-in-out infinite;
-          }
-          /* Secondary spiral galaxy at bottom-left — DIMMED */
-          [data-theme="cosmic-fusion"] .planet-2 {
-            width: 500px; height: 500px;
-            bottom: -180px; left: -180px;
-            background: conic-gradient(from 0deg at 50% 50%,
-              transparent 0deg,
-              rgba(34, 211, 238, 0.12) 30deg,
-              transparent 80deg,
-              rgba(96, 165, 250, 0.10) 130deg,
-              transparent 200deg,
-              rgba(34, 211, 238, 0.12) 250deg,
-              transparent 320deg);
-            border-radius: 50%;
-            filter: blur(15px);
-            animation: fusionMiniSpiral 35s linear infinite;
-          }
-          /* Stellar core at center — DIMATIKAN (display:none) supaya area tengah gak silau */
-          [data-theme="cosmic-fusion"] .planet-3 {
-            display: none !important;
-          }
-          /* Particle layer: shockwave rings — DIMMED + lebih halus */
-          [data-theme="cosmic-fusion"] .particle-layer {
-            position: fixed; inset: 0;
-            pointer-events: none; z-index: 1; overflow: hidden;
-          }
-          [data-theme="cosmic-fusion"] .particle-layer::before,
-          [data-theme="cosmic-fusion"] .particle-layer::after {
-            content: '';
-            position: absolute;
-            top: 50%; left: 50%;
-            width: 280px; height: 280px;
-            margin: -140px 0 0 -140px;
-            border: 1px solid rgba(254, 243, 199, 0.15);
-            border-radius: 50%;
-            animation: fusionShockwave 6s ease-out infinite;
-          }
-          [data-theme="cosmic-fusion"] .particle-layer::after {
-            border-color: rgba(168, 85, 247, 0.15);
-            animation-delay: 3s;
-          }
-
-          @keyframes fusionNebulaShift {
-            0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.85; }
-            50%      { transform: scale(1.08) rotate(2deg); opacity: 1; }
-          }
-          @keyframes fusionStarsTwinkle {
-            0%, 100% { opacity: 0.85; filter: brightness(1); }
-            50%      { opacity: 1; filter: brightness(1.4); }
-          }
-          /* HYPERSPACE WARP — bintang zoom dari kejauhan ke depan (galaxy-style)
-             Slow: 8s untuk far stars (bg::after) — terasa pelan jauh
-             Mid:  6s untuk middle stars (fx-mid::before) — speed sedang
-             Front 4s warp existing di fx-front (fusionWarp) — paling cepat
-             Total 3-tier warp depth = continuous hyperspace feel */
-          @keyframes fusionStarsWarpSlow {
-            0%   { transform: scale(0.2); opacity: 0; }
-            15%  { opacity: 0.55; }
-            70%  { opacity: 0.65; }
-            100% { transform: scale(2.2); opacity: 0; }
-          }
-          @keyframes fusionStarsWarpMid {
-            0%   { transform: scale(0.15); opacity: 0; }
-            20%  { opacity: 0.85; }
-            100% { transform: scale(2.8); opacity: 0; }
-          }
-          @keyframes fusionStarsWarpFar {
-            0%   { transform: scale(0.1); opacity: 0; }
-            25%  { opacity: 0.85; }
-            75%  { opacity: 0.85; }
-            100% { transform: scale(2); opacity: 0; }
-          }
-          /* Bintang ORBIT memutar sekitar pusat (replace spiral arms) */
-          @keyframes fusionStarsOrbit {
-            from { transform: rotate(0deg); }
-            to   { transform: rotate(360deg); }
-          }
-          @keyframes fusionNebulaRotate {
-            from { transform: translateZ(-500px) rotate(0deg); }
-            to   { transform: translateZ(-500px) rotate(360deg); }
-          }
-          @keyframes fusionWarp {
-            0%   { transform: translateZ(-800px) scale(0.05); opacity: 0; }
-            20%  { opacity: 1; }
-            100% { transform: translateZ(400px) scale(3); opacity: 0; }
-          }
-          @keyframes fusionSupernovaBreath {
-            0%, 100% { transform: scale(1) rotate(0deg); opacity: 0.85; filter: blur(3px); }
-            50%      { transform: scale(1.1) rotate(3deg); opacity: 1; filter: blur(2px); }
-          }
-          @keyframes fusionMiniSpiral {
-            from { transform: rotate(0deg); }
-            to   { transform: rotate(360deg); }
-          }
-          @keyframes fusionCorePulse {
-            0%, 100% { transform: scale(1); filter: blur(2px) brightness(1); }
-            50%      { transform: scale(1.15); filter: blur(2px) brightness(1.4); }
-          }
-          @keyframes fusionShockwave {
-            0%   { transform: scale(0.3); opacity: 1; }
-            100% { transform: scale(4); opacity: 0; }
-          }
-
-          /* === Shared keyframes for photo themes === */
-          @keyframes photoZoomBreath {
-            0%, 100% { background-size: 105% auto; background-position: 50% 50%; }
-            50%      { background-size: 115% auto; background-position: 52% 48%; }
-          }
-          @keyframes photoSlowRotate {
-            0%   { background-size: 110% auto; transform: rotate(0deg); }
-            50%  { background-size: 120% auto; transform: rotate(2deg); }
-            100% { background-size: 110% auto; transform: rotate(0deg); }
-          }
-          /* Reduce motion → disable 3D animations */
+          /* Reduce-motion preference — disable non-essential animations */
           @media (prefers-reduced-motion: reduce) {
-            .theme-fx-layer { animation: none !important; transform: none !important; }
-            .theme-planet { animation: none !important; }
-            .particle-layer, .particle-layer::before, .particle-layer::after,
-            .jets { animation: none !important; }
-            body::before, body::after { animation: none !important; }
-          }
-
-          /* Mobile: simpler 3D (skip front layer animation = save battery) */
-          @media (max-width: 768px) {
-            .theme-fx-layer.fx-front { animation-duration: 30s !important; }
-            .theme-fx { perspective: 800px; }
-            /* Shrink planets via zoom (doesn't conflict with transform: rotateX/spin) */
-            .theme-planet { zoom: 0.65; }
-          }
-
-          /* ============================================================
-             🎬 COSMIC VIDEO BACKGROUND (Pinterest-inspired)
-             Source: pin 817895982372951914 (extracted via ffmpeg)
-             Mode: video looping for desktop, JPG poster fallback for mobile/reduced-motion
-             ============================================================ */
-          .cosmic-bg-video {
-            position: fixed;
-            top: 0; left: 0;
-            width: 100vw; height: 100vh;
-            object-fit: cover;
-            object-position: center;
-            z-index: -2;
-            pointer-events: none;
-            /* Light enhancement only — gak bikin frame drop:
-               saturate + brightness ringan, NO sharpen filter (itu penyebab patah-patah) */
-            filter: saturate(1.10) brightness(1.02);
-            transform: translateZ(0); /* GPU layer = playback smooth */
-            will-change: transform;
-          }
-          .cosmic-bg-overlay {
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            /* Vignette: pinggir gelap → focal point ke center (mata otomatis fokus tengah,
-               distract dari edge yg mungkin blur dari upscaling viewport) */
-            background:
-              radial-gradient(ellipse 90% 80% at center, transparent 0%, transparent 30%, rgba(0, 0, 0, 0.30) 65%, rgba(0, 0, 0, 0.65) 100%);
-            z-index: -1;
-            pointer-events: none;
-          }
-          /* Hide existing Cosmic Fusion layers — biar gak overlap sama video */
-          [data-theme="cosmic-fusion"] .theme-fx,
-          [data-theme="cosmic-fusion"] .theme-planet,
-          [data-theme="cosmic-fusion"] .particle-layer,
-          [data-theme="cosmic-fusion"] .jets,
-          [data-theme="cosmic-fusion"] body::before,
-          [data-theme="cosmic-fusion"] body::after {
-            display: none !important;
-          }
-          /* Body background — JPG poster sebagai fallback kalau video MP4 ke-block
-             (Brave Shields, autoplay-policy, CSP strict, dll). Video di-cover overrides JPG saat play.
-             Sebelumnya: pure #000 → user lihat hitam polos kalau video gak load. */
-          [data-theme="cosmic-fusion"] body {
-            background: #000 url('/cosmic-bg.jpg') center bottom / cover no-repeat fixed !important;
-          }
-
-          /* ============================================================
-             🪟 TRANSPARENCY MODE — panels semi-transparan biar video bg keliatan
-             Strategi: target dark-bg solid panels (pakai inline-style atau class)
-             dan turunin opacity-nya + tambah backdrop-blur. Plus boost text shadow
-             biar OVERVIEW/ANALYTICS/dll tetap kebaca di atas video animated.
-             ============================================================ */
-
-          /* Tab navigation — TEXT ONLY (no bg, no border) */
-          .dash-tabs {
-            background: transparent !important;
-            backdrop-filter: none !important;
-            -webkit-backdrop-filter: none !important;
-            border-bottom: none !important;
-          }
-          .dash-tabs > div {
-            text-shadow:
-              0 2px 6px rgba(0, 0, 0, 0.95),
-              0 0 14px rgba(0, 0, 0, 0.75),
-              0 0 28px rgba(0, 0, 0, 0.5);
-          }
-
-          /* Header dashboard — TEXT ONLY */
-          .dash-header {
-            background: transparent !important;
-            backdrop-filter: none !important;
-            -webkit-backdrop-filter: none !important;
-            border-bottom: none !important;
-          }
-          .dash-header h1, .dash-header * {
-            text-shadow:
-              0 2px 6px rgba(0, 0, 0, 0.95),
-              0 0 14px rgba(0, 0, 0, 0.7);
-          }
-
-          /* Panel/card utama — FULLY TRANSPARENT
-             Catch HEX #0f172a / #020617 / #1e293b di posisi MANA AJA dalam attribute style
-             (misal: "background:linear-gradient(135deg,#0f172a 0%,#020617 100%)") */
-          .dash-main div[style*="#0f172a"]:not(button),
-          .dash-main div[style*="#020617"]:not(button),
-          .dash-main div[style*="#1e293b"]:not(button),
-          .dash-main section[style*="#0f172a"],
-          .dash-main section[style*="#020617"],
-          .dash-main section[style*="#1e293b"],
-          .dash-main [style*="rgb(15, 23, 42)"]:not(button):not(input):not(select):not(textarea),
-          .dash-main [style*="rgb(30, 41, 59)"]:not(button):not(input):not(select):not(textarea),
-          .dash-main [style*="rgb(2, 6, 23)"]:not(button):not(input):not(select):not(textarea) {
-            background: transparent !important;
-            background-color: transparent !important;
-            background-image: none !important;
-            backdrop-filter: none !important;
-            -webkit-backdrop-filter: none !important;
-            border-color: rgba(34, 211, 238, 0.15) !important;
-            box-shadow: none !important;
-          }
-
-          /* Tabel header (S.th) pakai linear-gradient dari #0f172a → bikin transparent juga */
-          .dash-main th[style*="#0f172a"],
-          .dash-main th[style*="#020617"] {
-            background: transparent !important;
-            background-image: none !important;
-          }
-
-          /* Input fields override — TETAP semi-solid biar typing kelihatan jelas
-             (Override rule above yg accidentally bikin input juga transparant) */
-          .dash-main input,
-          .dash-main select,
-          .dash-main textarea {
-            background-color: rgba(15, 23, 42, 0.65) !important;
-            backdrop-filter: blur(6px) !important;
-            -webkit-backdrop-filter: blur(6px) !important;
-            border: 1px solid rgba(34, 211, 238, 0.3) !important;
-          }
-          .dash-main input:focus,
-          .dash-main select:focus,
-          .dash-main textarea:focus {
-            background-color: rgba(15, 23, 42, 0.85) !important;
-          }
-
-          /* Strong text shadow di SEMUA dashboard text untuk readability */
-          .dash-main, .dash-main * {
-            text-shadow:
-              0 1px 4px rgba(0, 0, 0, 0.85),
-              0 0 10px rgba(0, 0, 0, 0.55) !important;
-          }
-          h1, h2, h3, h4 {
-            text-shadow:
-              0 2px 8px rgba(0, 0, 0, 0.95),
-              0 0 18px rgba(0, 0, 0, 0.65),
-              0 0 36px rgba(0, 0, 0, 0.4) !important;
-          }
-          /* Tabel rows tetap readable */
-          table tbody tr td {
-            text-shadow:
-              0 1px 4px rgba(0, 0, 0, 0.9),
-              0 0 8px rgba(0, 0, 0, 0.5) !important;
-          }
-
-          /* Overlay dark gradient lebih intense biar video gak overpower konten */
-          .cosmic-bg-overlay {
-            background:
-              radial-gradient(ellipse at center, rgba(0, 0, 0, 0.15) 0%, rgba(0, 0, 0, 0.45) 70%, rgba(0, 0, 0, 0.65) 100%) !important;
-          }
-
-          /* ============================================================
-             LOGIN CARD — fully transparent, cuma text + input/button yang muncul
-             Strong text-shadow biar tetap kebaca di atas video animated
-             ============================================================ */
-          .login-card h1,
-          .login-card p,
-          .login-card label,
-          .login-card > div > div {
-            text-shadow:
-              0 2px 8px rgba(0, 0, 0, 0.95),
-              0 0 20px rgba(0, 0, 0, 0.7),
-              0 0 40px rgba(0, 0, 0, 0.5) !important;
-          }
-
-          /* ============================================================
-             TRANSPARENCY: TABEL & ROW elements (audit Group Health → terapkan ke semua)
-             Dashboard ada banyak <table> di tab Bot Stats, Activity Log, A/B Caption,
-             Best Time, Group Health, Tracking Posting, dll.
-             ============================================================ */
-          .dash-main table {
-            background: transparent !important;
-            border-collapse: separate !important;
-            border-spacing: 0 4px !important;
-          }
-          .dash-main table thead tr,
-          .dash-main table thead th {
-            background: transparent !important;
-            border-bottom: 1px solid rgba(34, 211, 238, 0.3) !important;
-            text-shadow:
-              0 2px 6px rgba(0, 0, 0, 0.95),
-              0 0 12px rgba(0, 0, 0, 0.6) !important;
-          }
-          .dash-main table tbody tr {
-            background: transparent !important;
-            transition: background 0.15s ease;
-          }
-          .dash-main table tbody tr:hover {
-            background: rgba(34, 211, 238, 0.08) !important;
-          }
-          .dash-main table tbody td {
-            backdrop-filter: none !important;
-          }
-
-          /* ============================================================
-             TRANSPARENCY: FORM elements (input, select, textarea)
-             ============================================================ */
-          input, select, textarea {
-            background-color: rgba(15, 23, 42, 0.65) !important;
-            backdrop-filter: blur(6px);
-            -webkit-backdrop-filter: blur(6px);
-          }
-          input:focus, select:focus, textarea:focus {
-            background-color: rgba(15, 23, 42, 0.85) !important;
-          }
-
-          /* ============================================================
-             TRANSPARENCY: MODAL/DIALOG (Settings, Chat, Confirm dll)
-             ============================================================ */
-          [role="dialog"],
-          .modal,
-          .responsive-modal-content,
-          .responsive-modal-backdrop > div {
-            background-color: rgba(15, 23, 42, 0.78) !important;
-            backdrop-filter: blur(18px) saturate(1.2);
-            -webkit-backdrop-filter: blur(18px) saturate(1.2);
-            border: 1px solid rgba(34, 211, 238, 0.25);
-          }
-          .responsive-modal-backdrop {
-            background-color: rgba(0, 0, 0, 0.55) !important;
-            backdrop-filter: blur(4px);
-          }
-
-          /* ============================================================
-             TRANSPARENCY: card background dengan rgb format (React render)
-             ============================================================ */
-          [style*="rgb(15, 23, 42)"]:not(button):not(.dash-tabs):not(.dash-header),
-          [style*="rgb(30, 41, 59)"]:not(button),
-          [style*="rgb(2, 6, 23)"]:not(button):not(.dash-tabs) {
-            background-color: rgba(15, 23, 42, 0.55) !important;
-            backdrop-filter: blur(10px) saturate(1.15);
-            -webkit-backdrop-filter: blur(10px) saturate(1.15);
-            border: 1px solid rgba(34, 211, 238, 0.18);
-          }
-
-          /* Mobile: pakai poster JPG aja (hemat baterai + data) */
-          @media (max-width: 768px) {
-            .cosmic-bg-video {
-              display: none;
-            }
-            body {
-              background: url('/cosmic-bg.jpg') center bottom / cover no-repeat fixed, #000 !important;
-            }
-          }
-          /* Reduce motion: disable video, pakai poster image */
-          @media (prefers-reduced-motion: reduce) {
-            .cosmic-bg-video {
-              display: none;
-            }
-            body {
-              background: url('/cosmic-bg.jpg') center bottom / cover no-repeat fixed, #000 !important;
+            *, *::before, *::after {
+              animation-duration: 0.01ms !important;
+              animation-iteration-count: 1 !important;
+              transition-duration: 0.01ms !important;
             }
           }
         `}} />
       </head>
-      <body style={{
-        margin: 0,
-        fontFamily: "'Segoe UI', 'Inter', sans-serif",
-        color: '#e0f2fe',
-        minHeight: '100vh',
-        position: 'relative',
-        // Fallback static poster — kelihatan kalau video MP4 ke-block Shields/autoplay-policy.
-        // Default theme[0] (cosmic-warp); inline-script bisa override poster untuk theme lain (line 28).
-        background: "#000 url('/cosmic-bg.jpg') center bottom / cover no-repeat fixed",
-      }}>
-        {/* Cosmic video background — src diatur dynamic oleh inline script di <head> */}
-        <video
-          id="cosmic-bg-video-el"
-          className="cosmic-bg-video"
-          autoPlay
-          loop
-          muted
-          playsInline
-          preload="auto"
-          src="/cosmic-bg.mp4"
-          poster="/cosmic-bg.jpg"
-          aria-hidden="true"
-        />
-        {/* Theme switcher button di-inject by inline script di <head> (vanilla JS, biar
-            click handler beneran kerja — server component gak bisa onClick) */}
-        {/* Subtle dark overlay biar text dashboard tetap readable */}
-        <div className="cosmic-bg-overlay" aria-hidden="true"></div>
-        {/* Existing layers — di-hide oleh CSS .cosmic-bg-video ~ * (lihat layout style) */}
-        <div className="theme-fx" aria-hidden="true">
-          <div className="theme-fx-layer fx-back"></div>
-          <div className="theme-fx-layer fx-mid"></div>
-          <div className="theme-fx-layer fx-front"></div>
-          <div className="theme-planet planet-1"></div>
-          <div className="theme-planet planet-2"></div>
-          <div className="theme-planet planet-3"></div>
-        </div>
-        <div className="particle-layer" aria-hidden="true"></div>
-        <div className="jets" aria-hidden="true"></div>
-        <div style={{ position: 'relative', zIndex: 2 }}>
-          {children}
-        </div>
+      <body>
+        {children}
       </body>
     </html>
   );
