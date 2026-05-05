@@ -55,6 +55,43 @@ const S = {
   link: { color:'#22C55E',textDecoration:'none',fontWeight:600 },
 };
 
+// ============================================================
+// COUNT-UP HOOK + COMPONENT — Phase 3B
+// Animate angka dari 0 ke target dgn ease-out cubic. Default 800ms.
+// Honor prefers-reduced-motion via media query check.
+// ============================================================
+function useCountUp(end, duration = 800) {
+  const [value, setValue] = useState(0);
+  useEffect(() => {
+    if (typeof end !== 'number' || isNaN(end)) { setValue(end || 0); return; }
+    if (end === 0) { setValue(0); return; }
+    // Honor reduced-motion: skip animation, set instant
+    if (typeof window !== 'undefined' && window.matchMedia &&
+        window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setValue(end);
+      return;
+    }
+    const startTime = performance.now();
+    let rafId;
+    const step = (now) => {
+      const elapsed = now - startTime;
+      const progress = Math.min(elapsed / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3); // ease-out cubic
+      setValue(Math.round(end * eased));
+      if (progress < 1) rafId = requestAnimationFrame(step);
+    };
+    rafId = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(rafId);
+  }, [end, duration]);
+  return value;
+}
+
+function CountUp({ value, duration = 800 }) {
+  const display = useCountUp(typeof value === 'number' ? value : 0, duration);
+  if (typeof value !== 'number') return value;
+  return display.toLocaleString('id-ID');
+}
+
 const LEAGUE_COLORS = {'La Liga':'#22d3ee','Premier League':'#60a5fa','Serie A':'#67e8f9','Bundesliga':'#06b6d4','Ligue 1':'#38bdf8','Liga 1':'#7dd3fc','Timnas':'#0ea5e9','Pemain':'#a5f3fc'};
 
 // ============================================================
@@ -3577,19 +3614,19 @@ export default function Home() {
               )}
             </div>
 
-            {/* STATS GRID — HUD panel per metric */}
-            <div className="responsive-stats" style={{marginBottom:24}}>
+            {/* STATS GRID — Midnight Stadium card per metric, count-up animated */}
+            <div className="responsive-stats fade-in-stagger" style={{marginBottom:24}}>
               {[
-                { label:'Grup',           value:groups.length },
-                { label:'Klub',           value:clubs.length },
-                { label:'Post Hari Ini',  value:todayPosts },
-                { label:'Total Berhasil', value:totalSuccess },
-                { label:'Link Disubmit',  value:links.length },
-                { label:'Users',          value:users.length },
-              ].map((m, i) => (
-                <div key={m.label} className={'hud-panel' + (i % 2 === 1 ? ' hud-panel--magenta' : '')} style={{textAlign:'center'}}>
-                  <div style={{fontSize:10,color:'#64748b',textTransform:'uppercase',letterSpacing:1.8,fontWeight:700,marginBottom:10}}>{m.label}</div>
-                  <div style={S.num}>{m.value}</div>
+                { label:'Grup',           value:groups.length,  accent:'#22C55E' },
+                { label:'Klub',           value:clubs.length,   accent:'#F59E0B' },
+                { label:'Post Hari Ini',  value:todayPosts,     accent:'#22C55E' },
+                { label:'Total Berhasil', value:totalSuccess,   accent:'#F59E0B' },
+                { label:'Link Disubmit',  value:links.length,   accent:'#22C55E' },
+                { label:'Users',          value:users.length,   accent:'#F59E0B' },
+              ].map((m) => (
+                <div key={m.label} className="card-hover" style={{...S.stat,textAlign:'center'}}>
+                  <div style={{fontSize:11,color:'#9CA3AF',textTransform:'uppercase',letterSpacing:1.2,fontWeight:500,marginBottom:8}}>{m.label}</div>
+                  <div style={{...S.num,color:m.accent}}><CountUp value={m.value} /></div>
                 </div>
               ))}
             </div>
@@ -3603,7 +3640,7 @@ export default function Home() {
                     <div style={{fontSize:11,color:'#94a3b8',marginTop:8}}>Success vs failed task per worker — real-time dari heartbeat.</div>
                   </div>
                 </div>
-                <ResponsiveContainer width="100%" height={220}>
+                <ResponsiveContainer width="100%" height={240}>
                   <BarChart
                     data={botHealth.map(w => ({
                       name: w.worker_name || w.worker_id,
@@ -3612,15 +3649,15 @@ export default function Home() {
                     }))}
                     margin={{ top: 8, right: 16, left: 0, bottom: 8 }}
                   >
-                    <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
-                    <XAxis dataKey="name" stroke="#64748b" fontSize={11} tickLine={false} axisLine={{ stroke: '#1e293b' }} />
-                    <YAxis stroke="#64748b" fontSize={11} tickLine={false} axisLine={{ stroke: '#1e293b' }} allowDecimals={false} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" vertical={false} />
+                    <XAxis dataKey="name" stroke="#9CA3AF" fontSize={11} tickLine={false} axisLine={{ stroke: 'rgba(255,255,255,0.08)' }} />
+                    <YAxis stroke="#9CA3AF" fontSize={11} tickLine={false} axisLine={{ stroke: 'rgba(255,255,255,0.08)' }} allowDecimals={false} />
                     <Tooltip
-                      contentStyle={{ background:'#0f172a', border:'1px solid #22d3ee', borderRadius:4, fontSize:12 }}
-                      cursor={{ fill: 'rgba(34, 211, 238, 0.06)' }}
+                      contentStyle={{ background:'#111827', border:'1px solid rgba(34,197,94,0.30)', borderRadius:8, fontSize:12, boxShadow:'0 4px 20px rgba(0,0,0,0.30)' }}
+                      cursor={{ fill: 'rgba(34, 197, 94, 0.06)' }}
                     />
-                    <Bar dataKey="Success" fill="#22d3ee" radius={[2, 2, 0, 0]} />
-                    <Bar dataKey="Failed" fill="#d946ef" radius={[2, 2, 0, 0]} />
+                    <Bar dataKey="Success" fill="#22C55E" radius={[6, 6, 0, 0]} animationDuration={600} />
+                    <Bar dataKey="Failed" fill="#EF4444" radius={[6, 6, 0, 0]} animationDuration={600} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -3686,18 +3723,18 @@ export default function Home() {
                     <span className="hud-label">◢ Grafik Performa Klub</span>
                     <p style={{color:'#94a3b8',fontSize:11,margin:'8px 0 0'}}>Top 10 klub berdasarkan total konten (member + bot). 30 hari terakhir.</p>
                   </div>
-                  <ResponsiveContainer width="100%" height={260}>
+                  <ResponsiveContainer width="100%" height={280}>
                     <BarChart data={top10} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
-                      <XAxis dataKey="name" stroke="#64748b" fontSize={10} tickLine={false} axisLine={{ stroke: '#1e293b' }} angle={-25} textAnchor="end" height={60} />
-                      <YAxis stroke="#64748b" fontSize={11} tickLine={false} axisLine={{ stroke: '#1e293b' }} allowDecimals={false} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" vertical={false} />
+                      <XAxis dataKey="name" stroke="#9CA3AF" fontSize={10} tickLine={false} axisLine={{ stroke: 'rgba(255,255,255,0.08)' }} angle={-25} textAnchor="end" height={60} />
+                      <YAxis stroke="#9CA3AF" fontSize={11} tickLine={false} axisLine={{ stroke: 'rgba(255,255,255,0.08)' }} allowDecimals={false} />
                       <Tooltip
-                        contentStyle={{ background:'#0f172a', border:'1px solid #22d3ee', borderRadius:2, fontSize:12 }}
-                        cursor={{ fill: 'rgba(34, 211, 238, 0.06)' }}
+                        contentStyle={{ background:'#111827', border:'1px solid rgba(34,197,94,0.30)', borderRadius:8, fontSize:12, boxShadow:'0 4px 20px rgba(0,0,0,0.30)' }}
+                        cursor={{ fill: 'rgba(34, 197, 94, 0.06)' }}
                         formatter={(value, name, props) => [`${value} (${props.payload.member} member + ${props.payload.bot} bot)`, 'Total']}
                         labelFormatter={(label, payload) => payload[0] ? `${payload[0].payload.fullName} — ${payload[0].payload.completeRate}% complete` : label}
                       />
-                      <Bar dataKey="total" radius={[2, 2, 0, 0]}>
+                      <Bar dataKey="total" radius={[6, 6, 0, 0]} animationDuration={700}>
                         {top10.map((entry, i) => <Cell key={i} fill={entry.color} />)}
                       </Bar>
                     </BarChart>
@@ -3770,10 +3807,99 @@ export default function Home() {
             {/* Navigasi bulan */}
             <div style={{display:'flex',gap:12,alignItems:'center',marginBottom:20,flexWrap:'wrap'}}>
               <button style={S.btn('#374151')} onClick={() => { const nm = wsMonth === 1 ? 12 : wsMonth - 1; const ny = wsMonth === 1 ? wsYear - 1 : wsYear; setWsMonth(nm); setWsYear(ny); loadWeeklyStats(ny, nm); }}>&#9664; Bulan Sebelumnya</button>
-              <h3 style={{color:'#FFD700',fontSize:18,margin:'0 8px'}}>{MONTH_NAMES[wsMonth]} {wsYear}</h3>
+              <h3 style={{color:'#F59E0B',fontSize:18,margin:'0 8px',fontWeight:700}}>{MONTH_NAMES[wsMonth]} {wsYear}</h3>
               <button style={S.btn('#374151')} onClick={() => { const nm = wsMonth === 12 ? 1 : wsMonth + 1; const ny = wsMonth === 12 ? wsYear + 1 : wsYear; setWsMonth(nm); setWsYear(ny); loadWeeklyStats(ny, nm); }}>Bulan Berikutnya &#9654;</button>
-              <span style={{fontSize:12,color:'#6b7280',marginLeft:8}}>{weeklyStats.length} data tercatat</span>
+              <span style={{fontSize:12,color:'#9CA3AF',marginLeft:8}}>{weeklyStats.length} data tercatat</span>
             </div>
+
+            {/* === ANALYTICS SUMMARY SECTION — Phase 3B === */}
+            {(() => {
+              const totals = groups.map(g => ({ id: g.id, name: g.name, club: g.club, total: getGroupTotal(g.id) }));
+              const totalBulan = totals.reduce((s, t) => s + t.total, 0);
+              const filledGroups = totals.filter(t => t.total > 0);
+              const avgPerGroup = filledGroups.length > 0 ? Math.round(totalBulan / filledGroups.length) : 0;
+              const top5 = [...totals].sort((a, b) => b.total - a.total).slice(0, 5).filter(t => t.total > 0);
+              const weekTotals = [1,2,3,4,5].map(w => ({
+                week: 'Minggu ' + w,
+                total: groups.reduce((s, g) => s + (parseFloat(getWeekValue(g.id, w)) || 0), 0)
+              }));
+              return (
+                <div className="fade-in-stagger" style={{marginBottom:24}}>
+                  <div className="responsive-stats" style={{marginBottom:16}}>
+                    <div className="card-hover" style={{...S.stat,textAlign:'center'}}>
+                      <div style={{fontSize:11,color:'#9CA3AF',textTransform:'uppercase',letterSpacing:1.2,fontWeight:500,marginBottom:8}}>Total Bulan Ini</div>
+                      <div style={{...S.num,color:'#22C55E'}}><CountUp value={totalBulan} duration={1000} /></div>
+                    </div>
+                    <div className="card-hover" style={{...S.stat,textAlign:'center'}}>
+                      <div style={{fontSize:11,color:'#9CA3AF',textTransform:'uppercase',letterSpacing:1.2,fontWeight:500,marginBottom:8}}>Grup Terisi</div>
+                      <div style={{...S.num,color:'#F59E0B'}}><CountUp value={filledGroups.length} /> <span style={{fontSize:14,color:'#9CA3AF',fontWeight:400}}>/ {groups.length}</span></div>
+                    </div>
+                    <div className="card-hover" style={{...S.stat,textAlign:'center'}}>
+                      <div style={{fontSize:11,color:'#9CA3AF',textTransform:'uppercase',letterSpacing:1.2,fontWeight:500,marginBottom:8}}>Rata-rata/Grup</div>
+                      <div style={{...S.num,color:'#22C55E'}}><CountUp value={avgPerGroup} duration={900} /></div>
+                    </div>
+                    <div className="card-hover" style={{...S.stat,textAlign:'center'}}>
+                      <div style={{fontSize:11,color:'#9CA3AF',textTransform:'uppercase',letterSpacing:1.2,fontWeight:500,marginBottom:8}}>Coverage</div>
+                      <div style={{...S.num,color:'#F59E0B'}}><CountUp value={groups.length > 0 ? Math.round((filledGroups.length / groups.length) * 100) : 0} /><span style={{fontSize:18,marginLeft:2}}>%</span></div>
+                      <div style={{height:6,background:'rgba(255,255,255,0.06)',borderRadius:3,marginTop:10,overflow:'hidden'}}>
+                        <div style={{height:'100%',width:`${groups.length > 0 ? (filledGroups.length / groups.length) * 100 : 0}%`,background:'linear-gradient(90deg, #22C55E, #F59E0B)',borderRadius:3,transition:'width 800ms cubic-bezier(0.22,1,0.36,1)'}}/>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Tren mingguan + Top 5 grup */}
+                  <div className="responsive-grid-2" style={{gap:16}}>
+                    <div className="card-hover" style={{...S.box,marginBottom:0}}>
+                      <div style={{marginBottom:14}}>
+                        <span className="hud-label">📈 Tren Per Minggu</span>
+                      </div>
+                      <ResponsiveContainer width="100%" height={200}>
+                        <BarChart data={weekTotals} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" vertical={false} />
+                          <XAxis dataKey="week" stroke="#9CA3AF" fontSize={11} tickLine={false} axisLine={{ stroke: 'rgba(255,255,255,0.08)' }} />
+                          <YAxis stroke="#9CA3AF" fontSize={11} tickLine={false} axisLine={{ stroke: 'rgba(255,255,255,0.08)' }} />
+                          <Tooltip
+                            contentStyle={{ background:'#111827', border:'1px solid rgba(34,197,94,0.30)', borderRadius:8, fontSize:12 }}
+                            cursor={{ fill: 'rgba(34, 197, 94, 0.06)' }}
+                            formatter={(value) => [Number(value).toLocaleString('id-ID'), 'Submitted']}
+                          />
+                          <Bar dataKey="total" fill="#22C55E" radius={[6, 6, 0, 0]} animationDuration={700} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+
+                    <div className="card-hover" style={{...S.box,marginBottom:0}}>
+                      <div style={{marginBottom:14}}>
+                        <span className="hud-label hud-label--magenta">🏆 Top 5 Grup</span>
+                      </div>
+                      {top5.length === 0 ? (
+                        <p style={{color:'#9CA3AF',fontSize:13,margin:'12px 0 0'}}>Belum ada data minggu ini</p>
+                      ) : (
+                        <div style={{display:'flex',flexDirection:'column',gap:10}}>
+                          {top5.map((t, i) => {
+                            const pct = top5[0].total > 0 ? (t.total / top5[0].total) * 100 : 0;
+                            return (
+                              <div key={t.id}>
+                                <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline',marginBottom:4}}>
+                                  <span style={{fontSize:12,color:'#E5E7EB',fontWeight:500}}>
+                                    <span style={{color:i === 0 ? '#F59E0B' : '#9CA3AF',marginRight:6,fontWeight:700}}>#{i+1}</span>
+                                    {t.name}
+                                  </span>
+                                  <span style={{fontSize:13,color:'#22C55E',fontWeight:600,fontVariantNumeric:'tabular-nums'}}>{t.total.toLocaleString('id-ID')}</span>
+                                </div>
+                                <div style={{height:5,background:'rgba(255,255,255,0.06)',borderRadius:3,overflow:'hidden'}}>
+                                  <div style={{height:'100%',width:`${pct}%`,background:i === 0 ? '#F59E0B' : '#22C55E',borderRadius:3,transition:'width 600ms cubic-bezier(0.22,1,0.36,1)'}}/>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Tabel spreadsheet */}
             <div style={{...S.box,padding:0,overflow:'auto'}}>
