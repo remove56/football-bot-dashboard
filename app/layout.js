@@ -93,6 +93,18 @@ export default function RootLayout({ children }) {
             if (document.readyState !== 'loading') {
               setTimeout(function(){ applyTheme(current); injectSwitcher(); }, 0);
             }
+
+            // Brave/Chrome strict autoplay-policy workaround: video autoplay kadang
+            // ke-block sampai ada user gesture (bahkan walau muted+playsinline).
+            // Listener ini call play() lagi pas first user interaction (click/touch/keydown
+            // di mana aja), terus self-cleanup via { once: true }. No-op kalau video
+            // udah playing. Ref: https://developer.chrome.com/blog/autoplay/
+            ['click','touchstart','keydown'].forEach(function(evt) {
+              document.addEventListener(evt, function() {
+                var v = document.getElementById('cosmic-bg-video-el');
+                if (v) v.play().catch(function(){});
+              }, { once: true, passive: true });
+            });
           })();
         `}} />
         <style dangerouslySetInnerHTML={{ __html: `
