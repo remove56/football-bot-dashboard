@@ -548,6 +548,14 @@ export default function RootLayout({ children }) {
           }
           body.normal #hud-starfield { display: none; }
 
+          /* Tables fully transparent on HUD-B (always-on mode) */
+          body.hud-b table { background: transparent !important; }
+          body.hud-b tr,
+          body.hud-b tbody,
+          body.hud-b thead { background: transparent !important; }
+          /* Body bg lebih gelap biar bintang kontras */
+          body.hud-b { background: #050811 !important; }
+
           /* ============================================================
              HUD COSMETIC LAYER — sci-fi accent on top of Midnight Stadium
              Subtle additions: cyan accent borders sudah masuk via S object

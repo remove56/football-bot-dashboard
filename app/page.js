@@ -24,35 +24,39 @@ const hudCornerBg = (color = '#22D3EE', size = 12, thickness = 2) => ({
 });
 
 const S = {
-  nav: { background:'#0B1120',borderBottom:'1px solid rgba(34,211,238,0.25)',padding:'14px 24px',display:'flex',justifyContent:'space-between',alignItems:'center',position:'sticky',top:0,zIndex:100,boxShadow:'0 2px 12px rgba(0,0,0,0.4), 0 0 20px rgba(34,211,238,0.05)',backdropFilter:'blur(8px)' },
+  nav: { background:'rgba(11,17,32,0.55)',borderBottom:'1px solid rgba(34,211,238,0.35)',padding:'14px 24px',display:'flex',justifyContent:'space-between',alignItems:'center',position:'sticky',top:0,zIndex:100,boxShadow:'0 2px 12px rgba(0,0,0,0.4), 0 0 20px rgba(34,211,238,0.08)',backdropFilter:'blur(12px)',WebkitBackdropFilter:'blur(12px)' },
   h1: { fontSize:20,background:'linear-gradient(135deg,#22D3EE 0%,#22C55E 50%,#F59E0B 100%)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',fontWeight:800,letterSpacing:1,fontFamily:'Menlo, Consolas, "Courier New", monospace' },
-  tabs: { display:'flex',gap:6,padding:'14px 24px',background:'#0B1120',borderBottom:'1px solid rgba(34,211,238,0.12)',flexWrap:'wrap' },
+  tabs: { display:'flex',gap:6,padding:'14px 24px',background:'rgba(11,17,32,0.45)',borderBottom:'1px solid rgba(34,211,238,0.20)',flexWrap:'wrap',backdropFilter:'blur(10px)',WebkitBackdropFilter:'blur(10px)' },
   tab: (a) => a ? {
-    background:'rgba(34,211,238,0.10)',padding:'10px 18px',borderRadius:4,cursor:'pointer',fontSize:11,fontWeight:700,
-    color:'#22D3EE',border:'1px solid rgba(34,211,238,0.45)',transition:'all 250ms cubic-bezier(0.22,1,0.36,1)',
+    background:'rgba(34,211,238,0.12)',padding:'10px 18px',borderRadius:4,cursor:'pointer',fontSize:11,fontWeight:700,
+    color:'#22D3EE',border:'1px solid rgba(34,211,238,0.55)',transition:'all 250ms cubic-bezier(0.22,1,0.36,1)',
     textTransform:'uppercase',letterSpacing:1.5,fontFamily:'Menlo, Consolas, "Courier New", monospace',
-    boxShadow:'0 0 12px rgba(34,211,238,0.25), inset 0 0 8px rgba(34,211,238,0.08)',
+    boxShadow:'0 0 12px rgba(34,211,238,0.35), inset 0 0 8px rgba(34,211,238,0.10)',
+    backdropFilter:'blur(6px)',WebkitBackdropFilter:'blur(6px)',
   } : {
-    background:'transparent',padding:'10px 18px',borderRadius:4,cursor:'pointer',fontSize:11,fontWeight:700,
+    background:'rgba(0,0,0,0.20)',padding:'10px 18px',borderRadius:4,cursor:'pointer',fontSize:11,fontWeight:700,
     color:'#9CA3AF',border:'1px solid rgba(255,255,255,0.08)',transition:'all 250ms cubic-bezier(0.22,1,0.36,1)',
     textTransform:'uppercase',letterSpacing:1.5,fontFamily:'Menlo, Consolas, "Courier New", monospace',
+    backdropFilter:'blur(6px)',WebkitBackdropFilter:'blur(6px)',
   },
   main: { padding:24,maxWidth:1400,margin:'0 auto',position:'relative',zIndex:1 },
   box: {
-    backgroundColor:'#111827',
+    backgroundColor:'rgba(17,24,39,0.45)',
     ...hudCornerBg('#22D3EE', 14, 2),
-    border:'1px solid rgba(34,211,238,0.15)',
+    border:'1px solid rgba(34,211,238,0.30)',
     borderRadius:4,padding:24,marginBottom:20,
-    boxShadow:'0 1px 2px rgba(0,0,0,0.20), inset 0 0 30px rgba(34,211,238,0.02)',
+    boxShadow:'0 1px 2px rgba(0,0,0,0.20), inset 0 0 30px rgba(34,211,238,0.04)',
     transition:'transform 250ms cubic-bezier(0.22,1,0.36,1), box-shadow 250ms cubic-bezier(0.22,1,0.36,1)',
+    backdropFilter:'blur(8px)',WebkitBackdropFilter:'blur(8px)',
   },
   stat: {
-    backgroundColor:'#111827',
+    backgroundColor:'rgba(17,24,39,0.40)',
     ...hudCornerBg('#22D3EE', 10, 2),
-    border:'1px solid rgba(34,211,238,0.15)',
+    border:'1px solid rgba(34,211,238,0.25)',
     borderRadius:4,padding:18,
-    boxShadow:'0 1px 2px rgba(0,0,0,0.20), inset 0 0 20px rgba(34,211,238,0.03)',
+    boxShadow:'0 1px 2px rgba(0,0,0,0.20), inset 0 0 20px rgba(34,211,238,0.05)',
     transition:'transform 250ms cubic-bezier(0.22,1,0.36,1), box-shadow 250ms cubic-bezier(0.22,1,0.36,1)',
+    backdropFilter:'blur(8px)',WebkitBackdropFilter:'blur(8px)',
   },
   num: { fontSize:32,fontWeight:700,color:'#22C55E',letterSpacing:0.5,fontVariantNumeric:'tabular-nums',fontFamily:'Menlo, Consolas, "Courier New", monospace',textShadow:'0 0 12px rgba(34,197,94,0.35)' },
   label: { fontSize:11,color:'#9CA3AF',marginTop:6,fontWeight:500,textTransform:'uppercase',letterSpacing:1.5,fontFamily:'Menlo, Consolas, "Courier New", monospace' },
@@ -67,8 +71,8 @@ const S = {
     admin:{background:'rgba(168,85,247,0.12)',color:'#A855F7',border:'1px solid rgba(168,85,247,0.40)'},
     member:{background:'rgba(99,102,241,0.12)',color:'#818CF8',border:'1px solid rgba(99,102,241,0.40)'}
   }[c]||{background:'rgba(34,211,238,0.06)',color:'#22D3EE',border:'1px solid rgba(34,211,238,0.30)'}) }),
-  th: { background:'#0F172A',padding:'12px 14px',textAlign:'left',fontSize:10,color:'#22D3EE',fontWeight:700,borderBottom:'1px solid rgba(34,211,238,0.20)',textTransform:'uppercase',letterSpacing:1.5,fontFamily:'Menlo, Consolas, "Courier New", monospace' },
-  td: { padding:'12px 14px',borderBottom:'1px solid rgba(255,255,255,0.06)',fontSize:13,color:'#CBD5E1' },
+  th: { background:'rgba(15,23,42,0.40)',padding:'12px 14px',textAlign:'left',fontSize:10,color:'#22D3EE',fontWeight:700,borderBottom:'1px solid rgba(34,211,238,0.30)',textTransform:'uppercase',letterSpacing:1.5,fontFamily:'Menlo, Consolas, "Courier New", monospace' },
+  td: { padding:'12px 14px',borderBottom:'1px solid rgba(34,211,238,0.10)',fontSize:13,color:'#CBD5E1',background:'transparent' },
   link: { color:'#22D3EE',textDecoration:'none',fontWeight:600 },
 };
 
@@ -505,21 +509,11 @@ function HudStarField() {
 export default function Home() {
   const [user, setUser] = useState(null);
   const [tab, setTab] = useState('');
-  // HUD mode: normal | hud-a | hud-b — persists in localStorage, applied via body className
-  // Default = 'hud-b' (mode utama), tapi respect saved preference user.
-  const [hudMode, setHudMode] = useState('hud-b');
+  // HUD-B = satu-satunya mode. Selalu aktif, gak bisa dimatiin.
   useEffect(() => {
-    const saved = localStorage.getItem('fb-dash-hudmode');
-    if (saved === 'hud-a' || saved === 'hud-b' || saved === 'normal') setHudMode(saved);
+    document.body.classList.remove('normal', 'hud-a');
+    document.body.classList.add('hud-b');
   }, []);
-  useEffect(() => {
-    document.body.classList.remove('normal', 'hud-a', 'hud-b');
-    document.body.classList.add(hudMode);
-    localStorage.setItem('fb-dash-hudmode', hudMode);
-  }, [hudMode]);
-  const cycleHudMode = () => {
-    setHudMode(prev => prev === 'normal' ? 'hud-a' : prev === 'hud-a' ? 'hud-b' : 'normal');
-  };
   const [groups, setGroups] = useState([]);
   const [links, setLinks] = useState([]);
   const [activity, setActivity] = useState([]);
@@ -2763,7 +2757,7 @@ export default function Home() {
 
   return (
     <>
-      {hudMode !== 'normal' && <HudStarField />}
+      <HudStarField />
       {/* NAV */}
       <div style={S.nav} className="dash-header">
         <h1 style={S.h1}>Football Bot Dashboard</h1>
@@ -2793,9 +2787,6 @@ export default function Home() {
             {soundEnabled ? '🔊' : '🔇'}
           </a>
           <a onClick={()=>setGuideOpen(true)} style={{color:'#a5f3fc',cursor:'pointer',fontSize:12}} title="Panduan Pemakaian">❓</a>
-          <a onClick={cycleHudMode} style={{color:hudMode==='normal'?'#9CA3AF':hudMode==='hud-a'?'#22D3EE':'#F59E0B',cursor:'pointer',fontSize:11,fontFamily:'Menlo, Consolas, monospace',padding:'2px 8px',border:`1px solid ${hudMode==='normal'?'#9CA3AF':hudMode==='hud-a'?'#22D3EE':'#F59E0B'}55`,borderRadius:3,letterSpacing:1}} title={`Mode tema: ${hudMode==='normal'?'NORMAL — minimal HUD':hudMode==='hud-a'?'HUD-A — full visual (bintang+scan+glow+pulse)':'HUD-B — full visual + ring decor pojok cards'}\nKlik untuk ganti.`}>
-            [{hudMode==='normal'?'NRML':hudMode==='hud-a'?'HUD-A':'HUD-B'}]
-          </a>
           {isAdmin && <a href="/preview-hud" target="_blank" rel="noopener" style={{color:'#22D3EE',cursor:'pointer',fontSize:12,textDecoration:'none'}} title="Buka tampilan HUD Mode di tab baru (preview)">🔗 HUD</a>}
           <a onClick={()=>setPwModal(true)} style={{color:'#86EFAC',cursor:'pointer',fontSize:12}} title="Ganti Password">🔑</a>
           <a onClick={logout} style={{color:'#ef4444',cursor:'pointer'}}>Logout</a>
