@@ -459,6 +459,71 @@ export default function RootLayout({ children }) {
           }
 
           /* ============================================================
+             HUD COSMETIC LAYER — sci-fi accent on top of Midnight Stadium
+             Subtle additions: cyan accent borders sudah masuk via S object
+             di page.js. Sini cuma tambahin starfield twinkle global + scan line
+             cosmetic biar dashboard berasa "hidup". Gak ngubah tata letak.
+             ============================================================ */
+
+          /* Tiny cyan twinkle dots scattered (decorative, super subtle) */
+          body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: -1;
+            background-image:
+              radial-gradient(1px 1px at 12% 18%, rgba(34, 211, 238, 0.5), transparent 60%),
+              radial-gradient(1px 1px at 28% 72%, rgba(34, 211, 238, 0.4), transparent 60%),
+              radial-gradient(1px 1px at 45% 35%, rgba(34, 211, 238, 0.6), transparent 60%),
+              radial-gradient(1px 1px at 67% 84%, rgba(34, 211, 238, 0.4), transparent 60%),
+              radial-gradient(1px 1px at 82% 26%, rgba(34, 211, 238, 0.5), transparent 60%),
+              radial-gradient(1px 1px at 91% 58%, rgba(34, 211, 238, 0.4), transparent 60%),
+              radial-gradient(2px 2px at 8% 88%, rgba(34, 211, 238, 0.3), transparent 60%),
+              radial-gradient(2px 2px at 55% 12%, rgba(34, 211, 238, 0.3), transparent 60%);
+            animation: hudTwinkle 8s ease-in-out infinite;
+          }
+          @keyframes hudTwinkle {
+            0%, 100% { opacity: 0.6; }
+            50%      { opacity: 0.9; }
+          }
+
+          /* Subtle horizontal scan line on hover for elements with .hud-panel */
+          .hud-panel::after {
+            content: '';
+            position: absolute;
+            left: 0; right: 0; top: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(34, 211, 238, 0.6), transparent);
+            opacity: 0;
+            transition: opacity 0.3s, top 4s linear;
+          }
+          .hud-panel:hover::after {
+            opacity: 1;
+            top: 100%;
+          }
+
+          /* Numeric display monospace + cyan glow utility */
+          .hud-num {
+            font-family: 'Menlo', 'Consolas', 'Courier New', monospace !important;
+            letter-spacing: 0.5px;
+            text-shadow: 0 0 8px currentColor;
+          }
+
+          /* Sector code label (decorative) */
+          .hud-sector-code {
+            display: inline-block;
+            padding: 1px 6px;
+            font-family: 'Menlo', 'Consolas', monospace;
+            font-size: 9px;
+            letter-spacing: 1.5px;
+            color: rgba(34, 211, 238, 0.8);
+            border: 1px solid rgba(34, 211, 238, 0.4);
+            border-radius: 2px;
+            background: rgba(0, 0, 0, 0.3);
+          }
+
+          /* ============================================================
              ACCESSIBILITY — prefers-reduced-motion
              Disable orb floating + fade-in animations untuk user yg sensitive.
              Per W3C guidance: motion >5s yang auto-start harus pause-able.

@@ -9,50 +9,67 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 // ============================================================
 // MIDNIGHT STADIUM THEME — soft dark navy + green pitch + gold accent.
 // Phase 3A foundation: ganti HUD cyan harshness ke modern stadium lounge vibe.
+// HUD corner bracket helper (8-layer background-image trick → 4 L-shaped corners)
+// Pakai inline biar bisa diapply ke S.box / S.stat tanpa ngubah JSX struktur.
+const hudCornerBg = (color = '#22D3EE', size = 12, thickness = 2) => ({
+  backgroundImage: [
+    `linear-gradient(${color}, ${color})`, `linear-gradient(${color}, ${color})`,
+    `linear-gradient(${color}, ${color})`, `linear-gradient(${color}, ${color})`,
+    `linear-gradient(${color}, ${color})`, `linear-gradient(${color}, ${color})`,
+    `linear-gradient(${color}, ${color})`, `linear-gradient(${color}, ${color})`,
+  ].join(', '),
+  backgroundSize: `${size}px ${thickness}px, ${thickness}px ${size}px, ${size}px ${thickness}px, ${thickness}px ${size}px, ${size}px ${thickness}px, ${thickness}px ${size}px, ${size}px ${thickness}px, ${thickness}px ${size}px`,
+  backgroundPosition: '0 0, 0 0, 100% 0, 100% 0, 0 100%, 0 100%, 100% 100%, 100% 100%',
+  backgroundRepeat: 'no-repeat',
+});
+
 const S = {
-  nav: { background:'#111827',borderBottom:'1px solid rgba(34,197,94,0.20)',padding:'14px 24px',display:'flex',justifyContent:'space-between',alignItems:'center',position:'sticky',top:0,zIndex:100,boxShadow:'0 2px 12px rgba(0,0,0,0.4)',backdropFilter:'blur(8px)' },
-  h1: { fontSize:20,background:'linear-gradient(135deg,#22C55E 0%,#16A34A 50%,#F59E0B 100%)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',fontWeight:800,letterSpacing:-0.2 },
-  tabs: { display:'flex',gap:6,padding:'14px 24px',background:'#111827',borderBottom:'1px solid rgba(255,255,255,0.06)',flexWrap:'wrap' },
+  nav: { background:'#0B1120',borderBottom:'1px solid rgba(34,211,238,0.25)',padding:'14px 24px',display:'flex',justifyContent:'space-between',alignItems:'center',position:'sticky',top:0,zIndex:100,boxShadow:'0 2px 12px rgba(0,0,0,0.4), 0 0 20px rgba(34,211,238,0.05)',backdropFilter:'blur(8px)' },
+  h1: { fontSize:20,background:'linear-gradient(135deg,#22D3EE 0%,#22C55E 50%,#F59E0B 100%)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',fontWeight:800,letterSpacing:1,fontFamily:'Menlo, Consolas, "Courier New", monospace' },
+  tabs: { display:'flex',gap:6,padding:'14px 24px',background:'#0B1120',borderBottom:'1px solid rgba(34,211,238,0.12)',flexWrap:'wrap' },
   tab: (a) => a ? {
-    background:'rgba(34,197,94,0.12)',padding:'10px 18px',borderRadius:8,cursor:'pointer',fontSize:12,fontWeight:600,
-    color:'#22C55E',border:'1px solid rgba(34,197,94,0.35)',transition:'all 250ms cubic-bezier(0.22,1,0.36,1)',
-    textTransform:'uppercase',letterSpacing:1,
+    background:'rgba(34,211,238,0.10)',padding:'10px 18px',borderRadius:4,cursor:'pointer',fontSize:11,fontWeight:700,
+    color:'#22D3EE',border:'1px solid rgba(34,211,238,0.45)',transition:'all 250ms cubic-bezier(0.22,1,0.36,1)',
+    textTransform:'uppercase',letterSpacing:1.5,fontFamily:'Menlo, Consolas, "Courier New", monospace',
+    boxShadow:'0 0 12px rgba(34,211,238,0.25), inset 0 0 8px rgba(34,211,238,0.08)',
   } : {
-    background:'transparent',padding:'10px 18px',borderRadius:8,cursor:'pointer',fontSize:12,fontWeight:600,
-    color:'#9CA3AF',border:'1px solid rgba(255,255,255,0.06)',transition:'all 250ms cubic-bezier(0.22,1,0.36,1)',
-    textTransform:'uppercase',letterSpacing:1,
+    background:'transparent',padding:'10px 18px',borderRadius:4,cursor:'pointer',fontSize:11,fontWeight:700,
+    color:'#9CA3AF',border:'1px solid rgba(255,255,255,0.08)',transition:'all 250ms cubic-bezier(0.22,1,0.36,1)',
+    textTransform:'uppercase',letterSpacing:1.5,fontFamily:'Menlo, Consolas, "Courier New", monospace',
   },
   main: { padding:24,maxWidth:1400,margin:'0 auto',position:'relative',zIndex:1 },
   box: {
-    background:'#111827',
-    border:'1px solid rgba(255,255,255,0.08)',
-    borderRadius:10,padding:24,marginBottom:20,
-    boxShadow:'0 1px 2px rgba(0,0,0,0.20)',
+    backgroundColor:'#111827',
+    ...hudCornerBg('#22D3EE', 14, 2),
+    border:'1px solid rgba(34,211,238,0.15)',
+    borderRadius:4,padding:24,marginBottom:20,
+    boxShadow:'0 1px 2px rgba(0,0,0,0.20), inset 0 0 30px rgba(34,211,238,0.02)',
     transition:'transform 250ms cubic-bezier(0.22,1,0.36,1), box-shadow 250ms cubic-bezier(0.22,1,0.36,1)',
   },
   stat: {
-    background:'#111827',
-    border:'1px solid rgba(255,255,255,0.08)',
-    borderRadius:10,padding:18,
-    boxShadow:'0 1px 2px rgba(0,0,0,0.20)',
+    backgroundColor:'#111827',
+    ...hudCornerBg('#22D3EE', 10, 2),
+    border:'1px solid rgba(34,211,238,0.15)',
+    borderRadius:4,padding:18,
+    boxShadow:'0 1px 2px rgba(0,0,0,0.20), inset 0 0 20px rgba(34,211,238,0.03)',
     transition:'transform 250ms cubic-bezier(0.22,1,0.36,1), box-shadow 250ms cubic-bezier(0.22,1,0.36,1)',
   },
-  num: { fontSize:32,fontWeight:700,color:'#22C55E',letterSpacing:-0.5,fontVariantNumeric:'tabular-nums' },
-  label: { fontSize:11,color:'#9CA3AF',marginTop:6,fontWeight:500,textTransform:'uppercase',letterSpacing:1.2 },
-  input: { width:'100%',padding:'10px 14px',background:'#0F172A',border:'1px solid rgba(255,255,255,0.08)',borderRadius:8,color:'#E5E7EB',fontSize:14,outline:'none',fontWeight:400,transition:'border-color 150ms cubic-bezier(0.22,1,0.36,1)' },
-  btn: (c) => ({ padding:'9px 16px',border:`1px solid ${c||'#22C55E'}`,borderRadius:8,background:c||'#22C55E',color:c?'#fff':'#0B1120',fontSize:12,fontWeight:600,cursor:'pointer',transition:'all 150ms cubic-bezier(0.22,1,0.36,1)',textTransform:'uppercase',letterSpacing:0.8 }),
-  badge: (c) => ({ padding:'3px 9px',borderRadius:6,fontSize:11,fontWeight:600,textTransform:'uppercase',letterSpacing:0.5,...({
-    ok:{background:'rgba(34,197,94,0.12)',color:'#22C55E',border:'1px solid rgba(34,197,94,0.30)'},
-    fail:{background:'rgba(239,68,68,0.12)',color:'#EF4444',border:'1px solid rgba(239,68,68,0.30)'},
-    pending:{background:'rgba(245,158,11,0.12)',color:'#F59E0B',border:'1px solid rgba(245,158,11,0.30)'},
-    approved:{background:'rgba(34,197,94,0.12)',color:'#22C55E',border:'1px solid rgba(34,197,94,0.30)'},
-    rejected:{background:'rgba(239,68,68,0.12)',color:'#EF4444',border:'1px solid rgba(239,68,68,0.30)'},
-    admin:{background:'rgba(168,85,247,0.12)',color:'#A855F7',border:'1px solid rgba(168,85,247,0.30)'},
-    member:{background:'rgba(99,102,241,0.12)',color:'#818CF8',border:'1px solid rgba(99,102,241,0.30)'}
-  }[c]||{background:'rgba(255,255,255,0.04)',color:'#9CA3AF',border:'1px solid rgba(255,255,255,0.08)'}) }),
-  th: { background:'#0F172A',padding:'12px 14px',textAlign:'left',fontSize:11,color:'#22C55E',fontWeight:600,borderBottom:'1px solid rgba(255,255,255,0.08)',textTransform:'uppercase',letterSpacing:1 },
+  num: { fontSize:32,fontWeight:700,color:'#22C55E',letterSpacing:0.5,fontVariantNumeric:'tabular-nums',fontFamily:'Menlo, Consolas, "Courier New", monospace',textShadow:'0 0 12px rgba(34,197,94,0.35)' },
+  label: { fontSize:11,color:'#9CA3AF',marginTop:6,fontWeight:500,textTransform:'uppercase',letterSpacing:1.5,fontFamily:'Menlo, Consolas, "Courier New", monospace' },
+  input: { width:'100%',padding:'10px 14px',background:'#0F172A',border:'1px solid rgba(34,211,238,0.18)',borderRadius:4,color:'#E5E7EB',fontSize:14,outline:'none',fontWeight:400,transition:'border-color 150ms cubic-bezier(0.22,1,0.36,1), box-shadow 150ms cubic-bezier(0.22,1,0.36,1)' },
+  btn: (c) => ({ padding:'9px 16px',border:`1px solid ${c||'#22C55E'}`,borderRadius:4,background:c||'#22C55E',color:c?'#fff':'#0B1120',fontSize:11,fontWeight:700,cursor:'pointer',transition:'all 150ms cubic-bezier(0.22,1,0.36,1)',textTransform:'uppercase',letterSpacing:1.2,fontFamily:'Menlo, Consolas, "Courier New", monospace',boxShadow:`0 0 10px ${c?c+'33':'rgba(34,197,94,0.25)'}` }),
+  badge: (c) => ({ padding:'3px 9px',borderRadius:3,fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:1,fontFamily:'Menlo, Consolas, "Courier New", monospace',...({
+    ok:{background:'rgba(34,197,94,0.12)',color:'#22C55E',border:'1px solid rgba(34,197,94,0.40)'},
+    fail:{background:'rgba(239,68,68,0.12)',color:'#EF4444',border:'1px solid rgba(239,68,68,0.40)'},
+    pending:{background:'rgba(245,158,11,0.12)',color:'#F59E0B',border:'1px solid rgba(245,158,11,0.40)'},
+    approved:{background:'rgba(34,197,94,0.12)',color:'#22C55E',border:'1px solid rgba(34,197,94,0.40)'},
+    rejected:{background:'rgba(239,68,68,0.12)',color:'#EF4444',border:'1px solid rgba(239,68,68,0.40)'},
+    admin:{background:'rgba(168,85,247,0.12)',color:'#A855F7',border:'1px solid rgba(168,85,247,0.40)'},
+    member:{background:'rgba(99,102,241,0.12)',color:'#818CF8',border:'1px solid rgba(99,102,241,0.40)'}
+  }[c]||{background:'rgba(34,211,238,0.06)',color:'#22D3EE',border:'1px solid rgba(34,211,238,0.30)'}) }),
+  th: { background:'#0F172A',padding:'12px 14px',textAlign:'left',fontSize:10,color:'#22D3EE',fontWeight:700,borderBottom:'1px solid rgba(34,211,238,0.20)',textTransform:'uppercase',letterSpacing:1.5,fontFamily:'Menlo, Consolas, "Courier New", monospace' },
   td: { padding:'12px 14px',borderBottom:'1px solid rgba(255,255,255,0.06)',fontSize:13,color:'#CBD5E1' },
-  link: { color:'#22C55E',textDecoration:'none',fontWeight:600 },
+  link: { color:'#22D3EE',textDecoration:'none',fontWeight:600 },
 };
 
 // ============================================================
