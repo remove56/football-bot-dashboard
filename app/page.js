@@ -1,5 +1,5 @@
 'use client';
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import bcrypt from 'bcryptjs';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
@@ -416,9 +416,59 @@ function LoginScreen({ onLogin }) {
 // ============================================================
 // MAIN APP
 // ============================================================
+// ── HUD Star Field component (canvas, animated stars drifting) ──
+function HudStarField() {
+  const ref = React.useRef(null);
+  React.useEffect(() => {
+    const cv = ref.current; if (!cv) return;
+    const ctx = cv.getContext('2d');
+    let raf;
+    const resize = () => { cv.width = window.innerWidth; cv.height = window.innerHeight; };
+    resize(); window.addEventListener('resize', resize);
+    const stars = Array.from({ length: 140 }, () => ({
+      x: Math.random() * cv.width,
+      y: Math.random() * cv.height,
+      r: Math.random() * 1.4 + 0.3,
+      vy: Math.random() * 0.06 + 0.015,
+      o: Math.random() * 0.5 + 0.2,
+      tw: (Math.random() - 0.5) * 0.015,
+    }));
+    const draw = () => {
+      ctx.clearRect(0, 0, cv.width, cv.height);
+      stars.forEach(s => {
+        s.y += s.vy;
+        s.o += s.tw; if (s.o > 0.85 || s.o < 0.15) s.tw *= -1;
+        if (s.y > cv.height) { s.y = 0; s.x = Math.random() * cv.width; }
+        ctx.fillStyle = `rgba(34, 211, 238, ${s.o})`;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      raf = requestAnimationFrame(draw);
+    };
+    draw();
+    return () => { cancelAnimationFrame(raf); window.removeEventListener('resize', resize); };
+  }, []);
+  return <canvas id="hud-starfield" ref={ref} />;
+}
+
 export default function Home() {
   const [user, setUser] = useState(null);
   const [tab, setTab] = useState('');
+  // HUD mode: normal | hud-a | hud-b — persists in localStorage, applied via body className
+  const [hudMode, setHudMode] = useState('normal');
+  useEffect(() => {
+    const saved = localStorage.getItem('fb-dash-hudmode');
+    if (saved === 'hud-a' || saved === 'hud-b' || saved === 'normal') setHudMode(saved);
+  }, []);
+  useEffect(() => {
+    document.body.classList.remove('normal', 'hud-a', 'hud-b');
+    document.body.classList.add(hudMode);
+    localStorage.setItem('fb-dash-hudmode', hudMode);
+  }, [hudMode]);
+  const cycleHudMode = () => {
+    setHudMode(prev => prev === 'normal' ? 'hud-a' : prev === 'hud-a' ? 'hud-b' : 'normal');
+  };
   const [groups, setGroups] = useState([]);
   const [links, setLinks] = useState([]);
   const [activity, setActivity] = useState([]);
@@ -2662,6 +2712,7 @@ export default function Home() {
 
   return (
     <>
+      {hudMode !== 'normal' && <HudStarField />}
       {/* NAV */}
       <div style={S.nav} className="dash-header">
         <h1 style={S.h1}>Football Bot Dashboard</h1>
@@ -2691,6 +2742,9 @@ export default function Home() {
             {soundEnabled ? '🔊' : '🔇'}
           </a>
           <a onClick={()=>setGuideOpen(true)} style={{color:'#a5f3fc',cursor:'pointer',fontSize:12}} title="Panduan Pemakaian">❓</a>
+          <a onClick={cycleHudMode} style={{color:hudMode==='normal'?'#9CA3AF':hudMode==='hud-a'?'#22D3EE':'#F59E0B',cursor:'pointer',fontSize:11,fontFamily:'Menlo, Consolas, monospace',padding:'2px 8px',border:`1px solid ${hudMode==='normal'?'#9CA3AF':hudMode==='hud-a'?'#22D3EE':'#F59E0B'}55`,borderRadius:3,letterSpacing:1}} title={`Mode tema: ${hudMode==='normal'?'NORMAL — minimal HUD':hudMode==='hud-a'?'HUD-A — full visual (bintang+scan+glow+pulse)':'HUD-B — full visual + ring decor pojok cards'}\nKlik untuk ganti.`}>
+            [{hudMode==='normal'?'NRML':hudMode==='hud-a'?'HUD-A':'HUD-B'}]
+          </a>
           {isAdmin && <a href="/preview-hud" target="_blank" rel="noopener" style={{color:'#22D3EE',cursor:'pointer',fontSize:12,textDecoration:'none'}} title="Buka tampilan HUD Mode di tab baru (preview)">🔗 HUD</a>}
           <a onClick={()=>setPwModal(true)} style={{color:'#86EFAC',cursor:'pointer',fontSize:12}} title="Ganti Password">🔑</a>
           <a onClick={logout} style={{color:'#ef4444',cursor:'pointer'}}>Logout</a>

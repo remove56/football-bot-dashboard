@@ -459,6 +459,96 @@ export default function RootLayout({ children }) {
           }
 
           /* ============================================================
+             HUD MODE SYSTEM — 3 mode: normal | hud-a | hud-b
+             Ditrigger via body className. CSS variables ngubah intensity
+             tanpa harus rewrite S object di page.js (karena S inline pake var).
+             ============================================================ */
+          :root {
+            /* Default (normal mode) — subtle HUD cosmetics */
+            --hud-glow-intensity: 0.05;
+            --hud-border-strength: 0.15;
+            --hud-bracket-color: rgba(34, 211, 238, 0.6);
+            --hud-scan-opacity: 0;
+            --hud-pulse-scale: 1;
+            --hud-stars-opacity: 0.6;
+          }
+          body.hud-a, body.hud-b {
+            --hud-glow-intensity: 0.15;
+            --hud-border-strength: 0.4;
+            --hud-bracket-color: rgba(34, 211, 238, 1);
+            --hud-scan-opacity: 1;
+            --hud-stars-opacity: 1;
+          }
+
+          /* Mode A/B — stronger glow on .box-like elements via attribute selector */
+          body.hud-a [style*="rgba(34,211,238,0.15)"],
+          body.hud-b [style*="rgba(34,211,238,0.15)"] {
+            box-shadow: 0 0 24px rgba(34, 211, 238, 0.2), inset 0 0 30px rgba(34, 211, 238, 0.04) !important;
+          }
+
+          /* Mode A/B — scan line that automatically sweeps every box */
+          body.hud-a div[style*="#111827"]::after,
+          body.hud-b div[style*="#111827"]::after {
+            content: '';
+            position: absolute;
+            left: 0; right: 0; top: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #22D3EE, transparent);
+            box-shadow: 0 0 12px #22D3EE;
+            pointer-events: none;
+            animation: hudBoxScan 6s linear infinite;
+            opacity: var(--hud-scan-opacity);
+          }
+          @keyframes hudBoxScan {
+            0%   { top: 0; opacity: 0; }
+            10%  { opacity: 0.6; }
+            90%  { opacity: 0.6; }
+            100% { top: 100%; opacity: 0; }
+          }
+
+          /* Mode A/B — strengthen tab active glow + pulse */
+          body.hud-a [style*="rgba(34,211,238,0.45)"],
+          body.hud-b [style*="rgba(34,211,238,0.45)"] {
+            animation: hudTabPulse 2.4s ease-in-out infinite;
+          }
+          @keyframes hudTabPulse {
+            0%, 100% { box-shadow: 0 0 12px rgba(34, 211, 238, 0.3), inset 0 0 8px rgba(34, 211, 238, 0.08); }
+            50%      { box-shadow: 0 0 24px rgba(34, 211, 238, 0.6), inset 0 0 16px rgba(34, 211, 238, 0.15); }
+          }
+
+          /* Mode B ONLY — circular accent ring around cards (decorative gauge feel) */
+          body.hud-b div[style*="rgba(34,211,238,0.15)"] {
+            position: relative;
+          }
+          body.hud-b div[style*="rgba(34,211,238,0.15)"]::before {
+            content: '';
+            position: absolute;
+            top: -8px; right: -8px;
+            width: 24px; height: 24px;
+            border: 2px solid rgba(34, 211, 238, 0.7);
+            border-right-color: transparent;
+            border-bottom-color: transparent;
+            border-radius: 50%;
+            animation: hudGaugeSpin 4s linear infinite;
+            pointer-events: none;
+          }
+          @keyframes hudGaugeSpin {
+            from { transform: rotate(0deg); }
+            to   { transform: rotate(360deg); }
+          }
+
+          /* HUD canvas star field — fixed bg, behind everything */
+          #hud-starfield {
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            pointer-events: none;
+            opacity: var(--hud-stars-opacity);
+            transition: opacity 0.6s ease;
+          }
+          body.normal #hud-starfield { display: none; }
+
+          /* ============================================================
              HUD COSMETIC LAYER — sci-fi accent on top of Midnight Stadium
              Subtle additions: cyan accent borders sudah masuk via S object
              di page.js. Sini cuma tambahin starfield twinkle global + scan line
