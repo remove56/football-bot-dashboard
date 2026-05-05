@@ -549,10 +549,42 @@ export default function RootLayout({ children }) {
           body.normal #hud-starfield { display: none; }
 
           /* Tables fully transparent on HUD-B (always-on mode) */
-          body.hud-b table { background: transparent !important; }
+          body.hud-b table,
           body.hud-b tr,
           body.hud-b tbody,
-          body.hud-b thead { background: transparent !important; }
+          body.hud-b thead {
+            background: transparent !important;
+            background-color: transparent !important;
+          }
+          /* Force tr inline-style backgrounds also transparent */
+          body.hud-b tr[style*="background"] {
+            background: transparent !important;
+            background-color: transparent !important;
+          }
+          /* td/th cells also transparent (preserve inherit text color) */
+          body.hud-b td,
+          body.hud-b th {
+            background-color: transparent !important;
+          }
+          /* th sticky header — semi-transparent biar kebaca */
+          body.hud-b thead th {
+            background: rgba(15, 23, 42, 0.40) !important;
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+          }
+          /* Inputs/selects/textareas — semi-transparent dgn blur */
+          body.hud-b input:not([type="checkbox"]):not([type="radio"]),
+          body.hud-b select,
+          body.hud-b textarea {
+            background-color: rgba(15, 23, 42, 0.35) !important;
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+          }
+          /* Select option dropdown popup — keep readable (browser-controlled) */
+          body.hud-b option {
+            background-color: #0F172A !important;
+            color: #E5E7EB !important;
+          }
           /* Body bg lebih gelap biar bintang kontras */
           body.hud-b { background: #050811 !important; }
 

@@ -60,7 +60,7 @@ const S = {
   },
   num: { fontSize:32,fontWeight:700,color:'#22C55E',letterSpacing:0.5,fontVariantNumeric:'tabular-nums',fontFamily:'Menlo, Consolas, "Courier New", monospace',textShadow:'0 0 12px rgba(34,197,94,0.35)' },
   label: { fontSize:11,color:'#9CA3AF',marginTop:6,fontWeight:500,textTransform:'uppercase',letterSpacing:1.5,fontFamily:'Menlo, Consolas, "Courier New", monospace' },
-  input: { width:'100%',padding:'10px 14px',background:'#0F172A',border:'1px solid rgba(34,211,238,0.18)',borderRadius:4,color:'#E5E7EB',fontSize:14,outline:'none',fontWeight:400,transition:'border-color 150ms cubic-bezier(0.22,1,0.36,1), box-shadow 150ms cubic-bezier(0.22,1,0.36,1)' },
+  input: { width:'100%',padding:'10px 14px',background:'rgba(15,23,42,0.35)',border:'1px solid rgba(34,211,238,0.25)',borderRadius:4,color:'#E5E7EB',fontSize:14,outline:'none',fontWeight:400,transition:'border-color 150ms cubic-bezier(0.22,1,0.36,1), box-shadow 150ms cubic-bezier(0.22,1,0.36,1)',backdropFilter:'blur(6px)',WebkitBackdropFilter:'blur(6px)' },
   btn: (c) => ({ padding:'9px 16px',border:`1px solid ${c||'#22C55E'}`,borderRadius:4,background:c||'#22C55E',color:c?'#fff':'#0B1120',fontSize:11,fontWeight:700,cursor:'pointer',transition:'all 150ms cubic-bezier(0.22,1,0.36,1)',textTransform:'uppercase',letterSpacing:1.2,fontFamily:'Menlo, Consolas, "Courier New", monospace',boxShadow:`0 0 10px ${c?c+'33':'rgba(34,197,94,0.25)'}` }),
   badge: (c) => ({ padding:'3px 9px',borderRadius:3,fontSize:10,fontWeight:700,textTransform:'uppercase',letterSpacing:1,fontFamily:'Menlo, Consolas, "Courier New", monospace',...({
     ok:{background:'rgba(34,197,94,0.12)',color:'#22C55E',border:'1px solid rgba(34,197,94,0.40)'},
