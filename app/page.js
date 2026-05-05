@@ -2674,6 +2674,7 @@ export default function Home() {
             {soundEnabled ? '🔊' : '🔇'}
           </a>
           <a onClick={()=>setGuideOpen(true)} style={{color:'#a5f3fc',cursor:'pointer',fontSize:12}} title="Panduan Pemakaian">❓</a>
+          {isAdmin && <a href="/preview-hud" target="_blank" rel="noopener" style={{color:'#22D3EE',cursor:'pointer',fontSize:12,textDecoration:'none'}} title="Buka tampilan HUD Mode di tab baru (preview)">🔗 HUD</a>}
           <a onClick={()=>setPwModal(true)} style={{color:'#86EFAC',cursor:'pointer',fontSize:12}} title="Ganti Password">🔑</a>
           <a onClick={logout} style={{color:'#ef4444',cursor:'pointer'}}>Logout</a>
         </div>
