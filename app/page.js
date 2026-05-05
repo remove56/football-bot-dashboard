@@ -3582,7 +3582,7 @@ export default function Home() {
                             <div style={{fontSize:13,fontWeight:800,color:'#e0f2fe'}}>{w.worker_name}</div>
                             <div style={{fontSize:10,color:'#6b7280',marginTop:2}}>ID: {w.worker_id}</div>
                           </div>
-                          <span style={{padding:'4px 10px',borderRadius:4,fontSize:10,fontWeight:900,background:statusBg,color:statusColor,border:'1px solid '+statusColor}}>
+                          <span className={w.status === 'active' ? 'status-pulse' : ''} style={{display:'inline-block',position:'relative',padding:'4px 10px',borderRadius:6,fontSize:10,fontWeight:700,background:statusBg,color:statusColor,border:'1px solid '+statusColor,letterSpacing:0.5}}>
                             {statusEmoji} {statusLabel}
                           </span>
                         </div>
@@ -3682,24 +3682,19 @@ export default function Home() {
         {/* ANALYTICS (admin) */}
         {tab === 'analytics' && isAdmin && (
           <>
-            {/* Summary stats */}
-            <div className="responsive-stats" style={{marginBottom:20}}>
-              <div style={S.stat}>
-                <div style={S.num}>{clubStats.reduce((a,c)=>a+c.trackerCycles,0)}</div>
-                <div style={S.label}>Total Siklus</div>
-              </div>
-              <div style={S.stat}>
-                <div style={S.num}>{clubStats.reduce((a,c)=>a+c.trackerCompleted,0)}</div>
-                <div style={S.label}>Siklus Selesai</div>
-              </div>
-              <div style={S.stat}>
-                <div style={S.num}>{clubStats.reduce((a,c)=>a+c.memberPosts,0)}</div>
-                <div style={S.label}>Total Konten Member</div>
-              </div>
-              <div style={S.stat}>
-                <div style={S.num}>{clubStats.reduce((a,c)=>a+c.botPosts,0)}</div>
-                <div style={S.label}>Total Post Bot</div>
-              </div>
+            {/* Summary stats — Phase 3C polish dgn CountUp */}
+            <div className="responsive-stats fade-in-stagger" style={{marginBottom:20}}>
+              {[
+                { label:'Total Siklus',         value: clubStats.reduce((a,c)=>a+c.trackerCycles,0),    accent:'#22C55E' },
+                { label:'Siklus Selesai',       value: clubStats.reduce((a,c)=>a+c.trackerCompleted,0), accent:'#F59E0B' },
+                { label:'Total Konten Member',  value: clubStats.reduce((a,c)=>a+c.memberPosts,0),      accent:'#22C55E' },
+                { label:'Total Post Bot',       value: clubStats.reduce((a,c)=>a+c.botPosts,0),         accent:'#F59E0B' },
+              ].map((m) => (
+                <div key={m.label} className="card-hover" style={{...S.stat,textAlign:'center'}}>
+                  <div style={{fontSize:11,color:'#9CA3AF',textTransform:'uppercase',letterSpacing:1.2,fontWeight:500,marginBottom:8}}>{m.label}</div>
+                  <div style={{...S.num,color:m.accent}}><CountUp value={m.value} duration={900} /></div>
+                </div>
+              ))}
             </div>
 
             {/* BAR CHART — Top 10 klub by total konten (Recharts HUD style) */}
@@ -5537,23 +5532,23 @@ export default function Home() {
                   {titleIcon} {titleText}
                 </h3>
 
-                {/* Summary cards */}
-                <div className="responsive-stats" style={{marginBottom:16}}>
-                  <div style={{...S.stat,border:'1px solid #10b981'}}>
-                    <div style={{...S.num,color:'#10b981'}}>{data.summary.totalDone}</div>
-                    <div style={S.label}>✅ Sukses</div>
+                {/* Summary cards — Phase 3C polish dgn CountUp + Midnight palette */}
+                <div className="responsive-stats fade-in-stagger" style={{marginBottom:16}}>
+                  <div className="card-hover" style={{...S.stat,borderColor:'rgba(34,197,94,0.30)'}}>
+                    <div style={{fontSize:11,color:'#9CA3AF',textTransform:'uppercase',letterSpacing:1.2,fontWeight:500,marginBottom:8}}>✅ Sukses</div>
+                    <div style={{...S.num,color:'#22C55E'}}><CountUp value={data.summary.totalDone} duration={900} /></div>
                   </div>
-                  <div style={{...S.stat,border:'1px solid #ef4444'}}>
-                    <div style={{...S.num,color:'#ef4444'}}>{data.summary.totalFailed}</div>
-                    <div style={S.label}>❌ Gagal</div>
+                  <div className="card-hover" style={{...S.stat,borderColor:'rgba(239,68,68,0.30)'}}>
+                    <div style={{fontSize:11,color:'#9CA3AF',textTransform:'uppercase',letterSpacing:1.2,fontWeight:500,marginBottom:8}}>❌ Gagal</div>
+                    <div style={{...S.num,color:'#EF4444'}}><CountUp value={data.summary.totalFailed} duration={900} /></div>
                   </div>
-                  <div style={{...S.stat,border:'1px solid #f59e0b'}}>
-                    <div style={{...S.num,color:'#f59e0b'}}>{data.summary.totalPending}</div>
-                    <div style={S.label}>⏳ Pending/Running</div>
+                  <div className="card-hover" style={{...S.stat,borderColor:'rgba(245,158,11,0.30)'}}>
+                    <div style={{fontSize:11,color:'#9CA3AF',textTransform:'uppercase',letterSpacing:1.2,fontWeight:500,marginBottom:8}}>⏳ Pending/Running</div>
+                    <div style={{...S.num,color:'#F59E0B'}}><CountUp value={data.summary.totalPending} duration={900} /></div>
                   </div>
-                  <div style={{...S.stat,border:'1px solid #67e8f9'}}>
-                    <div style={{...S.num,color:'#67e8f9'}}>{data.summary.successRate}%</div>
-                    <div style={S.label}>📈 Success Rate</div>
+                  <div className="card-hover" style={{...S.stat,borderColor:'rgba(34,197,94,0.30)'}}>
+                    <div style={{fontSize:11,color:'#9CA3AF',textTransform:'uppercase',letterSpacing:1.2,fontWeight:500,marginBottom:8}}>📈 Success Rate</div>
+                    <div style={{...S.num,color:'#22C55E'}}><CountUp value={data.summary.successRate} duration={1100} /><span style={{fontSize:18,marginLeft:2}}>%</span></div>
                   </div>
                 </div>
 
@@ -5806,28 +5801,28 @@ export default function Home() {
           return (
             <>
               <div style={{display:'flex',gap:12,alignItems:'center',marginBottom:16,flexWrap:'wrap'}}>
-                <h3 style={{margin:0,color:'#22d3ee'}}>💚 Group Health Score</h3>
-                <button onClick={loadGroupHealth} style={{padding:'6px 14px',background:'#0891b2',color:'#fff',border:'none',borderRadius:6,cursor:'pointer',fontSize:13}}>🔄 Refresh</button>
+                <h3 style={{margin:0,color:'#22C55E',fontSize:18,fontWeight:700}}>💚 Group Health Score</h3>
+                <button onClick={loadGroupHealth} style={S.btn()}>🔄 Refresh</button>
               </div>
 
-              <p style={{fontSize:13,color:'#94a3b8',marginBottom:16}}>
+              <p style={{fontSize:13,color:'#9CA3AF',marginBottom:16}}>
                 Score 0-100 per grup. Komponen: success rate (40%), avg engagement (30%),
                 consistency (15%), recency (15%). Update otomatis tiap 6 jam dari bot worker.
               </p>
 
-              {/* Summary cards */}
-              <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit, minmax(160px, 1fr))',gap:12,marginBottom:24}}>
-                <div style={{padding:16,background:'rgba(16,185,129,0.1)',borderLeft:'4px solid #10b981',borderRadius:6}}>
-                  <div style={{fontSize:24,fontWeight:'bold',color:'#10b981'}}>{summary.healthy}</div>
-                  <div style={{fontSize:12,color:'#94a3b8'}}>✅ Healthy (≥80)</div>
+              {/* Summary cards — Phase 3C polish dgn CountUp + Midnight palette */}
+              <div className="responsive-stats fade-in-stagger" style={{marginBottom:24}}>
+                <div className="card-hover" style={{...S.stat,borderColor:'rgba(34,197,94,0.30)'}}>
+                  <div style={{fontSize:11,color:'#9CA3AF',textTransform:'uppercase',letterSpacing:1.2,fontWeight:500,marginBottom:8}}>✅ Healthy (≥80)</div>
+                  <div style={{...S.num,color:'#22C55E'}}><CountUp value={summary.healthy} duration={900} /></div>
                 </div>
-                <div style={{padding:16,background:'rgba(245,158,11,0.1)',borderLeft:'4px solid #f59e0b',borderRadius:6}}>
-                  <div style={{fontSize:24,fontWeight:'bold',color:'#f59e0b'}}>{summary.warning}</div>
-                  <div style={{fontSize:12,color:'#94a3b8'}}>⚠️ Warning (50-79)</div>
+                <div className="card-hover" style={{...S.stat,borderColor:'rgba(245,158,11,0.30)'}}>
+                  <div style={{fontSize:11,color:'#9CA3AF',textTransform:'uppercase',letterSpacing:1.2,fontWeight:500,marginBottom:8}}>⚠️ Warning (50-79)</div>
+                  <div style={{...S.num,color:'#F59E0B'}}><CountUp value={summary.warning} duration={900} /></div>
                 </div>
-                <div style={{padding:16,background:'rgba(239,68,68,0.1)',borderLeft:'4px solid #ef4444',borderRadius:6}}>
-                  <div style={{fontSize:24,fontWeight:'bold',color:'#ef4444'}}>{summary.atRisk}</div>
-                  <div style={{fontSize:12,color:'#94a3b8'}}>🚨 At-Risk (&lt;50)</div>
+                <div className="card-hover" style={{...S.stat,borderColor:'rgba(239,68,68,0.30)'}}>
+                  <div style={{fontSize:11,color:'#9CA3AF',textTransform:'uppercase',letterSpacing:1.2,fontWeight:500,marginBottom:8}}>🚨 At-Risk (&lt;50)</div>
+                  <div style={{...S.num,color:'#EF4444'}}><CountUp value={summary.atRisk} duration={900} /></div>
                 </div>
               </div>
 

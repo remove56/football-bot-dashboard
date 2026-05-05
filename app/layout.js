@@ -90,46 +90,108 @@ export default function RootLayout({ children }) {
             border-radius: 9999px;
             pointer-events: none;
             z-index: -1;
-            filter: blur(80px);
+            filter: blur(70px);
           }
           .ambient-orb--1 {
-            width: 480px;
-            height: 480px;
+            width: 520px;
+            height: 520px;
             top: -120px;
             left: -120px;
             background: radial-gradient(circle, var(--primary-glow), transparent 65%);
-            opacity: 0.55;
-            animation: floatOrb1 22s ease-in-out infinite alternate;
+            opacity: 0.75;
+            animation: floatOrb1 14s ease-in-out infinite alternate;
           }
           .ambient-orb--2 {
-            width: 420px;
-            height: 420px;
+            width: 460px;
+            height: 460px;
             bottom: -100px;
             right: -80px;
             background: radial-gradient(circle, var(--accent-glow), transparent 65%);
-            opacity: 0.45;
-            animation: floatOrb2 28s ease-in-out infinite alternate;
+            opacity: 0.65;
+            animation: floatOrb2 16s ease-in-out infinite alternate;
           }
           .ambient-orb--3 {
-            width: 360px;
-            height: 360px;
-            top: 40%;
-            right: 25%;
-            background: radial-gradient(circle, rgba(99, 102, 241, 0.20), transparent 65%);
-            opacity: 0.35;
-            animation: floatOrb3 35s ease-in-out infinite alternate;
+            width: 400px;
+            height: 400px;
+            top: 35%;
+            right: 22%;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.45), transparent 65%);
+            opacity: 0.55;
+            animation: floatOrb3 18s ease-in-out infinite alternate;
+          }
+          .ambient-orb--4 {
+            width: 340px;
+            height: 340px;
+            top: 18%;
+            left: 38%;
+            background: radial-gradient(circle, rgba(34, 197, 94, 0.30), transparent 65%);
+            opacity: 0.45;
+            animation: floatOrb4 12s ease-in-out infinite alternate;
           }
           @keyframes floatOrb1 {
-            from { transform: translate3d(-30px, -20px, 0) scale(1); }
-            to   { transform: translate3d(40px, 30px, 0) scale(1.10); }
+            from { transform: translate3d(-50px, -30px, 0) scale(1); }
+            to   { transform: translate3d(80px, 60px, 0) scale(1.18); }
           }
           @keyframes floatOrb2 {
-            from { transform: translate3d(20px, 30px, 0) scale(1.05); }
-            to   { transform: translate3d(-40px, -20px, 0) scale(1); }
+            from { transform: translate3d(40px, 60px, 0) scale(1.10); }
+            to   { transform: translate3d(-80px, -40px, 0) scale(1); }
           }
           @keyframes floatOrb3 {
             from { transform: translate3d(0, 0, 0) scale(1); }
-            to   { transform: translate3d(-50px, 40px, 0) scale(1.08); }
+            to   { transform: translate3d(-100px, 80px, 0) scale(1.15); }
+          }
+          @keyframes floatOrb4 {
+            from { transform: translate3d(-20px, 0, 0) scale(0.95); }
+            to   { transform: translate3d(60px, -50px, 0) scale(1.12); }
+          }
+
+          /* Header accent line — slow gradient sweep horizontal */
+          .accent-line {
+            position: relative;
+            height: 2px;
+            overflow: hidden;
+            background: rgba(255, 255, 255, 0.04);
+          }
+          .accent-line::after {
+            content: '';
+            position: absolute;
+            top: 0; left: -50%;
+            width: 50%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, var(--primary), var(--accent), transparent);
+            animation: accentSweep 6s linear infinite;
+          }
+          @keyframes accentSweep {
+            from { left: -50%; }
+            to   { left: 100%; }
+          }
+
+          /* Status pulse — for ACTIVE badges, slow + visible */
+          .status-pulse {
+            position: relative;
+          }
+          .status-pulse::before {
+            content: '';
+            position: absolute;
+            inset: -2px;
+            border-radius: inherit;
+            border: 2px solid var(--primary);
+            opacity: 0.6;
+            animation: statusPulseRing 2s ease-out infinite;
+          }
+          @keyframes statusPulseRing {
+            0%   { transform: scale(1); opacity: 0.6; }
+            100% { transform: scale(1.25); opacity: 0; }
+          }
+
+          /* Number tick — slight glow pulse on stat cards (subtle but visible) */
+          .number-glow {
+            text-shadow: 0 0 12px var(--primary-glow);
+            animation: numberGlow 3s ease-in-out infinite;
+          }
+          @keyframes numberGlow {
+            0%, 100% { text-shadow: 0 0 8px rgba(34, 197, 94, 0.30); }
+            50%      { text-shadow: 0 0 18px rgba(34, 197, 94, 0.50); }
           }
 
           /* ============================================================
@@ -416,10 +478,11 @@ export default function RootLayout({ children }) {
         `}} />
       </head>
       <body>
-        {/* Ambient orbs — soft floating background, decorative only */}
+        {/* Ambient orbs — 4 floating background, more visible motion */}
         <div className="ambient-orb ambient-orb--1" aria-hidden="true"></div>
         <div className="ambient-orb ambient-orb--2" aria-hidden="true"></div>
         <div className="ambient-orb ambient-orb--3" aria-hidden="true"></div>
+        <div className="ambient-orb ambient-orb--4" aria-hidden="true"></div>
         {children}
       </body>
     </html>
