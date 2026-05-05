@@ -6,34 +6,56 @@ export default function RootLayout({ children }) {
       <head>
         <style dangerouslySetInnerHTML={{ __html: `
           /* ============================================================
-             DESIGN TOKENS — Horizon/shadcn-modern, slate base + cyan accent.
-             Phase 1 foundation: clean dark, no video bg, solid surfaces.
+             DESIGN TOKENS — Midnight Stadium
+             Soft dark navy + green pitch + gold accent. Elegan, motion halus,
+             nyaman untuk session admin yang lama. Replaced HUD cyan harshness.
              ============================================================ */
           :root {
-            --bg-base:        #020617;  /* slate-950 — body */
-            --bg-surface:     #0f172a;  /* slate-900 — cards */
-            --bg-surface-2:   #1e293b;  /* slate-800 — elevated */
-            --bg-input:       #0a1224;  /* deeper for form fields */
-            --border:         #1e293b;  /* slate-800 */
-            --border-strong:  #334155;  /* slate-700 */
-            --border-accent:  rgba(34, 211, 238, 0.25);
-            --text-primary:   #e0f2fe;  /* sky-100 */
-            --text-secondary: #94a3b8;  /* slate-400 */
-            --text-muted:     #64748b;  /* slate-500 */
-            --accent:         #22d3ee;  /* cyan-400 */
-            --accent-hover:   #06b6d4;  /* cyan-500 */
-            --accent-bg:      rgba(34, 211, 238, 0.10);
-            --accent-magenta: #d946ef;  /* fuchsia-500 — HUD secondary accent */
-            --accent-magenta-bg: rgba(217, 70, 239, 0.10);
-            --success:        #10b981;  /* emerald-500 */
-            --warning:        #f59e0b;  /* amber-500 */
-            --danger:         #ef4444;  /* red-500 */
+            --bg:             #0B1120;  /* navy gelap — body */
+            --bg-base:        #0B1120;  /* alias backward-compat */
+            --surface:        #111827;  /* card */
+            --bg-surface:     #111827;  /* alias backward-compat */
+            --surface-2:      #1F2937;  /* hover/elevated */
+            --bg-surface-2:   #1F2937;  /* alias backward-compat */
+            --bg-input:       #0F172A;  /* deeper for form fields */
+
+            --border:         rgba(255, 255, 255, 0.08);
+            --border-strong:  rgba(255, 255, 255, 0.14);
+            --border-accent:  rgba(34, 197, 94, 0.25);  /* green accent border */
+
+            --text:           #E5E7EB;
+            --text-primary:   #E5E7EB;  /* alias */
+            --text-secondary: #CBD5E1;
+            --muted:          #9CA3AF;
+            --text-muted:     #9CA3AF;  /* alias */
+
+            --primary:        #22C55E;  /* green pitch — main accent */
+            --primary-hover:  #16A34A;  /* green-600 */
+            --primary-bg:     rgba(34, 197, 94, 0.10);
+            --primary-glow:   rgba(34, 197, 94, 0.40);
+
+            --accent:         #F59E0B;  /* gold/score highlight */
+            --accent-hover:   #D97706;
+            --accent-bg:      rgba(245, 158, 11, 0.10);
+            --accent-glow:    rgba(245, 158, 11, 0.30);
+
+            --success:        #22C55E;
+            --warning:        #F59E0B;
+            --danger:         #EF4444;
+            --danger-bg:      rgba(239, 68, 68, 0.10);
+
             --radius-sm:      4px;
-            --radius:         8px;
-            --radius-lg:      12px;
-            --shadow-sm:      0 1px 2px rgba(0, 0, 0, 0.3);
-            --shadow:         0 4px 16px rgba(0, 0, 0, 0.35);
-            --shadow-lg:      0 8px 32px rgba(0, 0, 0, 0.45);
+            --radius:         10px;
+            --radius-lg:      14px;
+
+            --shadow-sm:      0 1px 2px rgba(0, 0, 0, 0.20);
+            --shadow:         0 4px 20px rgba(0, 0, 0, 0.30);
+            --shadow-lg:      0 12px 40px rgba(0, 0, 0, 0.45);
+            --shadow-hover:   0 6px 24px rgba(0, 0, 0, 0.40);
+
+            --motion-fast:    150ms cubic-bezier(0.22, 1, 0.36, 1);
+            --motion-base:    250ms cubic-bezier(0.22, 1, 0.36, 1);
+            --motion-slow:    400ms cubic-bezier(0.22, 1, 0.36, 1);
           }
 
           /* ============================================================
@@ -43,8 +65,8 @@ export default function RootLayout({ children }) {
           html, body {
             margin: 0;
             padding: 0;
-            background: var(--bg-base);
-            color: var(--text-primary);
+            background: var(--bg);
+            color: var(--text);
             font-family: 'Inter', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
             font-size: 14px;
             line-height: 1.5;
@@ -54,190 +76,226 @@ export default function RootLayout({ children }) {
           }
           body {
             position: relative;
-            z-index: 0; /* establish stacking context for animated bg pseudos */
+            z-index: 0;
+            overflow-x: hidden;
           }
 
           /* ============================================================
-             ANIMATED HUD BACKGROUND — pure CSS, GPU-accelerated
-             Layer 1 (::before): cyan grid drift diagonal slow scroll
-             Layer 2 (::after):  radial cyan glow pulse breath
-             Layer 3 (.hud-scanline): horizontal scan line sweep top-to-bottom
-             All pointer-events:none, behind content (z:-1 in body context)
+             AMBIENT ORB BACKGROUND — pure CSS, soft motion
+             3 orbs floating slow di belakang layout, opacity rendah.
+             Pure decoration, gak distract dari content. Honors prefers-reduced-motion.
              ============================================================ */
-          body::before {
-            content: '';
+          .ambient-orb {
             position: fixed;
-            inset: 0;
-            background-image:
-              linear-gradient(rgba(34, 211, 238, 0.07) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(34, 211, 238, 0.07) 1px, transparent 1px);
-            background-size: 40px 40px;
-            animation: hud-grid-drift 30s linear infinite;
+            border-radius: 9999px;
             pointer-events: none;
             z-index: -1;
+            filter: blur(80px);
           }
-          body::after {
-            content: '';
-            position: fixed;
-            inset: 0;
-            background: radial-gradient(circle at 50% 50%, rgba(34, 211, 238, 0.10), transparent 65%);
-            animation: hud-pulse 8s ease-in-out infinite;
-            pointer-events: none;
-            z-index: -1;
+          .ambient-orb--1 {
+            width: 480px;
+            height: 480px;
+            top: -120px;
+            left: -120px;
+            background: radial-gradient(circle, var(--primary-glow), transparent 65%);
+            opacity: 0.55;
+            animation: floatOrb1 22s ease-in-out infinite alternate;
           }
-          @keyframes hud-grid-drift {
-            0%   { background-position: 0 0, 0 0; }
-            100% { background-position: 40px 40px, 40px 40px; }
+          .ambient-orb--2 {
+            width: 420px;
+            height: 420px;
+            bottom: -100px;
+            right: -80px;
+            background: radial-gradient(circle, var(--accent-glow), transparent 65%);
+            opacity: 0.45;
+            animation: floatOrb2 28s ease-in-out infinite alternate;
           }
-          @keyframes hud-pulse {
-            0%, 100% { opacity: 0.5; transform: scale(1); }
-            50%      { opacity: 1;   transform: scale(1.04); }
+          .ambient-orb--3 {
+            width: 360px;
+            height: 360px;
+            top: 40%;
+            right: 25%;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.20), transparent 65%);
+            opacity: 0.35;
+            animation: floatOrb3 35s ease-in-out infinite alternate;
           }
-
-          /* Layer 3: horizontal scan-line sweep (HUD radar style)
-             Auto-injected via ::before di html element, biar gak conflict body. */
-          html::before {
-            content: '';
-            position: fixed;
-            top: 0; left: 0; right: 0;
-            height: 2px;
-            background: linear-gradient(90deg,
-              transparent 0%,
-              rgba(34, 211, 238, 0.3) 30%,
-              rgba(34, 211, 238, 0.6) 50%,
-              rgba(34, 211, 238, 0.3) 70%,
-              transparent 100%);
-            animation: hud-scanline 12s linear infinite;
-            pointer-events: none;
-            z-index: 9998;
-            box-shadow: 0 0 8px rgba(34, 211, 238, 0.4);
+          @keyframes floatOrb1 {
+            from { transform: translate3d(-30px, -20px, 0) scale(1); }
+            to   { transform: translate3d(40px, 30px, 0) scale(1.10); }
           }
-          @keyframes hud-scanline {
-            0%   { transform: translateY(0); opacity: 0; }
-            5%   { opacity: 1; }
-            95%  { opacity: 1; }
-            100% { transform: translateY(100vh); opacity: 0; }
+          @keyframes floatOrb2 {
+            from { transform: translate3d(20px, 30px, 0) scale(1.05); }
+            to   { transform: translate3d(-40px, -20px, 0) scale(1); }
+          }
+          @keyframes floatOrb3 {
+            from { transform: translate3d(0, 0, 0) scale(1); }
+            to   { transform: translate3d(-50px, 40px, 0) scale(1.08); }
           }
 
-          /* Scrollbar — minimal, slate-themed */
+          /* ============================================================
+             SCROLLBAR — minimal, slate-themed, no neon
+             ============================================================ */
           ::-webkit-scrollbar { width: 10px; height: 10px; }
-          ::-webkit-scrollbar-track { background: var(--bg-base); }
+          ::-webkit-scrollbar-track { background: var(--bg); }
           ::-webkit-scrollbar-thumb {
-            background: var(--bg-surface-2);
+            background: var(--surface-2);
             border-radius: var(--radius-sm);
           }
           ::-webkit-scrollbar-thumb:hover { background: var(--border-strong); }
-          ::-webkit-scrollbar-corner { background: var(--bg-base); }
+          ::-webkit-scrollbar-corner { background: var(--bg); }
 
-          /* Focus ring — accessible + branded */
+          /* ============================================================
+             FOCUS — accessible, subtle green ring
+             ============================================================ */
           :focus-visible {
-            outline: 2px solid var(--accent);
+            outline: 2px solid var(--primary);
             outline-offset: 2px;
             border-radius: var(--radius-sm);
           }
           input:focus, select:focus, textarea:focus {
-            border-color: var(--accent) !important;
-            box-shadow: 0 0 0 3px var(--accent-bg) !important;
+            border-color: var(--primary) !important;
+            box-shadow: 0 0 0 3px var(--primary-bg) !important;
             outline: none;
           }
 
-          /* Selection */
+          /* Selection — green pitch */
           ::selection {
-            background: var(--accent-bg);
-            color: var(--text-primary);
-          }
-
-          /* Subtle button hover (no garish glow) */
-          button:not(:disabled):hover, [role="button"]:not(:disabled):hover {
-            filter: brightness(1.1);
-          }
-          button:not(:disabled):active, [role="button"]:not(:disabled):active {
-            transform: translateY(1px);
+            background: var(--primary-bg);
+            color: var(--text);
           }
 
           /* ============================================================
-             ANIMATIONS — keep features-used keyframes
+             SOFT MOTION — hover lift untuk card-like elements
+             Gentle 2-4px translate + soft shadow. Smooth easing.
              ============================================================ */
+          button:not(:disabled), [role="button"]:not(:disabled) {
+            transition: transform var(--motion-fast), filter var(--motion-fast), box-shadow var(--motion-fast);
+          }
+          button:not(:disabled):hover, [role="button"]:not(:disabled):hover {
+            filter: brightness(1.08);
+            transform: translateY(-1px);
+          }
+          button:not(:disabled):active, [role="button"]:not(:disabled):active {
+            transform: translateY(0);
+          }
+
+          /* Card hover lift — class opt-in: .card-hover */
+          .card-hover {
+            transition: transform var(--motion-base), box-shadow var(--motion-base);
+          }
+          .card-hover:hover {
+            transform: translateY(-3px);
+            box-shadow: var(--shadow-hover);
+          }
+
+          /* ============================================================
+             ANIMATIONS — slow & gentle (Midnight Stadium philosophy)
+             ============================================================ */
+
+          /* Bell/chat pulse — slowed, gentle */
           @keyframes bellPulse {
             0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.15); }
+            50%      { transform: scale(1.08); }
           }
+
+          /* Recording — kept original (specific feature need) */
           @keyframes recordPulse {
             0%, 100% { background-color: #991b1b; box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
-            50% { background-color: #dc2626; box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+            50%      { background-color: #dc2626; box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
           }
+
+          /* Online status dot — green slow pulse (stadium pitch) */
           @keyframes onlinePulse {
-            0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
-            50% { box-shadow: 0 0 0 4px rgba(16, 185, 129, 0); }
+            0%, 100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.50); }
+            50%      { box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); }
           }
+
           .chat-message-row:hover .msg-delete-btn { opacity: 1 !important; }
 
           /* ============================================================
-             HUD AESTHETIC — Phase 1B experimental (Overview tab only)
-             Cyan corner brackets via 8 background-image lines per panel.
-             No HTML changes needed: just add className="hud-panel".
-             Magenta variant: className="hud-panel hud-panel--magenta".
+             FADE-IN UTILITY — apply to dynamically-rendered cards
+             Opt-in via className="fade-in"
+             ============================================================ */
+          .fade-in {
+            animation: fadeInUp var(--motion-slow) ease-out backwards;
+          }
+          @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(8px); }
+            to   { opacity: 1; transform: translateY(0); }
+          }
+
+          /* Stagger helper — children fade-in sequential dgn delay 60ms */
+          .fade-in-stagger > * {
+            animation: fadeInUp var(--motion-slow) ease-out backwards;
+          }
+          .fade-in-stagger > *:nth-child(1) { animation-delay:  0ms; }
+          .fade-in-stagger > *:nth-child(2) { animation-delay: 60ms; }
+          .fade-in-stagger > *:nth-child(3) { animation-delay: 120ms; }
+          .fade-in-stagger > *:nth-child(4) { animation-delay: 180ms; }
+          .fade-in-stagger > *:nth-child(5) { animation-delay: 240ms; }
+          .fade-in-stagger > *:nth-child(6) { animation-delay: 300ms; }
+          .fade-in-stagger > *:nth-child(7) { animation-delay: 360ms; }
+          .fade-in-stagger > *:nth-child(8) { animation-delay: 420ms; }
+
+          /* ============================================================
+             SKELETON SHIMMER — loading state
+             Apply via className="skeleton" + fixed width/height
+             ============================================================ */
+          .skeleton {
+            background: linear-gradient(
+              90deg,
+              var(--surface) 0%,
+              var(--surface-2) 50%,
+              var(--surface) 100%
+            );
+            background-size: 200% 100%;
+            animation: shimmer 1.6s ease-in-out infinite;
+            border-radius: var(--radius-sm);
+          }
+          @keyframes shimmer {
+            0%   { background-position: 100% 0; }
+            100% { background-position: -100% 0; }
+          }
+
+          /* ============================================================
+             HUD-PANEL backward-compat — dipakai page.js Phase 1B+2A
+             Sebelumnya cyan corner brackets + breath pulse. Phase 3A:
+             ganti ke soft surface + gentle shadow + hover lift.
+             Class tetap sama biar gak break existing markup.
              ============================================================ */
           .hud-panel {
             position: relative;
             padding: 18px;
-            background-color: var(--bg-surface);
-            background-image:
-              linear-gradient(var(--accent), var(--accent)),
-              linear-gradient(var(--accent), var(--accent)),
-              linear-gradient(var(--accent), var(--accent)),
-              linear-gradient(var(--accent), var(--accent)),
-              linear-gradient(var(--accent), var(--accent)),
-              linear-gradient(var(--accent), var(--accent)),
-              linear-gradient(var(--accent), var(--accent)),
-              linear-gradient(var(--accent), var(--accent));
-            background-size:
-              16px 2px, 2px 16px,
-              16px 2px, 2px 16px,
-              16px 2px, 2px 16px,
-              16px 2px, 2px 16px;
-            background-position:
-              top left, top left,
-              top right, top right,
-              bottom left, bottom left,
-              bottom right, bottom right;
-            background-repeat: no-repeat;
+            background-color: var(--surface);
             border: 1px solid var(--border);
-            border-radius: 2px;
-            animation: hud-bracket-breath 4s ease-in-out infinite;
+            border-radius: var(--radius);
+            box-shadow: var(--shadow-sm);
+            transition: transform var(--motion-base), box-shadow var(--motion-base);
           }
-          @keyframes hud-bracket-breath {
-            0%, 100% { filter: brightness(1) drop-shadow(0 0 0 transparent); }
-            50%      { filter: brightness(1.15) drop-shadow(0 0 6px rgba(34, 211, 238, 0.4)); }
+          .hud-panel:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
           }
           .hud-panel--magenta {
-            background-image:
-              linear-gradient(var(--accent-magenta), var(--accent-magenta)),
-              linear-gradient(var(--accent-magenta), var(--accent-magenta)),
-              linear-gradient(var(--accent-magenta), var(--accent-magenta)),
-              linear-gradient(var(--accent-magenta), var(--accent-magenta)),
-              linear-gradient(var(--accent-magenta), var(--accent-magenta)),
-              linear-gradient(var(--accent-magenta), var(--accent-magenta)),
-              linear-gradient(var(--accent-magenta), var(--accent-magenta)),
-              linear-gradient(var(--accent-magenta), var(--accent-magenta));
+            border-color: var(--accent-bg);
           }
           .hud-label {
             display: inline-block;
-            padding: 3px 10px;
-            background: var(--accent-bg);
-            color: var(--accent);
+            padding: 4px 10px;
+            background: var(--primary-bg);
+            color: var(--primary);
             font-size: 10px;
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 1.8px;
+            letter-spacing: 1.5px;
             border: 1px solid var(--border-accent);
-            border-radius: 2px;
+            border-radius: var(--radius-sm);
             line-height: 1.4;
           }
           .hud-label--magenta {
-            background: var(--accent-magenta-bg);
-            color: var(--accent-magenta);
-            border-color: rgba(217, 70, 239, 0.25);
+            background: var(--accent-bg);
+            color: var(--accent);
+            border-color: rgba(245, 158, 11, 0.25);
           }
 
           /* ============================================================
@@ -253,14 +311,14 @@ export default function RootLayout({ children }) {
             scrollbar-width: thin;
           }
           .dash-tabs::-webkit-scrollbar { height: 4px; }
-          .dash-tabs::-webkit-scrollbar-thumb { background: var(--accent); }
-          .dash-main { padding: 24px; }
+          .dash-tabs::-webkit-scrollbar-thumb { background: var(--primary); }
+          .dash-main { padding: 24px; position: relative; z-index: 1; }
 
-          .responsive-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
-          .responsive-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+          .responsive-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+          .responsive-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
           .responsive-stats {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
             gap: 14px;
           }
 
@@ -275,7 +333,7 @@ export default function RootLayout({ children }) {
           .chat-main-area { flex: 1; }
 
           /* ============================================================
-             MOBILE RESPONSIVE — breakpoint 768px (tablet/HP)
+             MOBILE RESPONSIVE — breakpoint 768px
              ============================================================ */
           @media (max-width: 768px) {
             .dash-header h1 { font-size: 16px !important; }
@@ -300,8 +358,8 @@ export default function RootLayout({ children }) {
               grid-template-columns: 1fr !important;
             }
             .responsive-stats {
-              grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)) !important;
-              gap: 8px !important;
+              grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)) !important;
+              gap: 10px !important;
             }
 
             .responsive-modal-backdrop { padding: 0 !important; }
@@ -325,6 +383,11 @@ export default function RootLayout({ children }) {
 
             table { min-width: auto !important; }
             .mobile-hide-text { display: none !important; }
+
+            /* Smaller orbs di mobile biar gak overload performance */
+            .ambient-orb--1 { width: 280px; height: 280px; }
+            .ambient-orb--2 { width: 240px; height: 240px; }
+            .ambient-orb--3 { display: none; }
           }
 
           @media (max-width: 480px) {
@@ -333,17 +396,30 @@ export default function RootLayout({ children }) {
             .responsive-stats { grid-template-columns: 1fr 1fr !important; }
           }
 
-          /* Reduce-motion preference — disable non-essential animations */
+          /* ============================================================
+             ACCESSIBILITY — prefers-reduced-motion
+             Disable orb floating + fade-in animations untuk user yg sensitive.
+             Per W3C guidance: motion >5s yang auto-start harus pause-able.
+             ============================================================ */
           @media (prefers-reduced-motion: reduce) {
             *, *::before, *::after {
-              animation-duration: 0.01ms !important;
+              animation-duration: 0.001ms !important;
               animation-iteration-count: 1 !important;
-              transition-duration: 0.01ms !important;
+              transition-duration: 0.001ms !important;
+              scroll-behavior: auto !important;
+            }
+            .ambient-orb {
+              animation: none !important;
+              opacity: 0.25 !important;
             }
           }
         `}} />
       </head>
       <body>
+        {/* Ambient orbs — soft floating background, decorative only */}
+        <div className="ambient-orb ambient-orb--1" aria-hidden="true"></div>
+        <div className="ambient-orb ambient-orb--2" aria-hidden="true"></div>
+        <div className="ambient-orb ambient-orb--3" aria-hidden="true"></div>
         {children}
       </body>
     </html>
