@@ -578,8 +578,6 @@ export default function Home() {
   const [ptLink, setPtLink] = useState('');
   const [ptMsg, setPtMsg] = useState('');
   const [ptVerifying, setPtVerifying] = useState(false); // Phase 4 — server OG verify in progress
-  const [ptSweepResult, setPtSweepResult] = useState(null); // Phase 4 — admin Sweep DB result modal
-  const [ptSweepRunning, setPtSweepRunning] = useState(false);
   const [ptPeriod, setPtPeriod] = useState(() => localDateString());
 
   useEffect(() => {
@@ -1388,74 +1386,6 @@ export default function Home() {
 
     setPtLink('');
     setPtMsg(`${ptType.toUpperCase()}${ownerInfo} berhasil dihapus`);
-    loadPostTracker(ptPeriod);
-  };
-
-  // Phase 4 / C — Admin: scan semua entry posting_tracker yg link-nya ambigu (FB /posts/, /share/, dll)
-  // Untuk tiap entry, fetch og:type via /api/classify-media → flag mismatch.
-  // Hasil ditampilin di modal — admin bisa klik Hapus per entry.
-  const sweepDbForMismatches = async () => {
-    if (!user || user.role !== 'admin') return;
-    if (!confirm(`Sweep DB: server akan fetch og:type dari Facebook untuk semua entry V column yang ambigu (~${postTracker.filter(p => p.video_link).length} request). Lanjut?`)) return;
-
-    setPtSweepRunning(true);
-    setPtSweepResult(null);
-    const findings = []; // { id, group_name, cycle, field, link, server_type, owner }
-
-    // Iterate setiap entry dengan link
-    for (const p of postTracker) {
-      const checks = [
-        { field: 'gambar1_link', label: 'Gambar 1', expected: 'image', link: p.gambar1_link },
-        { field: 'gambar2_link', label: 'Gambar 2', expected: 'image', link: p.gambar2_link },
-        { field: 'video_link',   label: 'Video',    expected: 'video', link: p.video_link },
-      ];
-      for (const c of checks) {
-        if (!c.link) continue;
-        // Skip kalau client-side udah confident (gak perlu API)
-        const clientType = classifyMediaUrl(c.link);
-        if (clientType === c.expected) continue; // OK, sesuai
-        if (clientType && clientType !== c.expected) {
-          // Pattern jelas mismatch — gak perlu API call
-          findings.push({ id: p.id, group_name: p.group_name, cycle: p.cycle, field: c.field, label: c.label, link: c.link, server_type: clientType, owner: p.user_name, source: 'pattern' });
-          continue;
-        }
-        // clientType === null (ambigu) → pakai API
-        if (!/facebook\.com|fb\.com/.test(c.link.toLowerCase())) continue; // skip non-FB
-        try {
-          const res = await fetch('/api/classify-media', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ url: c.link }),
-          });
-          const r = await res.json();
-          if (r.type && r.type !== 'unknown' && r.type !== c.expected) {
-            findings.push({ id: p.id, group_name: p.group_name, cycle: p.cycle, field: c.field, label: c.label, link: c.link, server_type: r.type, owner: p.user_name, source: 'og-fetch', reason: r.reason });
-          }
-        } catch { /* skip */ }
-        await new Promise(r => setTimeout(r, 200)); // throttle 5 req/s biar gak rate-limit FB
-      }
-    }
-
-    setPtSweepRunning(false);
-    setPtSweepResult({ findings, scannedAt: new Date().toISOString() });
-  };
-
-  // Phase 4 / C — Hapus 1 entry mismatch dari hasil sweep modal
-  const deleteMismatchEntry = async (finding) => {
-    if (!confirm(`Hapus ${finding.label} dari "${finding.group_name}" Siklus ${finding.cycle} (milik ${finding.owner})?\n\nLink: ${finding.link.substring(0, 80)}...`)) return;
-    // Cari entry, set field=null + recompute is_complete
-    const entry = postTracker.find(p => p.id === finding.id);
-    if (!entry) { alert('Entry sudah hilang dari state, refresh dulu'); return; }
-    const updates = { [finding.field]: null };
-    const g1 = finding.field === 'gambar1_link' ? null : entry.gambar1_link;
-    const g2 = finding.field === 'gambar2_link' ? null : entry.gambar2_link;
-    const v  = finding.field === 'video_link'   ? null : entry.video_link;
-    updates.is_complete = !!(g1 && g2 && v);
-    const allEmpty = !g1 && !g2 && !v;
-    if (allEmpty) await supabase.from('posting_tracker').delete().eq('id', finding.id);
-    else          await supabase.from('posting_tracker').update(updates).eq('id', finding.id);
-    // Update modal state: drop this finding
-    setPtSweepResult(prev => prev ? { ...prev, findings: prev.findings.filter(f => !(f.id === finding.id && f.field === finding.field)) } : prev);
     loadPostTracker(ptPeriod);
   };
 
@@ -4177,7 +4107,6 @@ export default function Home() {
                   <input type="date" style={{...S.input,width:180}} value={ptPeriod} onChange={e=>{setPtPeriod(e.target.value);loadPostTracker(e.target.value)}} />
                   <button onClick={()=>{const t=localDateString();setPtPeriod(t);loadPostTracker(t);}} style={{...S.btn('#374151'),padding:'8px 14px',fontSize:12}}>Hari Ini</button>
                   {isAdmin && <button onClick={exportProgressCSV} style={{...S.btn('#065f46'),padding:'8px 14px',fontSize:12}}>Export CSV</button>}
-                  {isAdmin && <button onClick={sweepDbForMismatches} disabled={ptSweepRunning} title="Verify semua entry V column via Facebook OG meta — temukan link gambar yang tersembunyi di kolom Video" style={{...S.btn('#7f1d1d'),padding:'8px 14px',fontSize:12,opacity:ptSweepRunning?0.5:1,cursor:ptSweepRunning?'not-allowed':'pointer'}}>{ptSweepRunning?'🔍 Scanning...':'🔍 Sweep DB'}</button>}
                 </div>
               </div>
               <p style={{color:'#9ca3af',fontSize:12,marginBottom:16}}>
@@ -4535,58 +4464,6 @@ export default function Home() {
                 </div>
               );
             })()}
-
-            {/* Phase 4 / C — Modal hasil Sweep DB (admin only) */}
-            {isAdmin && ptSweepResult && (
-              <div style={{...S.box,marginTop:14,border:'1px solid #ef4444'}}>
-                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12,flexWrap:'wrap',gap:10}}>
-                  <div>
-                    <h3 style={{color:'#ef4444',fontSize:16,margin:0,fontWeight:700}}>🔍 Hasil Sweep DB — {ptSweepResult.findings.length} mismatch ditemukan</h3>
-                    <p style={{fontSize:11,color:'#9ca3af',margin:'4px 0 0 0'}}>Server fetch og:type via FacebookExternalHit. Scanned at: {new Date(ptSweepResult.scannedAt).toLocaleString('id-ID')}</p>
-                  </div>
-                  <button onClick={()=>setPtSweepResult(null)} style={{...S.btn('#374151'),padding:'6px 12px',fontSize:12}}>Tutup</button>
-                </div>
-                {ptSweepResult.findings.length === 0 ? (
-                  <p style={{color:'#10b981',fontSize:13,padding:'12px 0'}}>✓ Semua entry verified clean — tidak ada mismatch.</p>
-                ) : (
-                  <div style={{maxHeight:400,overflow:'auto',border:'1px solid #1f2937',borderRadius:6}}>
-                    <table style={{width:'100%',borderCollapse:'collapse',fontSize:12}}>
-                      <thead style={{position:'sticky',top:0,background:'#0d1117',zIndex:1}}>
-                        <tr>
-                          <th style={{...S.th,fontSize:11}}>Grup</th>
-                          <th style={{...S.th,fontSize:11}}>Siklus</th>
-                          <th style={{...S.th,fontSize:11}}>Field</th>
-                          <th style={{...S.th,fontSize:11}}>Detected</th>
-                          <th style={{...S.th,fontSize:11}}>Member</th>
-                          <th style={{...S.th,fontSize:11}}>Sumber</th>
-                          <th style={{...S.th,fontSize:11}}>Aksi</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {ptSweepResult.findings.map((f, i) => (
-                          <tr key={`${f.id}-${f.field}-${i}`} style={{background:i%2?'#0f1622':'transparent'}}>
-                            <td style={{...S.td,fontSize:12}}>{f.group_name}</td>
-                            <td style={{...S.td,textAlign:'center'}}>{f.cycle}</td>
-                            <td style={{...S.td}}>{f.label}</td>
-                            <td style={{...S.td}}>
-                              <span style={{padding:'2px 8px',borderRadius:4,fontSize:10,fontWeight:700,background:f.server_type==='video'?'#3b0764':'#7f1d1d',color:f.server_type==='video'?'#c084fc':'#fca5a5'}}>{f.server_type?.toUpperCase()}</span>
-                            </td>
-                            <td style={{...S.td,fontSize:12,color:'#9ca3af'}}>{f.owner||'-'}</td>
-                            <td style={{...S.td,fontSize:10,color:'#6b7280'}} title={f.reason||''}>{f.source==='og-fetch'?'OG fetch':'pattern'}</td>
-                            <td style={{...S.td}}>
-                              <div style={{display:'flex',gap:6}}>
-                                <button onClick={()=>window.open(f.link,'_blank')} style={{...S.btn('#1f2937'),padding:'4px 8px',fontSize:10}} title={f.link}>Lihat</button>
-                                <button onClick={()=>deleteMismatchEntry(f)} style={{...S.btn('#7f1d1d'),padding:'4px 8px',fontSize:10}}>Hapus</button>
-                              </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-            )}
 
             {/* Tabel tracking per grup */}
             <div style={{...S.box,padding:0,overflow:'auto'}}>
