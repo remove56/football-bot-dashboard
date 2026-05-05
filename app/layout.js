@@ -52,6 +52,46 @@ export default function RootLayout({ children }) {
             -moz-osx-font-smoothing: grayscale;
             min-height: 100vh;
           }
+          body {
+            position: relative;
+            z-index: 0; /* establish stacking context for animated bg pseudos */
+          }
+
+          /* ============================================================
+             ANIMATED HUD BACKGROUND — pure CSS, GPU-accelerated
+             Layer 1 (::before): cyan grid drift diagonal slow scroll
+             Layer 2 (::after):  radial cyan glow pulse breath
+             Both pointer-events:none, behind content (z:-1 in body context)
+             ============================================================ */
+          body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image:
+              linear-gradient(rgba(34, 211, 238, 0.04) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(34, 211, 238, 0.04) 1px, transparent 1px);
+            background-size: 40px 40px;
+            animation: hud-grid-drift 30s linear infinite;
+            pointer-events: none;
+            z-index: -1;
+          }
+          body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background: radial-gradient(circle at 50% 50%, rgba(34, 211, 238, 0.07), transparent 65%);
+            animation: hud-pulse 8s ease-in-out infinite;
+            pointer-events: none;
+            z-index: -1;
+          }
+          @keyframes hud-grid-drift {
+            0%   { background-position: 0 0, 0 0; }
+            100% { background-position: 40px 40px, 40px 40px; }
+          }
+          @keyframes hud-pulse {
+            0%, 100% { opacity: 0.5; transform: scale(1); }
+            50%      { opacity: 1;   transform: scale(1.04); }
+          }
 
           /* Scrollbar — minimal, slate-themed */
           ::-webkit-scrollbar { width: 10px; height: 10px; }
