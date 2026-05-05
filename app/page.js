@@ -4390,15 +4390,19 @@ export default function Home() {
                         </span>
                       </label>
                       <input
-                        style={{...S.input,borderColor:mismatch?'#EF4444':(detectedType?accentColor:'rgba(255,255,255,0.08)')}}
+                        style={{...S.input,borderColor:mismatch?'#EF4444':(detectedType?accentColor:'rgba(255,255,255,0.08)'),borderWidth:mismatch?2:1}}
                         placeholder={placeholderText}
                         value={ptLink}
                         onChange={e=>setPtLink(e.target.value)}
                       />
                       {mismatch && (
-                        <p style={{marginTop:6,fontSize:11,color:'#EF4444',display:'flex',alignItems:'center',gap:4}}>
-                          ⚠️ Link terdeteksi sebagai <strong>{detectedType === 'image' ? 'GAMBAR' : 'VIDEO'}</strong> tapi lo pilih jenis "{isVideoMode ? 'Video' : ptType === 'gambar1' ? 'Gambar 1' : 'Gambar 2'}". Submit akan ditolak.
-                        </p>
+                        <div style={{marginTop:8,padding:'10px 12px',background:'#7f1d1d33',border:'1px solid #ef4444',borderRadius:6,display:'flex',alignItems:'center',gap:10}}>
+                          <span style={{flexShrink:0,width:32,height:32,borderRadius:6,background:'#7f1d1d',color:'#fca5a5',display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:18,fontWeight:700,border:'1px solid #ef4444'}}>⚠</span>
+                          <div style={{fontSize:12,color:'#fca5a5',lineHeight:1.5}}>
+                            <strong style={{color:'#fff',fontSize:13}}>KOLOM SALAH:</strong> link yang lo masukin terdeteksi sebagai <strong style={{color:'#fff'}}>{detectedType === 'image' ? 'GAMBAR' : 'VIDEO'}</strong> — tapi Jenis yang dipilih "<strong style={{color:'#fff'}}>{isVideoMode ? 'Video' : ptType === 'gambar1' ? 'Gambar 1' : 'Gambar 2'}</strong>".<br/>
+                            <span style={{fontSize:11,color:'#fde68a'}}>Submit akan ditolak. Ganti link sesuai jenis, atau ubah Jenis di selector di atas.</span>
+                          </div>
+                        </div>
                       )}
                       {!mismatch && detectedType && (
                         <p style={{marginTop:6,fontSize:11,color:'#22C55E'}}>
@@ -4413,7 +4417,18 @@ export default function Home() {
                     <label style={{fontSize:12,color:'#9ca3af'}}>Tanggal:</label>
                     <input type="date" style={{...S.input,width:180}} value={ptPeriod} onChange={e=>{setPtPeriod(e.target.value);loadPostTracker(e.target.value)}} />
                   </div>
-                  {ptMsg && <p style={{marginTop:8,fontSize:13,color:ptMsg.includes('Error')||ptMsg.includes('DITOLAK')?'#ef4444':'#10b981'}}>{ptMsg}</p>}
+                  {ptMsg && (() => {
+                    const isError = ptMsg.includes('Error') || ptMsg.includes('DITOLAK') || ptMsg.includes('❌');
+                    if (isError) {
+                      return (
+                        <div style={{marginTop:10,padding:'10px 12px',background:'#7f1d1d33',border:'1px solid #ef4444',borderRadius:6,display:'flex',alignItems:'flex-start',gap:10}}>
+                          <span style={{flexShrink:0,width:28,height:28,borderRadius:6,background:'#7f1d1d',color:'#fca5a5',display:'inline-flex',alignItems:'center',justifyContent:'center',fontSize:16,fontWeight:700,border:'1px solid #ef4444',marginTop:1}}>⚠</span>
+                          <p style={{fontSize:13,color:'#fca5a5',margin:0,lineHeight:1.5}}>{ptMsg}</p>
+                        </div>
+                      );
+                    }
+                    return <p style={{marginTop:8,fontSize:13,color:'#10b981'}}>{ptMsg}</p>;
+                  })()}
                 </div>
               );
             })()}
