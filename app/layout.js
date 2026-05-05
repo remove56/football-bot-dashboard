@@ -61,15 +61,16 @@ export default function RootLayout({ children }) {
              ANIMATED HUD BACKGROUND — pure CSS, GPU-accelerated
              Layer 1 (::before): cyan grid drift diagonal slow scroll
              Layer 2 (::after):  radial cyan glow pulse breath
-             Both pointer-events:none, behind content (z:-1 in body context)
+             Layer 3 (.hud-scanline): horizontal scan line sweep top-to-bottom
+             All pointer-events:none, behind content (z:-1 in body context)
              ============================================================ */
           body::before {
             content: '';
             position: fixed;
             inset: 0;
             background-image:
-              linear-gradient(rgba(34, 211, 238, 0.04) 1px, transparent 1px),
-              linear-gradient(90deg, rgba(34, 211, 238, 0.04) 1px, transparent 1px);
+              linear-gradient(rgba(34, 211, 238, 0.07) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(34, 211, 238, 0.07) 1px, transparent 1px);
             background-size: 40px 40px;
             animation: hud-grid-drift 30s linear infinite;
             pointer-events: none;
@@ -79,7 +80,7 @@ export default function RootLayout({ children }) {
             content: '';
             position: fixed;
             inset: 0;
-            background: radial-gradient(circle at 50% 50%, rgba(34, 211, 238, 0.07), transparent 65%);
+            background: radial-gradient(circle at 50% 50%, rgba(34, 211, 238, 0.10), transparent 65%);
             animation: hud-pulse 8s ease-in-out infinite;
             pointer-events: none;
             z-index: -1;
@@ -91,6 +92,31 @@ export default function RootLayout({ children }) {
           @keyframes hud-pulse {
             0%, 100% { opacity: 0.5; transform: scale(1); }
             50%      { opacity: 1;   transform: scale(1.04); }
+          }
+
+          /* Layer 3: horizontal scan-line sweep (HUD radar style)
+             Auto-injected via ::before di html element, biar gak conflict body. */
+          html::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg,
+              transparent 0%,
+              rgba(34, 211, 238, 0.3) 30%,
+              rgba(34, 211, 238, 0.6) 50%,
+              rgba(34, 211, 238, 0.3) 70%,
+              transparent 100%);
+            animation: hud-scanline 12s linear infinite;
+            pointer-events: none;
+            z-index: 9998;
+            box-shadow: 0 0 8px rgba(34, 211, 238, 0.4);
+          }
+          @keyframes hud-scanline {
+            0%   { transform: translateY(0); opacity: 0; }
+            5%   { opacity: 1; }
+            95%  { opacity: 1; }
+            100% { transform: translateY(100vh); opacity: 0; }
           }
 
           /* Scrollbar — minimal, slate-themed */
@@ -178,6 +204,11 @@ export default function RootLayout({ children }) {
             background-repeat: no-repeat;
             border: 1px solid var(--border);
             border-radius: 2px;
+            animation: hud-bracket-breath 4s ease-in-out infinite;
+          }
+          @keyframes hud-bracket-breath {
+            0%, 100% { filter: brightness(1) drop-shadow(0 0 0 transparent); }
+            50%      { filter: brightness(1.15) drop-shadow(0 0 6px rgba(34, 211, 238, 0.4)); }
           }
           .hud-panel--magenta {
             background-image:
