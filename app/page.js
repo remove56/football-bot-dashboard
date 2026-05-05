@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import bcrypt from 'bcryptjs';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 // ============================================================
 // STYLES
@@ -46,7 +46,7 @@ const S = {
   num: { fontSize:28,fontWeight:900,background:'linear-gradient(135deg,#e0f2fe 0%,#67e8f9 50%,#06b6d4 100%)',WebkitBackgroundClip:'text',WebkitTextFillColor:'transparent',textShadow:'0 0 20px rgba(103,232,249,0.3)' },
   label: { fontSize:12,color:'#64748b',marginTop:4,fontWeight:600,textTransform:'uppercase',letterSpacing:0.5 },
   input: { width:'100%',padding:'10px 14px',background:'#020617',border:'1px solid #1e293b',borderRadius:6,color:'#e0f2fe',fontSize:14,outline:'none',fontWeight:500 },
-  btn: (c) => ({ padding:'10px 16px',border:`1px solid ${c||'#0e7490'}`,borderRadius:6,background:c?`linear-gradient(135deg,${c} 0%,${c}dd 100%)`:'linear-gradient(135deg,#0e7490 0%,#164e63 100%)',color:'#e0f2fe',fontSize:13,fontWeight:800,cursor:'pointer',boxShadow:'0 2px 12px rgba(6,182,212,0.3)',transition:'all 0.2s',textTransform:'uppercase',letterSpacing:0.5 }),
+  btn: (c) => ({ padding:'9px 16px',border:`1px solid ${c||'#0891b2'}`,borderRadius:2,background:c||'#0891b2',color:'#fff',fontSize:12,fontWeight:700,cursor:'pointer',transition:'all 0.15s',textTransform:'uppercase',letterSpacing:1 }),
   badge: (c) => ({ padding:'2px 8px',borderRadius:3,fontSize:11,fontWeight:800,textTransform:'uppercase',letterSpacing:0.5,...({
     ok:{background:'linear-gradient(135deg,#064e3b 0%,#047857 100%)',color:'#6ee7b7',border:'1px solid #10b981'},
     fail:{background:'linear-gradient(135deg,#7f1d1d 0%,#991b1b 100%)',color:'#fca5a5',border:'1px solid #ef4444'},
@@ -56,8 +56,8 @@ const S = {
     admin:{background:'linear-gradient(135deg,#581c87 0%,#6b21a8 100%)',color:'#d8b4fe',border:'1px solid #a855f7'},
     member:{background:'linear-gradient(135deg,#164e63 0%,#0e7490 100%)',color:'#67e8f9',border:'1px solid #06b6d4'}
   }[c]||{background:'#0f172a',color:'#94a3b8',border:'1px solid #1e293b'}) }),
-  th: { background:'linear-gradient(135deg,#0f172a 0%,#020617 100%)',padding:'10px 14px',textAlign:'left',fontSize:12,color:'#22d3ee',fontWeight:800,borderBottom:'2px solid #164e63',textTransform:'uppercase',letterSpacing:0.5 },
-  td: { padding:'10px 14px',borderTop:'1px solid #0f172a',fontSize:13,color:'#cbd5e1' },
+  th: { background:'#020617',padding:'10px 14px',textAlign:'left',fontSize:11,color:'#22d3ee',fontWeight:700,borderBottom:'1px solid #1e293b',textTransform:'uppercase',letterSpacing:1.2 },
+  td: { padding:'10px 14px',borderBottom:'1px solid #1e293b',fontSize:13,color:'#cbd5e1' },
   link: { color:'#67e8f9',textDecoration:'none',fontWeight:700 },
 };
 
@@ -3671,47 +3671,51 @@ export default function Home() {
               </div>
             </div>
 
-            {/* BAR CHART — Top 10 klub by total konten */}
-            {clubStats.length > 0 && (
-              <div style={{...S.box,marginBottom:20}}>
-                <h3 style={{color:'#FFD700',marginBottom:4,fontSize:16}}>Grafik Performa Klub</h3>
-                <p style={{color:'#9ca3af',fontSize:11,margin:'0 0 16px 0'}}>Top 10 klub berdasarkan total konten (member + bot). 30 hari terakhir.</p>
-                <div style={{display:'flex',gap:6,alignItems:'flex-end',height:200,padding:'0 4px'}}>
-                  {clubStats.slice(0, 10).map((c, i) => {
-                    const maxVal = Math.max(...clubStats.slice(0, 10).map(x => x.total)) || 1;
-                    const heightPct = (c.total / maxVal) * 100;
-                    const completeRate = c.trackerCycles > 0 ? Math.round(c.trackerCompleted / c.trackerCycles * 100) : 0;
-                    const barColor = completeRate >= 80 ? '#10b981' : completeRate >= 50 ? '#f59e0b' : completeRate > 0 ? '#ef4444' : '#374151';
-                    return (
-                      <div key={c.club} style={{flex:1,display:'flex',flexDirection:'column',alignItems:'center',gap:4}}>
-                        <span style={{fontSize:10,color:'#e0f2fe',fontWeight:700}}>{c.total}</span>
-                        <div
-                          title={`${c.club}: ${c.memberPosts} member + ${c.botPosts} bot = ${c.total} total | Complete: ${completeRate}%`}
-                          style={{
-                            width:'100%',
-                            height:`${Math.max(4, heightPct)}%`,
-                            background:`linear-gradient(180deg, ${barColor} 0%, ${barColor}88 100%)`,
-                            borderRadius:'4px 4px 0 0',
-                            cursor:'pointer',
-                            transition:'all 0.3s',
-                            minHeight:4,
-                            border:'1px solid ' + barColor,
-                          }}
-                        />
-                        <span style={{fontSize:9,color:'#9ca3af',textAlign:'center',lineHeight:1.2,maxWidth:80,overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap'}} title={c.club}>
-                          {c.club.length > 10 ? c.club.substring(0, 10) + '...' : c.club}
-                        </span>
-                      </div>
-                    );
-                  })}
+            {/* BAR CHART — Top 10 klub by total konten (Recharts HUD style) */}
+            {clubStats.length > 0 && (() => {
+              const top10 = clubStats.slice(0, 10).map(c => {
+                const completeRate = c.trackerCycles > 0 ? Math.round(c.trackerCompleted / c.trackerCycles * 100) : 0;
+                const color = completeRate >= 80 ? '#10b981' : completeRate >= 50 ? '#f59e0b' : completeRate > 0 ? '#ef4444' : '#374151';
+                return {
+                  name: c.club.length > 12 ? c.club.substring(0, 12) + '…' : c.club,
+                  fullName: c.club,
+                  total: c.total,
+                  member: c.memberPosts,
+                  bot: c.botPosts,
+                  completeRate,
+                  color,
+                };
+              });
+              return (
+                <div style={{...S.box,marginBottom:20}}>
+                  <div style={{marginBottom:14}}>
+                    <span className="hud-label">◢ Grafik Performa Klub</span>
+                    <p style={{color:'#94a3b8',fontSize:11,margin:'8px 0 0'}}>Top 10 klub berdasarkan total konten (member + bot). 30 hari terakhir.</p>
+                  </div>
+                  <ResponsiveContainer width="100%" height={260}>
+                    <BarChart data={top10} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
+                      <XAxis dataKey="name" stroke="#64748b" fontSize={10} tickLine={false} axisLine={{ stroke: '#1e293b' }} angle={-25} textAnchor="end" height={60} />
+                      <YAxis stroke="#64748b" fontSize={11} tickLine={false} axisLine={{ stroke: '#1e293b' }} allowDecimals={false} />
+                      <Tooltip
+                        contentStyle={{ background:'#0f172a', border:'1px solid #22d3ee', borderRadius:2, fontSize:12 }}
+                        cursor={{ fill: 'rgba(34, 211, 238, 0.06)' }}
+                        formatter={(value, name, props) => [`${value} (${props.payload.member} member + ${props.payload.bot} bot)`, 'Total']}
+                        labelFormatter={(label, payload) => payload[0] ? `${payload[0].payload.fullName} — ${payload[0].payload.completeRate}% complete` : label}
+                      />
+                      <Bar dataKey="total" radius={[2, 2, 0, 0]}>
+                        {top10.map((entry, i) => <Cell key={i} fill={entry.color} />)}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                  <div style={{display:'flex',justifyContent:'center',gap:18,marginTop:12,fontSize:10,color:'#94a3b8'}}>
+                    <span><span style={{display:'inline-block',width:10,height:10,background:'#10b981',borderRadius:2,marginRight:4,verticalAlign:'middle'}}/>Complete ≥80%</span>
+                    <span><span style={{display:'inline-block',width:10,height:10,background:'#f59e0b',borderRadius:2,marginRight:4,verticalAlign:'middle'}}/>Complete 50-79%</span>
+                    <span><span style={{display:'inline-block',width:10,height:10,background:'#ef4444',borderRadius:2,marginRight:4,verticalAlign:'middle'}}/>Complete {'<'}50%</span>
+                  </div>
                 </div>
-                <div style={{display:'flex',justifyContent:'center',gap:16,marginTop:12,fontSize:10,color:'#9ca3af'}}>
-                  <span><span style={{display:'inline-block',width:10,height:10,background:'#10b981',borderRadius:2,marginRight:4}}/>Complete ≥80%</span>
-                  <span><span style={{display:'inline-block',width:10,height:10,background:'#f59e0b',borderRadius:2,marginRight:4}}/>Complete 50-79%</span>
-                  <span><span style={{display:'inline-block',width:10,height:10,background:'#ef4444',borderRadius:2,marginRight:4}}/>Complete {'<'}50%</span>
-                </div>
-              </div>
-            )}
+              );
+            })()}
 
             <div style={S.box}>
               <h3 style={{color:'#FFD700',marginBottom:4,fontSize:16}}>Performa Per Klub</h3>
