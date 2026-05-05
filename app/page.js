@@ -92,7 +92,7 @@ function CountUp({ value, duration = 800 }) {
   return display.toLocaleString('id-ID');
 }
 
-const LEAGUE_COLORS = {'La Liga':'#22d3ee','Premier League':'#60a5fa','Serie A':'#67e8f9','Bundesliga':'#06b6d4','Ligue 1':'#38bdf8','Liga 1':'#7dd3fc','Timnas':'#0ea5e9','Pemain':'#a5f3fc'};
+const LEAGUE_COLORS = {'La Liga':'#22C55E','Premier League':'#60a5fa','Serie A':'#86EFAC','Bundesliga':'#16A34A','Ligue 1':'#38bdf8','Liga 1':'#7dd3fc','Timnas':'#0ea5e9','Pemain':'#a5f3fc'};
 
 // ============================================================
 // CONTENT DEDUP — Normalisasi URL untuk deteksi duplikat
@@ -353,7 +353,7 @@ function LoginScreen({ onLogin }) {
         </div>
         <button onClick={login} style={{
           width:'100%',padding:'12px 16px',
-          background:'#22d3ee',
+          background:'#22C55E',
           border:'none',borderRadius:6,color:'#020617',fontSize:14,fontWeight:600,cursor:'pointer',
           letterSpacing:0.2,
         }}>Sign In</button>
@@ -1843,7 +1843,7 @@ export default function Home() {
     const ctx = canvas.getContext('2d');
 
     // Base: bola sepak dengan background cyan (match theme Dark Crystal Ice)
-    ctx.fillStyle = '#06b6d4';
+    ctx.fillStyle = '#16A34A';
     ctx.beginPath();
     ctx.arc(32, 32, 30, 0, 2 * Math.PI);
     ctx.fill();
@@ -2595,7 +2595,7 @@ export default function Home() {
             {soundEnabled ? '🔊' : '🔇'}
           </a>
           <a onClick={()=>setGuideOpen(true)} style={{color:'#a5f3fc',cursor:'pointer',fontSize:12}} title="Panduan Pemakaian">❓</a>
-          <a onClick={()=>setPwModal(true)} style={{color:'#67e8f9',cursor:'pointer',fontSize:12}} title="Ganti Password">🔑</a>
+          <a onClick={()=>setPwModal(true)} style={{color:'#86EFAC',cursor:'pointer',fontSize:12}} title="Ganti Password">🔑</a>
           <a onClick={logout} style={{color:'#ef4444',cursor:'pointer'}}>Logout</a>
         </div>
       </div>
@@ -2604,10 +2604,10 @@ export default function Home() {
       {notifOpen && (
         <>
           <div onClick={()=>setNotifOpen(false)} style={{position:'fixed',top:0,left:0,right:0,bottom:0,zIndex:998}}/>
-          <div style={{position:'fixed',top:56,right:20,width:380,maxHeight:'70vh',background:'linear-gradient(180deg,#0f172a 0%,#020617 100%)',border:'2px solid #0891b2',borderRadius:10,boxShadow:'0 8px 40px rgba(6,182,212,0.4)',zIndex:999,display:'flex',flexDirection:'column',overflow:'hidden'}}>
+          <div style={{position:'fixed',top:56,right:20,width:380,maxHeight:'70vh',background:'linear-gradient(180deg,#0f172a 0%,#020617 100%)',border:'2px solid #15803D',borderRadius:10,boxShadow:'0 8px 40px rgba(6,182,212,0.4)',zIndex:999,display:'flex',flexDirection:'column',overflow:'hidden'}}>
             <div style={{padding:'12px 16px',borderBottom:'1px solid #1f2937',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
               <div>
-                <div style={{fontSize:13,color:'#67e8f9',fontWeight:800,textTransform:'uppercase',letterSpacing:1}}>🔔 Notifikasi</div>
+                <div style={{fontSize:13,color:'#86EFAC',fontWeight:800,textTransform:'uppercase',letterSpacing:1}}>🔔 Notifikasi</div>
                 <div style={{fontSize:10,color:'#9ca3af'}}>{notifUnread} belum dibaca</div>
               </div>
               <div style={{display:'flex',gap:6}}>
@@ -2615,7 +2615,7 @@ export default function Home() {
                   <button onClick={()=>{setBroadcastOpen(true);setNotifOpen(false);}} style={{...S.btn('#065f46'),padding:'6px 10px',fontSize:10}}>+ Kirim</button>
                 )}
                 {notifUnread > 0 && (
-                  <button onClick={markAllNotificationsRead} style={{...S.btn('#164e63'),padding:'6px 10px',fontSize:10}}>Tandai Baca</button>
+                  <button onClick={markAllNotificationsRead} style={{...S.btn('#15803D'),padding:'6px 10px',fontSize:10}}>Tandai Baca</button>
                 )}
               </div>
             </div>
@@ -2625,13 +2625,13 @@ export default function Home() {
               )}
               {notifications.map(n => {
                 const typeColors = {
-                  info: '#67e8f9', warning: '#f59e0b', success: '#10b981',
+                  info: '#86EFAC', warning: '#f59e0b', success: '#10b981',
                   error: '#ef4444', announce: '#c084fc',
                 };
                 const typeIcons = {
                   info: 'ℹ️', warning: '⚠️', success: '✅', error: '❌', announce: '📢',
                 };
-                const color = typeColors[n.type] || '#67e8f9';
+                const color = typeColors[n.type] || '#86EFAC';
                 const icon = typeIcons[n.type] || 'ℹ️';
                 const isUnread = !n.read_at;
                 return (
@@ -2661,10 +2661,10 @@ export default function Home() {
       {/* MODAL ADMIN BROADCAST */}
       {broadcastOpen && (
         <div onClick={()=>setBroadcastOpen(false)} className="responsive-modal-backdrop" style={{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(2,6,23,0.85)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
-          <div onClick={e=>e.stopPropagation()} style={{background:'linear-gradient(180deg,#0f172a 0%,#020617 100%)',border:'2px solid #0891b2',borderRadius:10,width:'100%',maxWidth:500,padding:24}}>
-            <h3 style={{color:'#67e8f9',margin:'0 0 16px 0',fontSize:15,fontWeight:900,textTransform:'uppercase',letterSpacing:1}}>📢 Kirim Notifikasi</h3>
+          <div onClick={e=>e.stopPropagation()} style={{background:'linear-gradient(180deg,#0f172a 0%,#020617 100%)',border:'2px solid #15803D',borderRadius:10,width:'100%',maxWidth:500,padding:24}}>
+            <h3 style={{color:'#86EFAC',margin:'0 0 16px 0',fontSize:15,fontWeight:900,textTransform:'uppercase',letterSpacing:1}}>📢 Kirim Notifikasi</h3>
             <div style={{display:'flex',flexDirection:'column',gap:12}}>
-              <div><label style={{display:'block',fontSize:11,color:'#67e8f9',marginBottom:4,fontWeight:700,textTransform:'uppercase'}}>Target</label>
+              <div><label style={{display:'block',fontSize:11,color:'#86EFAC',marginBottom:4,fontWeight:700,textTransform:'uppercase'}}>Target</label>
                 <select style={S.input} value={broadcastTarget} onChange={e=>setBroadcastTarget(e.target.value)}>
                   <option value="all">📢 Semua User (Broadcast)</option>
                   {users.filter(u => u.role === 'member').map(u => (
@@ -2672,7 +2672,7 @@ export default function Home() {
                   ))}
                 </select>
               </div>
-              <div><label style={{display:'block',fontSize:11,color:'#67e8f9',marginBottom:4,fontWeight:700,textTransform:'uppercase'}}>Tipe</label>
+              <div><label style={{display:'block',fontSize:11,color:'#86EFAC',marginBottom:4,fontWeight:700,textTransform:'uppercase'}}>Tipe</label>
                 <select style={S.input} value={broadcastType} onChange={e=>setBroadcastType(e.target.value)}>
                   <option value="info">ℹ️ Info</option>
                   <option value="warning">⚠️ Warning</option>
@@ -2681,9 +2681,9 @@ export default function Home() {
                   <option value="announce">📢 Announcement</option>
                 </select>
               </div>
-              <div><label style={{display:'block',fontSize:11,color:'#67e8f9',marginBottom:4,fontWeight:700,textTransform:'uppercase'}}>Judul</label>
+              <div><label style={{display:'block',fontSize:11,color:'#86EFAC',marginBottom:4,fontWeight:700,textTransform:'uppercase'}}>Judul</label>
                 <input style={S.input} value={broadcastTitle} onChange={e=>setBroadcastTitle(e.target.value)} placeholder="Judul singkat..." maxLength={100}/></div>
-              <div><label style={{display:'block',fontSize:11,color:'#67e8f9',marginBottom:4,fontWeight:700,textTransform:'uppercase'}}>Pesan</label>
+              <div><label style={{display:'block',fontSize:11,color:'#86EFAC',marginBottom:4,fontWeight:700,textTransform:'uppercase'}}>Pesan</label>
                 <textarea style={{...S.input,minHeight:100,resize:'vertical',fontFamily:'inherit'}} value={broadcastMessage} onChange={e=>setBroadcastMessage(e.target.value)} placeholder="Isi pesan..." maxLength={1000}/></div>
               {broadcastMsg && <p style={{fontSize:12,color:broadcastMsg.includes('berhasil')?'#10b981':'#ef4444',margin:0}}>{broadcastMsg}</p>}
               <div style={{display:'flex',gap:8}}>
@@ -2746,7 +2746,7 @@ export default function Home() {
             color:'#e0f2fe',fontSize:12,
             background:'rgba(6,182,212,0.2)',
             padding:'8px 14px',borderRadius:6,
-            border:'1px solid #0891b2',
+            border:'1px solid #15803D',
             maxWidth:'60%',overflow:'hidden',textOverflow:'ellipsis',whiteSpace:'nowrap',
             zIndex:2001,
           }}>
@@ -2783,11 +2783,11 @@ export default function Home() {
 
       {chatOpen && (
         <div onClick={()=>setChatOpen(false)} className="responsive-modal-backdrop" style={{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(2,6,23,0.9)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
-          <div onClick={e=>e.stopPropagation()} className="responsive-modal-content" style={{background:'linear-gradient(180deg,#0f172a 0%,#020617 100%)',border:'2px solid #0891b2',borderRadius:12,width:'100%',maxWidth:900,height:'85vh',display:'flex',flexDirection:'column',overflow:'hidden',boxShadow:'0 8px 40px rgba(6,182,212,0.3)'}}>
+          <div onClick={e=>e.stopPropagation()} className="responsive-modal-content" style={{background:'linear-gradient(180deg,#0f172a 0%,#020617 100%)',border:'2px solid #15803D',borderRadius:12,width:'100%',maxWidth:900,height:'85vh',display:'flex',flexDirection:'column',overflow:'hidden',boxShadow:'0 8px 40px rgba(6,182,212,0.3)'}}>
             {/* Header */}
-            <div style={{padding:'14px 20px',borderBottom:'2px solid #0891b2',display:'flex',justifyContent:'space-between',alignItems:'center',background:'linear-gradient(90deg,#0c1220 0%,#020617 100%)'}}>
+            <div style={{padding:'14px 20px',borderBottom:'2px solid #15803D',display:'flex',justifyContent:'space-between',alignItems:'center',background:'linear-gradient(90deg,#0c1220 0%,#020617 100%)'}}>
               <div>
-                <h2 style={{margin:0,color:'#67e8f9',fontSize:16,fontWeight:900,textTransform:'uppercase',letterSpacing:1}}>💬 Chat</h2>
+                <h2 style={{margin:0,color:'#86EFAC',fontSize:16,fontWeight:900,textTransform:'uppercase',letterSpacing:1}}>💬 Chat</h2>
                 <div style={{fontSize:10,color:'#9ca3af',marginTop:2,display:'flex',alignItems:'center',gap:6,flexWrap:'wrap'}}>
                   {chatMode === 'global' ? (
                     <span>Global — semua member bisa baca</span>
@@ -2822,9 +2822,9 @@ export default function Home() {
                     padding:'12px 16px',
                     fontSize:12,
                     cursor:'pointer',
-                    color: chatMode === 'global' ? '#67e8f9' : '#9ca3af',
+                    color: chatMode === 'global' ? '#86EFAC' : '#9ca3af',
                     background: chatMode === 'global' ? '#0c1220' : 'transparent',
-                    borderLeft: chatMode === 'global' ? '3px solid #06b6d4' : '3px solid transparent',
+                    borderLeft: chatMode === 'global' ? '3px solid #16A34A' : '3px solid transparent',
                     fontWeight: chatMode === 'global' ? 700 : 400,
                     borderBottom:'1px solid #1f2937',
                   }}
@@ -2843,9 +2843,9 @@ export default function Home() {
                         padding:'10px 16px',
                         fontSize:11,
                         cursor:'pointer',
-                        color: chatMode === 'dm' && chatDmPartner?.id === conv.partner_id ? '#67e8f9' : '#9ca3af',
+                        color: chatMode === 'dm' && chatDmPartner?.id === conv.partner_id ? '#86EFAC' : '#9ca3af',
                         background: chatMode === 'dm' && chatDmPartner?.id === conv.partner_id ? '#0c1220' : 'transparent',
-                        borderLeft: chatMode === 'dm' && chatDmPartner?.id === conv.partner_id ? '3px solid #06b6d4' : '3px solid transparent',
+                        borderLeft: chatMode === 'dm' && chatDmPartner?.id === conv.partner_id ? '3px solid #16A34A' : '3px solid transparent',
                         borderBottom:'1px solid #1f2937',
                       }}
                     >
@@ -2888,7 +2888,7 @@ export default function Home() {
                   )}
                   {chatMessages.map(m => {
                     const isMe = m.from_user_id === user.id;
-                    const roleColor = m.from_user_role === 'admin' ? '#c084fc' : '#67e8f9';
+                    const roleColor = m.from_user_role === 'admin' ? '#c084fc' : '#86EFAC';
                     const isDeleted = m.deleted;
                     // Read receipt logic: untuk DM, cek read_at. Global nggak ada read tracking per user.
                     const isRead = m.to_user_id && m.read_at;
@@ -3024,12 +3024,12 @@ export default function Home() {
                 <div style={{padding:12,borderTop:'1px solid #1f2937',background:'#020617'}}>
                   {/* PREVIEW ATTACHMENT (kalau ada pending) */}
                   {chatPendingAttachment && (
-                    <div style={{marginBottom:10,padding:10,background:'#0d1117',border:'1px solid #0891b2',borderRadius:6,display:'flex',gap:12,alignItems:'center'}}>
+                    <div style={{marginBottom:10,padding:10,background:'#0d1117',border:'1px solid #15803D',borderRadius:6,display:'flex',gap:12,alignItems:'center'}}>
                       {chatPendingAttachment.type === 'image' && (
                         <img src={chatPendingAttachment.previewUrl} alt="preview" style={{maxHeight:80,maxWidth:120,borderRadius:4,objectFit:'cover'}}/>
                       )}
                       <div style={{flex:1,minWidth:0}}>
-                        <div style={{fontSize:11,color:'#67e8f9',fontWeight:700}}>📷 Gambar siap dikirim</div>
+                        <div style={{fontSize:11,color:'#86EFAC',fontWeight:700}}>📷 Gambar siap dikirim</div>
                         <div style={{fontSize:10,color:'#9ca3af',marginTop:2,whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{chatPendingAttachment.name}</div>
                         <div style={{fontSize:10,color:'#6b7280',marginTop:2}}>{(chatPendingAttachment.size / 1024).toFixed(1)} KB · Tekan Kirim untuk upload, atau tambahkan caption di bawah</div>
                       </div>
@@ -3049,13 +3049,13 @@ export default function Home() {
                     <div style={{display:'flex',gap:6,alignItems:'center'}}>
                       {/* Emoji picker */}
                       <div style={{position:'relative'}}>
-                        <button onClick={()=>setEmojiPickerOpen(!emojiPickerOpen)} style={{padding:'10px 12px',background:emojiPickerOpen?'#0c4a6e':'#164e63',color:'#67e8f9',border:'none',borderRadius:6,fontSize:16,cursor:'pointer'}} title="Emoji">
+                        <button onClick={()=>setEmojiPickerOpen(!emojiPickerOpen)} style={{padding:'10px 12px',background:emojiPickerOpen?'#0c4a6e':'#15803D',color:'#86EFAC',border:'none',borderRadius:6,fontSize:16,cursor:'pointer'}} title="Emoji">
                           😀
                         </button>
                         {emojiPickerOpen && (
                           <>
                             <div onClick={()=>setEmojiPickerOpen(false)} style={{position:'fixed',top:0,left:0,right:0,bottom:0,zIndex:99}}/>
-                            <div style={{position:'absolute',bottom:46,left:0,background:'#0f172a',border:'2px solid #0891b2',borderRadius:10,padding:10,width:320,maxHeight:280,overflow:'auto',zIndex:100,boxShadow:'0 8px 30px rgba(0,0,0,0.7)',userSelect:'none',WebkitUserSelect:'none'}}>
+                            <div style={{position:'absolute',bottom:46,left:0,background:'#0f172a',border:'2px solid #15803D',borderRadius:10,padding:10,width:320,maxHeight:280,overflow:'auto',zIndex:100,boxShadow:'0 8px 30px rgba(0,0,0,0.7)',userSelect:'none',WebkitUserSelect:'none'}}>
                               {[
                                 { cat: 'Sering', emojis: '😀😂🤣😍🥰😘😎🤩🥳🤔😅😭🔥❤️👍👏💪🎉⚽🏆' },
                                 { cat: 'Wajah', emojis: '😀😃😄😁😆😅🤣😂🙂😊😇🥰😍🤩😘😋😛🤔🤫🤭😏😌😴😷🤒🤕🤑🤠😈👿' },
@@ -3096,12 +3096,12 @@ export default function Home() {
                         )}
                       </div>
                       {/* Image upload */}
-                      <label style={{cursor:(chatUploading||chatPendingAttachment)?'not-allowed':'pointer',padding:'10px 12px',background:'#164e63',borderRadius:6,fontSize:16,opacity:(chatUploading||chatPendingAttachment)?0.5:1}} title="Kirim foto">
+                      <label style={{cursor:(chatUploading||chatPendingAttachment)?'not-allowed':'pointer',padding:'10px 12px',background:'#15803D',borderRadius:6,fontSize:16,opacity:(chatUploading||chatPendingAttachment)?0.5:1}} title="Kirim foto">
                         {chatUploading ? '⏳' : '📷'}
                         <input type="file" accept="image/*" style={{display:'none'}} disabled={chatUploading||!!chatPendingAttachment} onChange={onChatImageSelect}/>
                       </label>
                       {/* Voice record */}
-                      <button onClick={startVoiceRecord} disabled={chatUploading||!!chatPendingAttachment} style={{padding:'10px 12px',background:'#164e63',color:'#67e8f9',border:'none',borderRadius:6,fontSize:16,cursor:(chatUploading||chatPendingAttachment)?'not-allowed':'pointer',opacity:(chatUploading||chatPendingAttachment)?0.5:1}} title="Rekam pesan suara">
+                      <button onClick={startVoiceRecord} disabled={chatUploading||!!chatPendingAttachment} style={{padding:'10px 12px',background:'#15803D',color:'#86EFAC',border:'none',borderRadius:6,fontSize:16,cursor:(chatUploading||chatPendingAttachment)?'not-allowed':'pointer',opacity:(chatUploading||chatPendingAttachment)?0.5:1}} title="Rekam pesan suara">
                         🎤
                       </button>
                       {/* View once toggle — hanya aktif di DM mode */}
@@ -3112,8 +3112,8 @@ export default function Home() {
                           title={chatViewOnceMode ? 'View Once ON — pesan akan hilang setelah dilihat' : 'Toggle View Once (🔥 pesan sekali lihat)'}
                           style={{
                             padding:'10px 12px',
-                            background: chatViewOnceMode ? '#7c2d12' : '#164e63',
-                            color: chatViewOnceMode ? '#fb923c' : '#67e8f9',
+                            background: chatViewOnceMode ? '#7c2d12' : '#15803D',
+                            color: chatViewOnceMode ? '#fb923c' : '#86EFAC',
                             border: chatViewOnceMode ? '2px solid #fb923c' : 'none',
                             borderRadius:6,
                             fontSize:16,
@@ -3159,11 +3159,11 @@ export default function Home() {
       {/* MODAL PANDUAN MEMBER */}
       {guideOpen && (
         <div onClick={()=>setGuideOpen(false)} className="responsive-modal-backdrop" style={{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(2,6,23,0.9)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
-          <div onClick={e=>e.stopPropagation()} className="responsive-modal-content" style={{background:'linear-gradient(180deg,#0f172a 0%,#020617 100%)',border:'2px solid #0891b2',borderRadius:12,width:'100%',maxWidth:900,maxHeight:'90vh',display:'flex',flexDirection:'column',overflow:'hidden',boxShadow:'0 8px 40px rgba(6,182,212,0.3)'}}>
+          <div onClick={e=>e.stopPropagation()} className="responsive-modal-content" style={{background:'linear-gradient(180deg,#0f172a 0%,#020617 100%)',border:'2px solid #15803D',borderRadius:12,width:'100%',maxWidth:900,maxHeight:'90vh',display:'flex',flexDirection:'column',overflow:'hidden',boxShadow:'0 8px 40px rgba(6,182,212,0.3)'}}>
             {/* Header */}
-            <div style={{padding:'16px 24px',borderBottom:'2px solid #0891b2',display:'flex',justifyContent:'space-between',alignItems:'center',background:'linear-gradient(90deg,#0c1220 0%,#020617 100%)'}}>
+            <div style={{padding:'16px 24px',borderBottom:'2px solid #15803D',display:'flex',justifyContent:'space-between',alignItems:'center',background:'linear-gradient(90deg,#0c1220 0%,#020617 100%)'}}>
               <div>
-                <h2 style={{margin:0,color:'#67e8f9',fontSize:18,fontWeight:900,textTransform:'uppercase',letterSpacing:1.5}}>❓ Panduan Pemakaian</h2>
+                <h2 style={{margin:0,color:'#86EFAC',fontSize:18,fontWeight:900,textTransform:'uppercase',letterSpacing:1.5}}>❓ Panduan Pemakaian</h2>
                 <div style={{fontSize:11,color:'#9ca3af',marginTop:2}}>Football Bot Dashboard — untuk member & admin</div>
               </div>
               <button onClick={()=>setGuideOpen(false)} style={{background:'#991b1b',color:'#fff',border:'none',borderRadius:6,padding:'8px 14px',fontSize:13,fontWeight:700,cursor:'pointer'}}>✕ Tutup</button>
@@ -3187,9 +3187,9 @@ export default function Home() {
                     padding:'10px 16px',
                     fontSize:12,
                     cursor:'pointer',
-                    color: guideSection === s.id ? '#67e8f9' : '#9ca3af',
+                    color: guideSection === s.id ? '#86EFAC' : '#9ca3af',
                     background: guideSection === s.id ? '#0c1220' : 'transparent',
-                    borderLeft: guideSection === s.id ? '3px solid #06b6d4' : '3px solid transparent',
+                    borderLeft: guideSection === s.id ? '3px solid #16A34A' : '3px solid transparent',
                     fontWeight: guideSection === s.id ? 700 : 400,
                   }}>
                     {s.label}
@@ -3201,13 +3201,13 @@ export default function Home() {
               <div style={{flex:1,padding:'20px 28px',overflow:'auto',fontSize:13,lineHeight:1.7,color:'#e0f2fe'}}>
                 {guideSection === 'welcome' && (
                   <div>
-                    <h3 style={{color:'#67e8f9',fontSize:18,marginTop:0}}>👋 Selamat Datang di Football Bot Dashboard</h3>
+                    <h3 style={{color:'#86EFAC',fontSize:18,marginTop:0}}>👋 Selamat Datang di Football Bot Dashboard</h3>
                     <p>Dashboard ini adalah pusat kendali untuk tim posting konten sepakbola ke grup Facebook. Dashboard bantu kamu tracking progress harian, submit link postingan, dan kelola target.</p>
 
                     <h4 style={{color:'#a5f3fc',marginTop:20,fontSize:14}}>Siapa yang pakai?</h4>
                     <ul style={{paddingLeft:20}}>
-                      <li><strong style={{color:'#67e8f9'}}>Admin</strong> — kelola grup, member, bot, review progress</li>
-                      <li><strong style={{color:'#67e8f9'}}>Member</strong> — submit link posting harian ke grup yang ditugaskan</li>
+                      <li><strong style={{color:'#86EFAC'}}>Admin</strong> — kelola grup, member, bot, review progress</li>
+                      <li><strong style={{color:'#86EFAC'}}>Member</strong> — submit link posting harian ke grup yang ditugaskan</li>
                     </ul>
 
                     <h4 style={{color:'#a5f3fc',marginTop:20,fontSize:14}}>Apa yang kamu perlukan?</h4>
@@ -3225,7 +3225,7 @@ export default function Home() {
 
                 {guideSection === 'target' && (
                   <div>
-                    <h3 style={{color:'#67e8f9',fontSize:18,marginTop:0}}>🎯 Target Harian & Siklus Posting</h3>
+                    <h3 style={{color:'#86EFAC',fontSize:18,marginTop:0}}>🎯 Target Harian & Siklus Posting</h3>
 
                     <h4 style={{color:'#a5f3fc',fontSize:14}}>Apa itu "Siklus"?</h4>
                     <p>Satu <strong>siklus</strong> = satu ronde posting lengkap di satu grup. Tiap siklus terdiri dari:</p>
@@ -3256,7 +3256,7 @@ export default function Home() {
 
                 {guideSection === 'submit' && (
                   <div>
-                    <h3 style={{color:'#67e8f9',fontSize:18,marginTop:0}}>📝 Cara Submit Link Post</h3>
+                    <h3 style={{color:'#86EFAC',fontSize:18,marginTop:0}}>📝 Cara Submit Link Post</h3>
 
                     <p>Setelah kamu selesai posting ke grup Facebook, <strong>submit link post-nya</strong> ke dashboard biar ke-track.</p>
 
@@ -3291,7 +3291,7 @@ export default function Home() {
 
                 {guideSection === 'rules' && (
                   <div>
-                    <h3 style={{color:'#67e8f9',fontSize:18,marginTop:0}}>✅ Aturan Konten</h3>
+                    <h3 style={{color:'#86EFAC',fontSize:18,marginTop:0}}>✅ Aturan Konten</h3>
 
                     <h4 style={{color:'#6ee7b7',fontSize:14}}>YANG BOLEH (sepakbola):</h4>
                     <ul style={{paddingLeft:20,lineHeight:1.8}}>
@@ -3320,7 +3320,7 @@ export default function Home() {
 
                 {guideSection === 'dedup' && (
                   <div>
-                    <h3 style={{color:'#67e8f9',fontSize:18,marginTop:0}}>🔍 Sistem Dedup (Anti-Duplikat)</h3>
+                    <h3 style={{color:'#86EFAC',fontSize:18,marginTop:0}}>🔍 Sistem Dedup (Anti-Duplikat)</h3>
 
                     <p>Dashboard punya <strong>3 lapis proteksi</strong> untuk mencegah duplikat konten. Ini kenapa kadang link kamu <strong>ditolak</strong> walau belum pernah submit.</p>
 
@@ -3343,7 +3343,7 @@ export default function Home() {
 
                 {guideSection === 'progress' && (
                   <div>
-                    <h3 style={{color:'#67e8f9',fontSize:18,marginTop:0}}>📊 Cara Baca Progress</h3>
+                    <h3 style={{color:'#86EFAC',fontSize:18,marginTop:0}}>📊 Cara Baca Progress</h3>
 
                     <p>Di tab <strong>Tracking Postingan</strong>, ada tabel "Progress Postingan" yang nampilin status semua grup.</p>
 
@@ -3383,7 +3383,7 @@ export default function Home() {
 
                 {guideSection === 'faq' && (
                   <div>
-                    <h3 style={{color:'#67e8f9',fontSize:18,marginTop:0}}>💬 FAQ (Pertanyaan Umum)</h3>
+                    <h3 style={{color:'#86EFAC',fontSize:18,marginTop:0}}>💬 FAQ (Pertanyaan Umum)</h3>
 
                     <div style={{marginTop:16}}>
                       <div style={{fontWeight:700,color:'#a5f3fc',marginBottom:4}}>❓ Kenapa link saya ditolak padahal belum pernah submit?</div>
@@ -3419,7 +3419,7 @@ export default function Home() {
 
                 {guideSection === 'trouble' && (
                   <div>
-                    <h3 style={{color:'#67e8f9',fontSize:18,marginTop:0}}>🚨 Troubleshooting</h3>
+                    <h3 style={{color:'#86EFAC',fontSize:18,marginTop:0}}>🚨 Troubleshooting</h3>
 
                     <h4 style={{color:'#fcd34d',marginTop:16,fontSize:14}}>🟡 Submit link tapi nggak muncul di tabel</h4>
                     <ul style={{paddingLeft:20,color:'#9ca3af',fontSize:12}}>
@@ -3448,7 +3448,7 @@ export default function Home() {
                       <li>Kalau hijau tapi tidak merespon, browser mungkin blokir popup — izinkan popup untuk dashboard</li>
                     </ul>
 
-                    <div style={{marginTop:20,padding:12,background:'#0c1220',borderLeft:'3px solid #06b6d4',borderRadius:4,fontSize:12}}>
+                    <div style={{marginTop:20,padding:12,background:'#0c1220',borderLeft:'3px solid #16A34A',borderRadius:4,fontSize:12}}>
                       💡 <strong>Masih bingung?</strong> Hubungi admin langsung. Kasih tahu masalah yang kamu alami + screenshot kalau bisa.
                     </div>
                   </div>
@@ -3462,15 +3462,15 @@ export default function Home() {
       {/* MODAL GANTI PASSWORD */}
       {pwModal && (
         <div onClick={()=>setPwModal(false)} style={{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(2,6,23,0.85)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center'}}>
-          <div onClick={e=>e.stopPropagation()} style={{background:'linear-gradient(180deg,#0f172a 0%,#020617 100%)',border:'2px solid #0891b2',borderRadius:8,padding:24,maxWidth:400,width:'90%',boxShadow:'0 8px 40px rgba(6,182,212,0.3)'}}>
-            <h3 style={{color:'#67e8f9',margin:'0 0 16px 0',fontSize:16,fontWeight:900,textTransform:'uppercase',letterSpacing:1}}>Ganti Password</h3>
+          <div onClick={e=>e.stopPropagation()} style={{background:'linear-gradient(180deg,#0f172a 0%,#020617 100%)',border:'2px solid #15803D',borderRadius:8,padding:24,maxWidth:400,width:'90%',boxShadow:'0 8px 40px rgba(6,182,212,0.3)'}}>
+            <h3 style={{color:'#86EFAC',margin:'0 0 16px 0',fontSize:16,fontWeight:900,textTransform:'uppercase',letterSpacing:1}}>Ganti Password</h3>
             <p style={{color:'#9ca3af',fontSize:12,margin:'0 0 16px 0'}}>Akun: <strong style={{color:'#e0f2fe'}}>{user.name}</strong> ({user.role})</p>
             <div style={{display:'flex',flexDirection:'column',gap:12}}>
-              <div><label style={{display:'block',fontSize:11,color:'#67e8f9',marginBottom:4,fontWeight:700,textTransform:'uppercase',letterSpacing:1}}>Password Lama</label>
+              <div><label style={{display:'block',fontSize:11,color:'#86EFAC',marginBottom:4,fontWeight:700,textTransform:'uppercase',letterSpacing:1}}>Password Lama</label>
                 <input type="password" style={S.input} value={pwOld} onChange={e=>setPwOld(e.target.value)} /></div>
-              <div><label style={{display:'block',fontSize:11,color:'#67e8f9',marginBottom:4,fontWeight:700,textTransform:'uppercase',letterSpacing:1}}>Password Baru</label>
+              <div><label style={{display:'block',fontSize:11,color:'#86EFAC',marginBottom:4,fontWeight:700,textTransform:'uppercase',letterSpacing:1}}>Password Baru</label>
                 <input type="password" style={S.input} value={pwNew} onChange={e=>setPwNew(e.target.value)} /></div>
-              <div><label style={{display:'block',fontSize:11,color:'#67e8f9',marginBottom:4,fontWeight:700,textTransform:'uppercase',letterSpacing:1}}>Konfirmasi Password Baru</label>
+              <div><label style={{display:'block',fontSize:11,color:'#86EFAC',marginBottom:4,fontWeight:700,textTransform:'uppercase',letterSpacing:1}}>Konfirmasi Password Baru</label>
                 <input type="password" style={S.input} value={pwConfirm} onChange={e=>setPwConfirm(e.target.value)} onKeyDown={e=>e.key==='Enter'&&changePassword()} /></div>
               {pwMsg && <p style={{fontSize:12,color:pwMsg.includes('berhasil')?'#10b981':'#ef4444',margin:'4px 0'}}>{pwMsg}</p>}
               <div style={{display:'flex',gap:8,marginTop:8}}>
@@ -3523,7 +3523,7 @@ export default function Home() {
             <div style={{background:'#1a1a2e',border:'1px solid #2d2d5e',padding:'10px 16px',borderRadius:8,marginBottom:16,display:'flex',alignItems:'center',gap:10,fontSize:13}}>
               <span style={{fontSize:18}}>⏰</span>
               <span style={{color:'#9ca3af'}}>Deadline hari ini:</span>
-              <span style={{color:'#FFD700',fontWeight:700}}>{cd.hours} jam {cd.minutes} menit lagi</span>
+              <span style={{color:'#F59E0B',fontWeight:700}}>{cd.hours} jam {cd.minutes} menit lagi</span>
               <span style={{color:'#6b7280',fontSize:11,marginLeft:'auto'}}>(berakhir jam 23:59)</span>
             </div>
           );
@@ -3539,7 +3539,7 @@ export default function Home() {
                   <span className="hud-label">▣ Bot Health Monitor</span>
                   <div style={{fontSize:11,color:'#94a3b8',marginTop:8}}>Status worker bot yang jalan di komputer lokal. Auto-refresh tiap 30 detik.</div>
                 </div>
-                <button onClick={loadBotHealth} disabled={botHealthLoading} style={{...S.btn('#164e63'),padding:'8px 14px',fontSize:11}}>
+                <button onClick={loadBotHealth} disabled={botHealthLoading} style={{...S.btn('#15803D'),padding:'8px 14px',fontSize:11}}>
                   {botHealthLoading ? '⏳' : '🔄'} Refresh
                 </button>
               </div>
@@ -3588,7 +3588,7 @@ export default function Home() {
                         </div>
                         <div style={{fontSize:11,color:'#9ca3af',lineHeight:1.6}}>
                           <div><span style={{color:'#6b7280'}}>Heartbeat:</span> <strong style={{color:statusColor}}>{ageText}</strong></div>
-                          {w.current_task && <div><span style={{color:'#6b7280'}}>Sedang:</span> <span style={{color:'#67e8f9'}}>{w.current_task}</span></div>}
+                          {w.current_task && <div><span style={{color:'#6b7280'}}>Sedang:</span> <span style={{color:'#86EFAC'}}>{w.current_task}</span></div>}
                           {!w.current_task && w.status === 'active' && <div style={{color:'#6b7280',fontStyle:'italic'}}>Idle (menunggu task)</div>}
                           {w.last_task_info && <div><span style={{color:'#6b7280'}}>Task terakhir:</span> {w.last_task_info}</div>}
                           <div style={{display:'flex',gap:14,marginTop:6,paddingTop:6,borderTop:'1px solid #1f2937'}}>
@@ -3744,7 +3744,7 @@ export default function Home() {
             })()}
 
             <div style={S.box}>
-              <h3 style={{color:'#FFD700',marginBottom:4,fontSize:16}}>Performa Per Klub</h3>
+              <h3 style={{color:'#F59E0B',marginBottom:4,fontSize:16}}>Performa Per Klub</h3>
               <p style={{color:'#9ca3af',fontSize:11,margin:'0 0 16px 0'}}>
                 Konten Member dihitung dari Tracking Postingan (gambar1 + gambar2 + video per siklus).
                 Data bot dari activity_log. 30 hari terakhir.
@@ -3773,8 +3773,8 @@ export default function Home() {
                           <td style={{...S.td,textAlign:'center',color:'#9ca3af'}}>{c.trackerCycles}</td>
                           <td style={{...S.td,textAlign:'center',color:c.trackerCompleted>0?'#10b981':'#6b7280',fontWeight:700}}>{c.trackerCompleted}</td>
                           <td style={{...S.td,textAlign:'center',color:c.botPosts>0?'#60a5fa':'#6b7280'}}>{c.botPosts}</td>
-                          <td style={{...S.td,textAlign:'center',color:c.memberPosts>0?'#67e8f9':'#6b7280',fontWeight:600}}>{c.memberPosts}</td>
-                          <td style={{...S.td,textAlign:'center',fontWeight:700,color:'#FFD700'}}>{c.total}</td>
+                          <td style={{...S.td,textAlign:'center',color:c.memberPosts>0?'#86EFAC':'#6b7280',fontWeight:600}}>{c.memberPosts}</td>
+                          <td style={{...S.td,textAlign:'center',fontWeight:700,color:'#F59E0B'}}>{c.total}</td>
                           <td style={S.td}>
                             <div style={{display:'flex',alignItems:'center',gap:6}}>
                               <div style={{flex:1,height:6,background:'#1f2937',borderRadius:3}}>
@@ -3993,7 +3993,7 @@ export default function Home() {
             {/* Performa Member */}
             {isAdmin && (
               <div style={{...S.box,marginTop:24}}>
-                <h3 style={{color:'#FFD700',marginBottom:16,fontSize:16}}>Performa Member — {MONTH_NAMES[wsMonth]} {wsYear}</h3>
+                <h3 style={{color:'#F59E0B',marginBottom:16,fontSize:16}}>Performa Member — {MONTH_NAMES[wsMonth]} {wsYear}</h3>
                 <table style={{width:'100%',borderCollapse:'collapse'}}>
                   <thead><tr><th style={S.th}>#</th><th style={S.th}>Member</th><th style={S.th}>Grup Diisi</th><th style={S.th}>Entri</th><th style={S.th}>Total Nilai</th></tr></thead>
                   <tbody>
@@ -4003,7 +4003,7 @@ export default function Home() {
                         <td style={{...S.td,fontWeight:600}}>{m.name}</td>
                         <td style={S.td}>{m.groups}</td>
                         <td style={S.td}>{m.entries}</td>
-                        <td style={{...S.td,fontWeight:700,color:'#FFD700'}}>{Number(m.totalValue).toLocaleString('id-ID')}</td>
+                        <td style={{...S.td,fontWeight:700,color:'#F59E0B'}}>{Number(m.totalValue).toLocaleString('id-ID')}</td>
                       </tr>
                     ))}
                     {getMemberStats().length === 0 && <tr><td colSpan={5} style={{...S.td,textAlign:'center',color:'#6b7280'}}>Belum ada data</td></tr>}
@@ -4020,7 +4020,7 @@ export default function Home() {
             {/* PROGRESS TARGET — visible untuk admin & member, bisa pilih tanggal */}
             <div style={S.box}>
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8,flexWrap:'wrap',gap:12}}>
-                <h3 style={{color:'#FFD700',fontSize:16,margin:0}}>
+                <h3 style={{color:'#F59E0B',fontSize:16,margin:0}}>
                   Progress Target {ptPeriod === localDateString() ? 'Hari Ini' : new Date(ptPeriod).toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}
                 </h3>
                 <div style={{display:'flex',alignItems:'center',gap:8}}>
@@ -4068,7 +4068,7 @@ export default function Home() {
                           <tr key={m.id} style={isMe?{background:'#1a2744'}:undefined}>
                             <td style={S.td}>{i+1}</td>
                             <td style={{...S.td,fontWeight:600,cursor:'pointer',color:'#60a5fa'}} onClick={()=>setHistoryModal(m)}>
-                              {m.name}{isMe && <span style={{marginLeft:6,fontSize:10,color:'#FFD700'}}>(Kamu)</span>}
+                              {m.name}{isMe && <span style={{marginLeft:6,fontSize:10,color:'#F59E0B'}}>(Kamu)</span>}
                             </td>
                             <td style={{...S.td,textAlign:'center'}}>{target || '-'}</td>
                             <td style={{...S.td,textAlign:'center',fontWeight:700,color:cat.color}}>{completedGroups}</td>
@@ -4132,7 +4132,7 @@ export default function Home() {
 
             {/* LEADERBOARD MINGGUAN & BULANAN */}
             <div style={S.box}>
-              <h3 style={{color:'#FFD700',marginBottom:8,fontSize:16}}>🏆 Leaderboard Performa Member</h3>
+              <h3 style={{color:'#F59E0B',marginBottom:8,fontSize:16}}>🏆 Leaderboard Performa Member</h3>
               <p style={{color:'#9ca3af',fontSize:12,marginBottom:16}}>
                 Ranking berdasarkan rata-rata persentase pencapaian dalam periode tertentu.
               </p>
@@ -4193,7 +4193,7 @@ export default function Home() {
               <div onClick={()=>setHistoryModal(null)} style={{position:'fixed',top:0,left:0,right:0,bottom:0,background:'rgba(0,0,0,0.8)',zIndex:1000,display:'flex',alignItems:'center',justifyContent:'center',padding:20}}>
                 <div onClick={e=>e.stopPropagation()} style={{background:'#111827',border:'1px solid #1f2937',borderRadius:12,padding:24,maxWidth:900,width:'100%',maxHeight:'90vh',overflow:'auto'}}>
                   <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
-                    <h3 style={{color:'#FFD700',fontSize:18,margin:0}}>📊 Riwayat 30 Hari — {historyModal.name}</h3>
+                    <h3 style={{color:'#F59E0B',fontSize:18,margin:0}}>📊 Riwayat 30 Hari — {historyModal.name}</h3>
                     <button onClick={()=>setHistoryModal(null)} style={{...S.btn('#7f1d1d'),padding:'6px 12px'}}>Tutup</button>
                   </div>
                   {(() => {
@@ -4223,7 +4223,7 @@ export default function Home() {
                         <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(140px,1fr))',gap:10,marginBottom:20}}>
                           <div style={{background:'#0d1117',padding:12,borderRadius:8,border:'1px solid #1f2937'}}>
                             <div style={{fontSize:11,color:'#6b7280'}}>Target Harian</div>
-                            <div style={{fontSize:20,fontWeight:700,color:'#FFD700'}}>{target || '-'}</div>
+                            <div style={{fontSize:20,fontWeight:700,color:'#F59E0B'}}>{target || '-'}</div>
                           </div>
                           <div style={{background:'#0d1117',padding:12,borderRadius:8,border:'1px solid #1f2937'}}>
                             <div style={{fontSize:11,color:'#6b7280'}}>Total Grup</div>
@@ -4296,7 +4296,7 @@ export default function Home() {
 
             {/* Form submit */}
             <div style={S.box}>
-              <h3 style={{color:'#FFD700',marginBottom:8,fontSize:16}}>Submit Postingan</h3>
+              <h3 style={{color:'#F59E0B',marginBottom:8,fontSize:16}}>Submit Postingan</h3>
               <p style={{color:'#9ca3af',fontSize:12,marginBottom:16}}>Target per grup: <strong>4 siklus</strong> (2 gambar + 1 video = 1 siklus)</p>
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:10,marginBottom:10}}>
                 <div><label style={{display:'block',fontSize:12,color:'#9ca3af',marginBottom:4}}>Grup</label>
@@ -4335,7 +4335,7 @@ export default function Home() {
             <div style={{...S.box,padding:0,overflow:'auto'}}>
               <div style={{padding:'16px 20px',borderBottom:'1px solid #1f2937'}}>
                 <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',flexWrap:'wrap',gap:10}}>
-                  <h3 style={{color:'#FFD700',fontSize:16,margin:0}}>Progress Postingan — {new Date(ptPeriod).toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</h3>
+                  <h3 style={{color:'#F59E0B',fontSize:16,margin:0}}>Progress Postingan — {new Date(ptPeriod).toLocaleDateString('id-ID',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</h3>
                   <input style={{...S.input,width:220,fontSize:11}} placeholder="🔍 Cari grup / member..." value={searchTracking} onChange={e=>setSearchTracking(e.target.value)}/>
                 </div>
               </div>
@@ -4397,7 +4397,7 @@ export default function Home() {
             {/* Summary member (admin) */}
             {isAdmin && (
               <div style={{...S.box,marginTop:24}}>
-                <h3 style={{color:'#FFD700',marginBottom:16,fontSize:16}}>Performa Member — {new Date(ptPeriod).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})}</h3>
+                <h3 style={{color:'#F59E0B',marginBottom:16,fontSize:16}}>Performa Member — {new Date(ptPeriod).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})}</h3>
                 <table style={{width:'100%',borderCollapse:'collapse'}}>
                   <thead><tr><th style={S.th}>#</th><th style={S.th}>Member</th><th style={S.th}>Grup</th><th style={S.th}>Gambar</th><th style={S.th}>Video</th><th style={S.th}>Siklus Selesai</th><th style={S.th}>Target (4/grup)</th><th style={S.th}>Progress</th></tr></thead>
                   <tbody>
@@ -4411,7 +4411,7 @@ export default function Home() {
                           <td style={S.td}>{m.groups}</td>
                           <td style={S.td}>{m.gambar}</td>
                           <td style={S.td}>{m.video}</td>
-                          <td style={{...S.td,fontWeight:700,color:'#FFD700'}}>{m.completeCycles}</td>
+                          <td style={{...S.td,fontWeight:700,color:'#F59E0B'}}>{m.completeCycles}</td>
                           <td style={S.td}>{target}</td>
                           <td style={S.td}><div style={{display:'flex',alignItems:'center',gap:6}}><div style={{width:80,height:6,background:'#1f2937',borderRadius:3}}><div style={{width:`${pct}%`,height:'100%',background:pct>=80?'#10b981':pct>=50?'#f59e0b':'#ef4444',borderRadius:3}}/></div><span style={{fontSize:11}}>{pct}%</span></div></td>
                         </tr>
@@ -4430,7 +4430,7 @@ export default function Home() {
           <>
             {/* Kelola Akun Bot GRUP */}
             <div style={S.box}>
-              <h3 style={{color:'#FFD700',marginBottom:8,fontSize:16}}>Kelola Akun Bot Grup</h3>
+              <h3 style={{color:'#F59E0B',marginBottom:8,fontSize:16}}>Kelola Akun Bot Grup</h3>
               <p style={{color:'#9ca3af',fontSize:12,marginBottom:16}}>Tambah, edit, atau hapus akun Facebook untuk bot grup. Akun bot reels dikelola di tab "Reels Bot".</p>
 
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr auto',gap:10,marginBottom:10,alignItems:'end'}}>
@@ -4508,13 +4508,13 @@ export default function Home() {
             </div>
 
             <div style={S.box}>
-              <h3 style={{color:'#FFD700',marginBottom:8,fontSize:16}}>Buat Tugas Posting</h3>
+              <h3 style={{color:'#F59E0B',marginBottom:8,fontSize:16}}>Buat Tugas Posting</h3>
               <p style={{color:'#9ca3af',fontSize:12,marginBottom:16}}>Pilih akun bot grup, pilih grup tujuan, bot akan posting atas nama akun tersebut.</p>
 
               {/* Selector akun bot grup */}
               <label style={{display:'block',fontSize:12,color:'#9ca3af',marginBottom:8}}>Pilih Akun Bot Grup</label>
               {grupAccounts.length === 0 ? (
-                <p style={{color:'#fbbf24',fontSize:13,padding:12,background:'#1a1a2e',borderRadius:8,border:'1px solid #2d2d5e',marginBottom:16}}>
+                <p style={{color:'#F59E0B',fontSize:13,padding:12,background:'#1a1a2e',borderRadius:8,border:'1px solid #2d2d5e',marginBottom:16}}>
                   Belum ada akun grup aktif. Tambahkan di section atas.
                 </p>
               ) : (
@@ -4574,7 +4574,7 @@ export default function Home() {
 
               <label style={{display:'block',fontSize:12,color:'#9ca3af',marginBottom:8}}>Pilih Grup ({tqGroups.length} dipilih)</label>
               <div style={{marginBottom:10}}>
-                <label style={{display:'flex',alignItems:'center',gap:6,cursor:'pointer',fontSize:13,color:'#FFD700',marginBottom:8}}>
+                <label style={{display:'flex',alignItems:'center',gap:6,cursor:'pointer',fontSize:13,color:'#F59E0B',marginBottom:8}}>
                   <input type="checkbox" checked={tqSelectAll} onChange={toggleSelectAll} /> Pilih Semua Grup
                 </label>
               </div>
@@ -4591,7 +4591,7 @@ export default function Home() {
               {/* Status Siklus Hari Ini (untuk grup yang dipilih) */}
               {tqGroups.length > 0 && Object.keys(tqCycleStatus).length > 0 && (
                 <div style={{marginTop:14,padding:10,background:'#0d1117',borderRadius:8,border:'1px solid #1f2937'}}>
-                  <div style={{fontSize:12,color:'#FFD700',marginBottom:8,fontWeight:600}}>📊 Status Siklus Hari Ini ({localDateString()})</div>
+                  <div style={{fontSize:12,color:'#F59E0B',marginBottom:8,fontWeight:600}}>📊 Status Siklus Hari Ini ({localDateString()})</div>
                   <div style={{maxHeight:200,overflowY:'auto'}}>
                     {tqGroups.map(gid => {
                       const grp = groups.find(g => g.id === gid);
@@ -4720,7 +4720,7 @@ export default function Home() {
                         {tqBulkPreview.skipped.slice(0, 12).map((s, i) => (
                           <span key={i} style={{display:'inline-block',background:'#78350f',padding:'2px 6px',borderRadius:4,marginRight:4,marginBottom:4}}>{s.groupName} C{s.cycle}</span>
                         ))}
-                        {tqBulkPreview.skipped.length > 12 && <span style={{color:'#fbbf24',fontStyle:'italic'}}>...+{tqBulkPreview.skipped.length - 12}</span>}
+                        {tqBulkPreview.skipped.length > 12 && <span style={{color:'#F59E0B',fontStyle:'italic'}}>...+{tqBulkPreview.skipped.length - 12}</span>}
                       </div>
                     </div>
                   )}
@@ -4743,7 +4743,7 @@ export default function Home() {
             {/* Daftar tugas */}
             <div style={S.box}>
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
-                <h3 style={{color:'#FFD700',fontSize:16,margin:0}}>Antrian Tugas</h3>
+                <h3 style={{color:'#F59E0B',fontSize:16,margin:0}}>Antrian Tugas</h3>
                 <div style={{display:'flex',gap:8}}>
                   <button onClick={loadTaskQueue} style={{...S.btn('#374151'),padding:'6px 14px',fontSize:12}}>Refresh</button>
                   <button onClick={clearDoneTasks} style={{...S.btn('#7f1d1d'),padding:'6px 14px',fontSize:12}}>Hapus Selesai</button>
@@ -4780,7 +4780,7 @@ export default function Home() {
 
             <div style={{...S.box,background:'#0d1117',border:'1px solid #374151'}}>
               <p style={{fontSize:13,color:'#9ca3af'}}>
-                <strong style={{color:'#FFD700'}}>Cara kerja:</strong><br/>
+                <strong style={{color:'#F59E0B'}}>Cara kerja:</strong><br/>
                 <span style={{fontSize:11}}>1. Tambahkan akun bot grup di section atas (sekali saja)</span><br/>
                 <span style={{fontSize:11}}>2. Save cookies akun: <code style={{background:'#1f2937',padding:'2px 6px',borderRadius:4,fontSize:11}}>node src/save-cookies-grup.js [ID_AKUN] "[Nama]"</code></span><br/>
                 <span style={{fontSize:11}}>3. Pilih akun → pilih grup → klik Buat Tugas</span><br/>
@@ -4796,7 +4796,7 @@ export default function Home() {
           <>
             {/* Kelola Akun Bot — per Platform (FB Reels / TikTok / IG) */}
             <div style={S.box}>
-              <h3 style={{color:'#FFD700',marginBottom:8,fontSize:16}}>Kelola Akun Bot — Per Platform</h3>
+              <h3 style={{color:'#F59E0B',marginBottom:8,fontSize:16}}>Kelola Akun Bot — Per Platform</h3>
               <p style={{color:'#9ca3af',fontSize:12,marginBottom:16}}>Tambah akun untuk platform spesifik. Akun FB Reels = post ke beranda FB. TikTok = upload ke TikTok. Instagram = upload ke IG Reels.</p>
 
               {/* Form tambah/edit */}
@@ -4881,13 +4881,13 @@ export default function Home() {
 
             {/* Buat Tugas Reels */}
             <div style={S.box}>
-              <h3 style={{color:'#FFD700',marginBottom:8,fontSize:16}}>Buat Tugas Reels — Video Highlight ke Beranda</h3>
+              <h3 style={{color:'#F59E0B',marginBottom:8,fontSize:16}}>Buat Tugas Reels — Video Highlight ke Beranda</h3>
               <p style={{color:'#9ca3af',fontSize:12,marginBottom:16}}>
                 Pilih akun reels untuk generate video 2 menit + watermark ColokNet → posting ke beranda.
               </p>
 
               {reelsAccounts.length === 0 ? (
-                <p style={{color:'#fbbf24',fontSize:13,padding:16,background:'#1a1a2e',borderRadius:8,border:'1px solid #2d2d5e'}}>
+                <p style={{color:'#F59E0B',fontSize:13,padding:16,background:'#1a1a2e',borderRadius:8,border:'1px solid #2d2d5e'}}>
                   Belum ada akun tipe "Reels" atau "Keduanya" yang aktif. Tambahkan akun di atas.
                 </p>
               ) : (
@@ -4951,7 +4951,7 @@ export default function Home() {
             {/* Daftar tugas reels */}
             <div style={S.box}>
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16}}>
-                <h3 style={{color:'#FFD700',fontSize:16,margin:0}}>Riwayat Tugas Reels</h3>
+                <h3 style={{color:'#F59E0B',fontSize:16,margin:0}}>Riwayat Tugas Reels</h3>
                 <button onClick={loadReelsTasks} style={S.btn('#374151')}>Refresh</button>
               </div>
 
@@ -5015,7 +5015,7 @@ export default function Home() {
             {/* Form tambah grup (admin only) */}
             {isAdmin && (
               <div style={S.box}>
-                <h3 style={{color:'#FFD700',marginBottom:16,fontSize:16}}>Tambah Grup Baru</h3>
+                <h3 style={{color:'#F59E0B',marginBottom:16,fontSize:16}}>Tambah Grup Baru</h3>
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:10,marginBottom:10}}>
                   <div><label style={{display:'block',fontSize:12,color:'#9ca3af',marginBottom:4}}>Nama Klub</label><input style={S.input} placeholder="Real Madrid" value={grpClub} onChange={e=>setGrpClub(e.target.value)} /></div>
                   <div><label style={{display:'block',fontSize:12,color:'#9ca3af',marginBottom:4}}>Nama Grup</label><input style={S.input} placeholder="Info Seputar Real Madrid" value={grpName} onChange={e=>setGrpName(e.target.value)} /></div>
@@ -5156,7 +5156,7 @@ export default function Home() {
         {tab === 'submitlink' && (
           <>
             <div style={S.box}>
-              <h3 style={{color:'#FFD700',marginBottom:16,fontSize:16}}>Submit Link Postingan</h3>
+              <h3 style={{color:'#F59E0B',marginBottom:16,fontSize:16}}>Submit Link Postingan</h3>
               <p style={{color:'#9ca3af',fontSize:13,marginBottom:20}}>Masukkan link postingan Facebook yang sudah kamu buat di grup.</p>
               <div style={{marginBottom:16}}>
                 <label style={{display:'block',fontSize:13,color:'#9ca3af',marginBottom:6}}>Pilih Grup</label>
@@ -5177,7 +5177,7 @@ export default function Home() {
             </div>
 
             <div style={S.box}>
-              <h3 style={{color:'#FFD700',marginBottom:16,fontSize:16}}>{isAdmin?'Semua Link Disubmit':'Link Kamu'}</h3>
+              <h3 style={{color:'#F59E0B',marginBottom:16,fontSize:16}}>{isAdmin?'Semua Link Disubmit':'Link Kamu'}</h3>
               <table style={{width:'100%',borderCollapse:'collapse'}}>
                 <thead><tr><th style={S.th}>Grup</th><th style={S.th}>Link</th><th style={S.th}>Catatan</th><th style={S.th}>Status</th><th style={S.th}>User</th><th style={S.th}>Waktu</th>{isAdmin&&<th style={S.th}>Aksi</th>}</tr></thead>
                 <tbody>
@@ -5207,7 +5207,7 @@ export default function Home() {
         {tab === 'users' && isAdmin && (
           <>
             <div style={S.box}>
-              <h3 style={{color:'#FFD700',marginBottom:16,fontSize:16}}>Tambah Member</h3>
+              <h3 style={{color:'#F59E0B',marginBottom:16,fontSize:16}}>Tambah Member</h3>
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr auto',gap:10,alignItems:'end'}}>
                 <div><label style={{display:'block',fontSize:13,color:'#9ca3af',marginBottom:6}}>Username</label><input style={S.input} value={newUser} onChange={e=>setNewUser(e.target.value)} /></div>
                 <div><label style={{display:'block',fontSize:13,color:'#9ca3af',marginBottom:6}}>Password</label><input style={S.input} value={newPass} onChange={e=>setNewPass(e.target.value)} /></div>
@@ -5217,7 +5217,7 @@ export default function Home() {
               {userMsg && <p style={{marginTop:12,fontSize:13,color:userMsg.includes('Error')?'#ef4444':'#10b981'}}>{userMsg}</p>}
             </div>
             <div style={S.box}>
-              <h3 style={{color:'#FFD700',marginBottom:16,fontSize:16}}>Daftar User</h3>
+              <h3 style={{color:'#F59E0B',marginBottom:16,fontSize:16}}>Daftar User</h3>
               <p style={{color:'#9ca3af',fontSize:12,marginBottom:12}}>Edit target grup harian per member langsung di kolom Target. Tekan Enter atau klik di luar untuk simpan.</p>
               <table style={{width:'100%',borderCollapse:'collapse'}}>
                 <thead><tr><th style={S.th}>Username</th><th style={S.th}>Nama</th><th style={S.th}>Role</th><th style={S.th}>Target Grup/Hari</th><th style={S.th}>Dibuat</th><th style={S.th}>Aksi</th></tr></thead>
@@ -5257,7 +5257,7 @@ export default function Home() {
 
             {/* BACKUP & RESTORE */}
             <div style={S.box}>
-              <h3 style={{color:'#FFD700',marginBottom:8,fontSize:16}}>💾 Backup & Restore</h3>
+              <h3 style={{color:'#F59E0B',marginBottom:8,fontSize:16}}>💾 Backup & Restore</h3>
               <p style={{color:'#9ca3af',fontSize:12,marginBottom:16}}>
                 Backup semua data (users, groups, bot_accounts, posting_tracker, target_notes, dll) ke file JSON.
                 Simpan file ini ke Google Drive / komputer untuk jaga-jaga.
@@ -5312,14 +5312,14 @@ export default function Home() {
               )}
 
               {/* AUTO BACKUP HISTORY (Vercel Cron) */}
-              <div style={{marginTop:20,padding:16,background:'#0d1117',border:'1px solid #0891b2',borderRadius:8}}>
+              <div style={{marginTop:20,padding:16,background:'#0d1117',border:'1px solid #15803D',borderRadius:8}}>
                 <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12,flexWrap:'wrap',gap:8}}>
                   <div>
-                    <h4 style={{color:'#67e8f9',fontSize:14,margin:0,fontWeight:800,textTransform:'uppercase',letterSpacing:1}}>⏰ Auto Backup Harian</h4>
+                    <h4 style={{color:'#86EFAC',fontSize:14,margin:0,fontWeight:800,textTransform:'uppercase',letterSpacing:1}}>⏰ Auto Backup Harian</h4>
                     <p style={{fontSize:11,color:'#9ca3af',margin:'4px 0 0 0'}}>Vercel Cron otomatis backup ke tabel backups_log setiap 02:00 WIB. Disimpan 30 backup terakhir.</p>
                   </div>
                   <div style={{display:'flex',gap:8}}>
-                    <button onClick={loadAutoBackups} disabled={autoBackupsLoading} style={{...S.btn('#164e63'),padding:'8px 14px',fontSize:11}}>
+                    <button onClick={loadAutoBackups} disabled={autoBackupsLoading} style={{...S.btn('#15803D'),padding:'8px 14px',fontSize:11}}>
                       {autoBackupsLoading ? '⏳ Loading...' : '🔄 Refresh'}
                     </button>
                     <button onClick={triggerManualBackup} style={{...S.btn('#065f46'),padding:'8px 14px',fontSize:11}}>
@@ -5355,7 +5355,7 @@ export default function Home() {
                             <tr key={b.id}>
                               <td style={{...S.td,fontSize:11}}>{new Date(b.created_at).toLocaleString('id-ID')}</td>
                               <td style={{...S.td,fontSize:11}}>
-                                <span style={{padding:'2px 6px',borderRadius:3,fontSize:9,fontWeight:700,background:b.trigger_type==='auto'?'#164e63':'#7c2d12',color:b.trigger_type==='auto'?'#67e8f9':'#fb923c'}}>
+                                <span style={{padding:'2px 6px',borderRadius:3,fontSize:9,fontWeight:700,background:b.trigger_type==='auto'?'#15803D':'#7c2d12',color:b.trigger_type==='auto'?'#86EFAC':'#fb923c'}}>
                                   {(b.trigger_type || 'auto').toUpperCase()}
                                 </span>
                               </td>
@@ -5376,7 +5376,7 @@ export default function Home() {
                 )}
 
                 <div style={{marginTop:12,padding:10,background:'#020617',border:'1px solid #1f2937',borderRadius:6,fontSize:10,color:'#6b7280'}}>
-                  <strong style={{color:'#67e8f9'}}>Setup yang diperlukan:</strong>
+                  <strong style={{color:'#86EFAC'}}>Setup yang diperlukan:</strong>
                   <ol style={{margin:'4px 0 0 16px',padding:0}}>
                     <li>Jalankan SQL <code style={{background:'#1f2937',padding:'0 3px',borderRadius:2}}>003_backups_log.sql</code> di Supabase SQL Editor</li>
                     <li>Tambah env var <code style={{background:'#1f2937',padding:'0 3px',borderRadius:2}}>CRON_SECRET</code> di Vercel (opsional, untuk manual trigger)</li>
@@ -5473,7 +5473,7 @@ export default function Home() {
                     <button key={f.id} onClick={()=>setActivityFilter(f.id)} style={{
                       padding:'8px 14px',fontSize:11,borderRadius:4,border:'1px solid #1f2937',cursor:'pointer',
                       background: activityFilter === f.id ? '#0c4a6e' : '#111827',
-                      color: activityFilter === f.id ? '#67e8f9' : '#9ca3af',
+                      color: activityFilter === f.id ? '#86EFAC' : '#9ca3af',
                       fontWeight: activityFilter === f.id ? 700 : 400,
                     }}>{f.label}</button>
                   ))}
@@ -5510,7 +5510,7 @@ export default function Home() {
                       )}
                       <br/>
                       <span>{new Date(e.timestamp).toLocaleString('id-ID',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</span>
-                      {e.link && <> · <a href={e.link} target="_blank" rel="noreferrer" style={{color:'#67e8f9',textDecoration:'none'}}>lihat</a></>}
+                      {e.link && <> · <a href={e.link} target="_blank" rel="noreferrer" style={{color:'#86EFAC',textDecoration:'none'}}>lihat</a></>}
                     </div>
                   </div>
                 ))}
@@ -5528,7 +5528,7 @@ export default function Home() {
             const titleText = botType === 'grup' ? 'BOT GRUP — Posting ke Grup FB' : 'BOT REELS — Posting ke Beranda (FB/TikTok/IG/X)';
             return (
               <div style={{marginBottom:32,paddingBottom:24,borderBottom:'2px solid #1f2937'}}>
-                <h3 style={{color:botType==='grup'?'#67e8f9':'#fbbf24',fontSize:16,margin:'0 0 12px 0',fontWeight:800,textTransform:'uppercase',letterSpacing:1}}>
+                <h3 style={{color:botType==='grup'?'#86EFAC':'#F59E0B',fontSize:16,margin:'0 0 12px 0',fontWeight:800,textTransform:'uppercase',letterSpacing:1}}>
                   {titleIcon} {titleText}
                 </h3>
 
@@ -5554,7 +5554,7 @@ export default function Home() {
 
                 {/* Per-akun */}
                 <div style={{...S.box,marginBottom:16}}>
-                  <h4 style={{color:'#67e8f9',fontSize:13,margin:'0 0 10px 0',fontWeight:700,textTransform:'uppercase',letterSpacing:1}}>👤 Per-Akun Success Rate</h4>
+                  <h4 style={{color:'#86EFAC',fontSize:13,margin:'0 0 10px 0',fontWeight:700,textTransform:'uppercase',letterSpacing:1}}>👤 Per-Akun Success Rate</h4>
                   {data.accounts.length === 0 ? (
                     <p style={{fontSize:12,color:'#6b7280'}}>Belum ada data 7 hari terakhir.</p>
                   ) : (
@@ -5613,7 +5613,7 @@ export default function Home() {
 
                 {/* Top 5 errors */}
                 <div style={{...S.box,marginBottom:16}}>
-                  <h4 style={{color:'#67e8f9',fontSize:13,margin:'0 0 10px 0',fontWeight:700,textTransform:'uppercase',letterSpacing:1}}>🔥 Top 5 Error Reasons</h4>
+                  <h4 style={{color:'#86EFAC',fontSize:13,margin:'0 0 10px 0',fontWeight:700,textTransform:'uppercase',letterSpacing:1}}>🔥 Top 5 Error Reasons</h4>
                   {data.errors.length === 0 ? (
                     <p style={{fontSize:12,color:'#6b7280'}}>Tidak ada error 7 hari terakhir 🎉</p>
                   ) : (
@@ -5633,7 +5633,7 @@ export default function Home() {
 
                 {/* Recent 10 failures */}
                 <div style={{...S.box}}>
-                  <h4 style={{color:'#67e8f9',fontSize:13,margin:'0 0 10px 0',fontWeight:700,textTransform:'uppercase',letterSpacing:1}}>📋 Recent 10 Failures</h4>
+                  <h4 style={{color:'#86EFAC',fontSize:13,margin:'0 0 10px 0',fontWeight:700,textTransform:'uppercase',letterSpacing:1}}>📋 Recent 10 Failures</h4>
                   {data.recentFails.length === 0 ? (
                     <p style={{fontSize:12,color:'#6b7280'}}>Tidak ada failure 7 hari terakhir 🎉</p>
                   ) : (
@@ -5669,10 +5669,10 @@ export default function Home() {
             <>
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:16,flexWrap:'wrap',gap:8}}>
                 <div>
-                  <h3 style={{color:'#67e8f9',fontSize:15,margin:0,fontWeight:800,textTransform:'uppercase',letterSpacing:1}}>📊 Bot Performance — Last 7 Days</h3>
+                  <h3 style={{color:'#86EFAC',fontSize:15,margin:0,fontWeight:800,textTransform:'uppercase',letterSpacing:1}}>📊 Bot Performance — Last 7 Days</h3>
                   <p style={{fontSize:11,color:'#9ca3af',margin:'4px 0 0 0'}}>Stats Bot Grup (task_queue) + Bot Reels (reels_tasks). Auto-refresh saat buka tab.</p>
                 </div>
-                <button onClick={loadBotStats} style={{...S.btn('#164e63'),padding:'6px 12px',fontSize:11}}>🔄 Refresh</button>
+                <button onClick={loadBotStats} style={{...S.btn('#15803D'),padding:'6px 12px',fontSize:11}}>🔄 Refresh</button>
               </div>
 
               {renderBotSection('grup', botStatsData.grup, 'Grup')}
@@ -5702,8 +5702,8 @@ export default function Home() {
           return (
             <>
               <div style={{display:'flex',gap:12,alignItems:'center',marginBottom:16,flexWrap:'wrap'}}>
-                <h3 style={{margin:0,color:'#22d3ee'}}>⏰ Best Posting Time per Grup</h3>
-                <button onClick={() => loadBestTimeGroups()} style={{padding:'6px 14px',background:'#0891b2',color:'#fff',border:'none',borderRadius:6,cursor:'pointer',fontSize:13}}>🔄 Refresh</button>
+                <h3 style={{margin:0,color:'#22C55E'}}>⏰ Best Posting Time per Grup</h3>
+                <button onClick={() => loadBestTimeGroups()} style={{padding:'6px 14px',background:'#15803D',color:'#fff',border:'none',borderRadius:6,cursor:'pointer',fontSize:13}}>🔄 Refresh</button>
               </div>
 
               <p style={{fontSize:13,color:'#94a3b8',marginBottom:16}}>
@@ -5765,8 +5765,8 @@ export default function Home() {
                   </div>
 
                   {/* Best Hours summary */}
-                  <div style={{padding:16,background:'#0f172a',borderRadius:8,border:'1px solid #164e63'}}>
-                    <h4 style={{margin:'0 0 12px 0',color:'#22d3ee',fontSize:14}}>🏆 Top 3 Jam Terbaik (gabungan semua hari)</h4>
+                  <div style={{padding:16,background:'#0f172a',borderRadius:8,border:'1px solid #15803D'}}>
+                    <h4 style={{margin:'0 0 12px 0',color:'#22C55E',fontSize:14}}>🏆 Top 3 Jam Terbaik (gabungan semua hari)</h4>
                     {bestTimeData.bestHours.length === 0 ? (
                       <p style={{fontSize:13,color:'#94a3b8',margin:0}}>Data belum cukup (butuh min. 3 post per slot jam).</p>
                     ) : (
@@ -5874,12 +5874,12 @@ export default function Home() {
 
         {/* CAPTION A/B TAB (admin) — Phase 4.2 */}
         {tab === 'captionab' && isAdmin && (() => {
-          const winnerColor = (idx) => idx === 0 ? '#10b981' : idx < 3 ? '#22d3ee' : idx < 10 ? '#94a3b8' : '#64748b';
+          const winnerColor = (idx) => idx === 0 ? '#10b981' : idx < 3 ? '#22C55E' : idx < 10 ? '#94a3b8' : '#64748b';
           return (
             <>
               <div style={{display:'flex',gap:12,alignItems:'center',marginBottom:16,flexWrap:'wrap'}}>
-                <h3 style={{margin:0,color:'#22d3ee'}}>🅰️🅱️ Caption A/B Test Analysis</h3>
-                <button onClick={loadCaptionAB} style={{padding:'6px 14px',background:'#0891b2',color:'#fff',border:'none',borderRadius:6,cursor:'pointer',fontSize:13}}>🔄 Refresh</button>
+                <h3 style={{margin:0,color:'#22C55E'}}>🅰️🅱️ Caption A/B Test Analysis</h3>
+                <button onClick={loadCaptionAB} style={{padding:'6px 14px',background:'#15803D',color:'#fff',border:'none',borderRadius:6,cursor:'pointer',fontSize:13}}>🔄 Refresh</button>
                 <span style={{fontSize:12,color:'#94a3b8'}}>{captionAB.totalSamples} sampel total (30 hari)</span>
               </div>
 
@@ -5899,7 +5899,7 @@ export default function Home() {
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:24}}>
                   {/* Template ranking */}
                   <div>
-                    <h4 style={{color:'#22d3ee',marginBottom:8,fontSize:14}}>📋 Template Caption Ranking (50 templates)</h4>
+                    <h4 style={{color:'#22C55E',marginBottom:8,fontSize:14}}>📋 Template Caption Ranking (50 templates)</h4>
                     <table style={{width:'100%',borderCollapse:'collapse',fontSize:12}}>
                       <thead>
                         <tr style={{background:'#1e293b',color:'#94a3b8'}}>
@@ -5930,7 +5930,7 @@ export default function Home() {
 
                   {/* Promo ranking */}
                   <div>
-                    <h4 style={{color:'#22d3ee',marginBottom:8,fontSize:14}}>📢 Promo Text Ranking (50 promos)</h4>
+                    <h4 style={{color:'#22C55E',marginBottom:8,fontSize:14}}>📢 Promo Text Ranking (50 promos)</h4>
                     <table style={{width:'100%',borderCollapse:'collapse',fontSize:12}}>
                       <thead>
                         <tr style={{background:'#1e293b',color:'#94a3b8'}}>
@@ -5967,7 +5967,7 @@ export default function Home() {
             <div style={{...S.box,marginBottom:20,border:autoMasterSwitch?'2px solid #10b981':'2px solid #ef4444'}}>
               <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',gap:16,flexWrap:'wrap'}}>
                 <div style={{flex:1,minWidth:280}}>
-                  <h3 style={{color:'#67e8f9',fontSize:15,margin:'0 0 6px 0',fontWeight:800,textTransform:'uppercase',letterSpacing:1}}>🤖 Autonomous Posting (Master Switch)</h3>
+                  <h3 style={{color:'#86EFAC',fontSize:15,margin:'0 0 6px 0',fontWeight:800,textTransform:'uppercase',letterSpacing:1}}>🤖 Autonomous Posting (Master Switch)</h3>
                   <p style={{fontSize:12,color:'#9ca3af',margin:'0 0 8px 0'}}>
                     Bot mandiri auto-create posting task tiap interval per grup, tanpa user intervensi.
                     {autoMasterSwitch ? (
@@ -5989,7 +5989,7 @@ export default function Home() {
 
             {/* SECTION 1: BOT ACCOUNTS QUICK VIEW (read-only view + toggle) */}
             <div style={{...S.box,marginBottom:20}}>
-              <h3 style={{color:'#67e8f9',fontSize:15,margin:'0 0 6px 0',fontWeight:800,textTransform:'uppercase',letterSpacing:1}}>🤖 Bot Accounts Quick View</h3>
+              <h3 style={{color:'#86EFAC',fontSize:15,margin:'0 0 6px 0',fontWeight:800,textTransform:'uppercase',letterSpacing:1}}>🤖 Bot Accounts Quick View</h3>
               <p style={{fontSize:12,color:'#9ca3af',margin:'0 0 16px 0'}}>Toggle aktif/inactive akun bot dengan cepat. Untuk CRUD lengkap (tambah/edit/hapus), pakai tab <strong>Jalankan Bot</strong> atau <strong>Reels Bot</strong>.</p>
 
               {/* Filter */}
@@ -5998,7 +5998,7 @@ export default function Home() {
                   <button key={f} onClick={()=>setBotAccFilter(f)} style={{
                     padding:'6px 12px',fontSize:11,borderRadius:4,border:'1px solid #1f2937',cursor:'pointer',
                     background: botAccFilter === f ? '#0c4a6e' : '#111827',
-                    color: botAccFilter === f ? '#67e8f9' : '#9ca3af',
+                    color: botAccFilter === f ? '#86EFAC' : '#9ca3af',
                     fontWeight: botAccFilter === f ? 700 : 400,
                     textTransform:'uppercase',letterSpacing:1,
                   }}>{f === 'all' ? 'Semua' : f}</button>
@@ -6024,7 +6024,7 @@ export default function Home() {
                           <td style={{...S.td,fontFamily:'monospace',fontSize:11}}>{acc.account_id}</td>
                           <td style={{...S.td,fontWeight:600}}>{acc.account_name}</td>
                           <td style={S.td}>
-                            <span style={{padding:'2px 8px',borderRadius:3,fontSize:9,fontWeight:700,background:'#0c4a6e',color:'#67e8f9',textTransform:'uppercase'}}>{acc.account_type}</span>
+                            <span style={{padding:'2px 8px',borderRadius:3,fontSize:9,fontWeight:700,background:'#0c4a6e',color:'#86EFAC',textTransform:'uppercase'}}>{acc.account_type}</span>
                           </td>
                           <td style={S.td}>
                             <label style={{display:'flex',alignItems:'center',gap:6,cursor:'pointer',fontSize:11}}>
@@ -6044,30 +6044,30 @@ export default function Home() {
 
             {/* SECTION 2: SYSTEM ACTIONS */}
             <div style={{...S.box,marginBottom:20}}>
-              <h3 style={{color:'#67e8f9',fontSize:15,margin:'0 0 6px 0',fontWeight:800,textTransform:'uppercase',letterSpacing:1}}>⚡ System Actions</h3>
+              <h3 style={{color:'#86EFAC',fontSize:15,margin:'0 0 6px 0',fontWeight:800,textTransform:'uppercase',letterSpacing:1}}>⚡ System Actions</h3>
               <p style={{fontSize:12,color:'#9ca3af',margin:'0 0 16px 0'}}>Tombol-tombol admin untuk maintenance database.</p>
 
               <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(280px,1fr))',gap:12}}>
                 <div style={{background:'#0d1117',border:'1px solid #1f2937',borderRadius:6,padding:14}}>
-                  <div style={{fontSize:12,color:'#67e8f9',fontWeight:700,marginBottom:4}}>🔄 Reset Worker Counters</div>
+                  <div style={{fontSize:12,color:'#86EFAC',fontWeight:700,marginBottom:4}}>🔄 Reset Worker Counters</div>
                   <p style={{fontSize:10,color:'#9ca3af',margin:'0 0 10px 0'}}>Reset counter harian (total/success/failed) untuk semua bot worker ke 0.</p>
-                  <button onClick={resetWorkerCounters} style={{...S.btn('#164e63'),padding:'8px 14px',fontSize:11,width:'100%'}}>Reset Sekarang</button>
+                  <button onClick={resetWorkerCounters} style={{...S.btn('#15803D'),padding:'8px 14px',fontSize:11,width:'100%'}}>Reset Sekarang</button>
                 </div>
 
                 <div style={{background:'#0d1117',border:'1px solid #1f2937',borderRadius:6,padding:14}}>
-                  <div style={{fontSize:12,color:'#67e8f9',fontWeight:700,marginBottom:4}}>🗑 Cleanup Chat Lama</div>
+                  <div style={{fontSize:12,color:'#86EFAC',fontWeight:700,marginBottom:4}}>🗑 Cleanup Chat Lama</div>
                   <p style={{fontSize:10,color:'#9ca3af',margin:'0 0 10px 0'}}>Hapus pesan chat yang umurnya lebih dari 30 hari.</p>
                   <button onClick={cleanupOldChat} style={{...S.btn('#7c2d12'),padding:'8px 14px',fontSize:11,width:'100%'}}>Cleanup</button>
                 </div>
 
                 <div style={{background:'#0d1117',border:'1px solid #1f2937',borderRadius:6,padding:14}}>
-                  <div style={{fontSize:12,color:'#67e8f9',fontWeight:700,marginBottom:4}}>🗑 Cleanup Backup Lama</div>
+                  <div style={{fontSize:12,color:'#86EFAC',fontWeight:700,marginBottom:4}}>🗑 Cleanup Backup Lama</div>
                   <p style={{fontSize:10,color:'#9ca3af',margin:'0 0 10px 0'}}>Hapus backup lebih lama dari 30 terbaru (otomatis juga jalan harian).</p>
                   <button onClick={cleanupOldBackups} style={{...S.btn('#7c2d12'),padding:'8px 14px',fontSize:11,width:'100%'}}>Cleanup</button>
                 </div>
 
                 <div style={{background:'#0d1117',border:'1px solid #1f2937',borderRadius:6,padding:14}}>
-                  <div style={{fontSize:12,color:'#67e8f9',fontWeight:700,marginBottom:4}}>⚡ Backup Sekarang</div>
+                  <div style={{fontSize:12,color:'#86EFAC',fontWeight:700,marginBottom:4}}>⚡ Backup Sekarang</div>
                   <p style={{fontSize:10,color:'#9ca3af',margin:'0 0 10px 0'}}>Trigger backup manual sekarang (buka tab Kelola User untuk lihat hasilnya).</p>
                   <button onClick={triggerManualBackup} style={{...S.btn('#065f46'),padding:'8px 14px',fontSize:11,width:'100%'}}>Backup Now</button>
                 </div>
@@ -6078,10 +6078,10 @@ export default function Home() {
             <div style={{...S.box,marginBottom:20}}>
               <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12}}>
                 <div>
-                  <h3 style={{color:'#67e8f9',fontSize:15,margin:'0 0 4px 0',fontWeight:800,textTransform:'uppercase',letterSpacing:1}}>📊 Database Statistics</h3>
+                  <h3 style={{color:'#86EFAC',fontSize:15,margin:'0 0 4px 0',fontWeight:800,textTransform:'uppercase',letterSpacing:1}}>📊 Database Statistics</h3>
                   <p style={{fontSize:12,color:'#9ca3af',margin:0}}>Statistik total row per tabel.</p>
                 </div>
-                <button onClick={loadSystemStats} style={{...S.btn('#164e63'),padding:'8px 14px',fontSize:11}}>🔄 Refresh</button>
+                <button onClick={loadSystemStats} style={{...S.btn('#15803D'),padding:'8px 14px',fontSize:11}}>🔄 Refresh</button>
               </div>
               {!systemStats && <p style={{fontSize:12,color:'#6b7280'}}>Memuat statistik...</p>}
               {systemStats && (
@@ -6098,12 +6098,12 @@ export default function Home() {
                   ].map(s => (
                     <div key={s.key} style={{background:'#0d1117',border:'1px solid #1f2937',borderRadius:6,padding:12}}>
                       <div style={{fontSize:11,color:'#9ca3af'}}>{s.label}</div>
-                      <div style={{fontSize:20,fontWeight:900,color:'#67e8f9',marginTop:4}}>{(systemStats[s.key] || 0).toLocaleString('id-ID')}</div>
+                      <div style={{fontSize:20,fontWeight:900,color:'#86EFAC',marginTop:4}}>{(systemStats[s.key] || 0).toLocaleString('id-ID')}</div>
                     </div>
                   ))}
-                  <div style={{background:'#0d1117',border:'1px solid #0891b2',borderRadius:6,padding:12}}>
+                  <div style={{background:'#0d1117',border:'1px solid #15803D',borderRadius:6,padding:12}}>
                     <div style={{fontSize:11,color:'#9ca3af'}}>💾 Total Backup Size</div>
-                    <div style={{fontSize:20,fontWeight:900,color:'#67e8f9',marginTop:4}}>{systemStats.backups_size_kb?.toLocaleString('id-ID') || 0} KB</div>
+                    <div style={{fontSize:20,fontWeight:900,color:'#86EFAC',marginTop:4}}>{systemStats.backups_size_kb?.toLocaleString('id-ID') || 0} KB</div>
                   </div>
                 </div>
               )}
@@ -6111,7 +6111,7 @@ export default function Home() {
 
             {/* Info box */}
             <div style={{padding:14,background:'#0d1117',border:'1px solid #1f2937',borderRadius:8,fontSize:11,color:'#6b7280'}}>
-              <strong style={{color:'#67e8f9'}}>💡 Tips admin:</strong>
+              <strong style={{color:'#86EFAC'}}>💡 Tips admin:</strong>
               <ul style={{margin:'6px 0 0 20px',padding:0}}>
                 <li>Matikan akun bot yang lagi bermasalah daripada hapus — biar history tetap terjaga</li>
                 <li>Cleanup chat + backup lama sebulan sekali untuk hemat storage Supabase</li>
