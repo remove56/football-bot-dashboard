@@ -3744,7 +3744,7 @@ export default function Home() {
             })()}
 
             <div style={S.box}>
-              <h3 style={{color:'#F59E0B',marginBottom:4,fontSize:16}}>Performa Per Klub</h3>
+              <h3 style={{color:'#F59E0B',marginBottom:4,fontSize:17,fontWeight:700}}>Performa Per Klub</h3>
               <p style={{color:'#9ca3af',fontSize:11,margin:'0 0 16px 0'}}>
                 Konten Member dihitung dari Tracking Postingan (gambar1 + gambar2 + video per siklus).
                 Data bot dari activity_log. 30 hari terakhir.
@@ -3993,7 +3993,7 @@ export default function Home() {
             {/* Performa Member */}
             {isAdmin && (
               <div style={{...S.box,marginTop:24}}>
-                <h3 style={{color:'#F59E0B',marginBottom:16,fontSize:16}}>Performa Member — {MONTH_NAMES[wsMonth]} {wsYear}</h3>
+                <h3 style={{color:'#F59E0B',marginBottom:16,fontSize:17,fontWeight:700}}>Performa Member — {MONTH_NAMES[wsMonth]} {wsYear}</h3>
                 <table style={{width:'100%',borderCollapse:'collapse'}}>
                   <thead><tr><th style={S.th}>#</th><th style={S.th}>Member</th><th style={S.th}>Grup Diisi</th><th style={S.th}>Entri</th><th style={S.th}>Total Nilai</th></tr></thead>
                   <tbody>
@@ -4132,7 +4132,7 @@ export default function Home() {
 
             {/* LEADERBOARD MINGGUAN & BULANAN */}
             <div style={S.box}>
-              <h3 style={{color:'#F59E0B',marginBottom:8,fontSize:16}}>🏆 Leaderboard Performa Member</h3>
+              <h3 style={{color:'#F59E0B',marginBottom:8,fontSize:17,fontWeight:700}}>🏆 Leaderboard Performa Member</h3>
               <p style={{color:'#9ca3af',fontSize:12,marginBottom:16}}>
                 Ranking berdasarkan rata-rata persentase pencapaian dalam periode tertentu.
               </p>
@@ -4296,7 +4296,7 @@ export default function Home() {
 
             {/* Form submit */}
             <div style={S.box}>
-              <h3 style={{color:'#F59E0B',marginBottom:8,fontSize:16}}>Submit Postingan</h3>
+              <h3 style={{color:'#F59E0B',marginBottom:8,fontSize:17,fontWeight:700}}>Submit Postingan</h3>
               <p style={{color:'#9ca3af',fontSize:12,marginBottom:16}}>Target per grup: <strong>4 siklus</strong> (2 gambar + 1 video = 1 siklus)</p>
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:10,marginBottom:10}}>
                 <div><label style={{display:'block',fontSize:12,color:'#9ca3af',marginBottom:4}}>Grup</label>
@@ -4397,7 +4397,7 @@ export default function Home() {
             {/* Summary member (admin) */}
             {isAdmin && (
               <div style={{...S.box,marginTop:24}}>
-                <h3 style={{color:'#F59E0B',marginBottom:16,fontSize:16}}>Performa Member — {new Date(ptPeriod).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})}</h3>
+                <h3 style={{color:'#F59E0B',marginBottom:16,fontSize:17,fontWeight:700}}>Performa Member — {new Date(ptPeriod).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})}</h3>
                 <table style={{width:'100%',borderCollapse:'collapse'}}>
                   <thead><tr><th style={S.th}>#</th><th style={S.th}>Member</th><th style={S.th}>Grup</th><th style={S.th}>Gambar</th><th style={S.th}>Video</th><th style={S.th}>Siklus Selesai</th><th style={S.th}>Target (4/grup)</th><th style={S.th}>Progress</th></tr></thead>
                   <tbody>
@@ -4430,7 +4430,7 @@ export default function Home() {
           <>
             {/* Kelola Akun Bot GRUP */}
             <div style={S.box}>
-              <h3 style={{color:'#F59E0B',marginBottom:8,fontSize:16}}>Kelola Akun Bot Grup</h3>
+              <h3 style={{color:'#F59E0B',marginBottom:8,fontSize:17,fontWeight:700}}>Kelola Akun Bot Grup</h3>
               <p style={{color:'#9ca3af',fontSize:12,marginBottom:16}}>Tambah, edit, atau hapus akun Facebook untuk bot grup. Akun bot reels dikelola di tab "Reels Bot".</p>
 
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr auto',gap:10,marginBottom:10,alignItems:'end'}}>
@@ -4508,7 +4508,7 @@ export default function Home() {
             </div>
 
             <div style={S.box}>
-              <h3 style={{color:'#F59E0B',marginBottom:8,fontSize:16}}>Buat Tugas Posting</h3>
+              <h3 style={{color:'#F59E0B',marginBottom:8,fontSize:17,fontWeight:700}}>Buat Tugas Posting</h3>
               <p style={{color:'#9ca3af',fontSize:12,marginBottom:16}}>Pilih akun bot grup, pilih grup tujuan, bot akan posting atas nama akun tersebut.</p>
 
               {/* Selector akun bot grup */}
@@ -4796,7 +4796,7 @@ export default function Home() {
           <>
             {/* Kelola Akun Bot — per Platform (FB Reels / TikTok / IG) */}
             <div style={S.box}>
-              <h3 style={{color:'#F59E0B',marginBottom:8,fontSize:16}}>Kelola Akun Bot — Per Platform</h3>
+              <h3 style={{color:'#F59E0B',marginBottom:8,fontSize:17,fontWeight:700}}>Kelola Akun Bot — Per Platform</h3>
               <p style={{color:'#9ca3af',fontSize:12,marginBottom:16}}>Tambah akun untuk platform spesifik. Akun FB Reels = post ke beranda FB. TikTok = upload ke TikTok. Instagram = upload ke IG Reels.</p>
 
               {/* Form tambah/edit */}
@@ -4881,7 +4881,7 @@ export default function Home() {
 
             {/* Buat Tugas Reels */}
             <div style={S.box}>
-              <h3 style={{color:'#F59E0B',marginBottom:8,fontSize:16}}>Buat Tugas Reels — Video Highlight ke Beranda</h3>
+              <h3 style={{color:'#F59E0B',marginBottom:8,fontSize:17,fontWeight:700}}>Buat Tugas Reels — Video Highlight ke Beranda</h3>
               <p style={{color:'#9ca3af',fontSize:12,marginBottom:16}}>
                 Pilih akun reels untuk generate video 2 menit + watermark ColokNet → posting ke beranda.
               </p>
@@ -5015,7 +5015,7 @@ export default function Home() {
             {/* Form tambah grup (admin only) */}
             {isAdmin && (
               <div style={S.box}>
-                <h3 style={{color:'#F59E0B',marginBottom:16,fontSize:16}}>Tambah Grup Baru</h3>
+                <h3 style={{color:'#F59E0B',marginBottom:16,fontSize:17,fontWeight:700}}>Tambah Grup Baru</h3>
                 <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:10,marginBottom:10}}>
                   <div><label style={{display:'block',fontSize:12,color:'#9ca3af',marginBottom:4}}>Nama Klub</label><input style={S.input} placeholder="Real Madrid" value={grpClub} onChange={e=>setGrpClub(e.target.value)} /></div>
                   <div><label style={{display:'block',fontSize:12,color:'#9ca3af',marginBottom:4}}>Nama Grup</label><input style={S.input} placeholder="Info Seputar Real Madrid" value={grpName} onChange={e=>setGrpName(e.target.value)} /></div>
@@ -5156,7 +5156,7 @@ export default function Home() {
         {tab === 'submitlink' && (
           <>
             <div style={S.box}>
-              <h3 style={{color:'#F59E0B',marginBottom:16,fontSize:16}}>Submit Link Postingan</h3>
+              <h3 style={{color:'#F59E0B',marginBottom:16,fontSize:17,fontWeight:700}}>Submit Link Postingan</h3>
               <p style={{color:'#9ca3af',fontSize:13,marginBottom:20}}>Masukkan link postingan Facebook yang sudah kamu buat di grup.</p>
               <div style={{marginBottom:16}}>
                 <label style={{display:'block',fontSize:13,color:'#9ca3af',marginBottom:6}}>Pilih Grup</label>
@@ -5177,7 +5177,7 @@ export default function Home() {
             </div>
 
             <div style={S.box}>
-              <h3 style={{color:'#F59E0B',marginBottom:16,fontSize:16}}>{isAdmin?'Semua Link Disubmit':'Link Kamu'}</h3>
+              <h3 style={{color:'#F59E0B',marginBottom:16,fontSize:17,fontWeight:700}}>{isAdmin?'Semua Link Disubmit':'Link Kamu'}</h3>
               <table style={{width:'100%',borderCollapse:'collapse'}}>
                 <thead><tr><th style={S.th}>Grup</th><th style={S.th}>Link</th><th style={S.th}>Catatan</th><th style={S.th}>Status</th><th style={S.th}>User</th><th style={S.th}>Waktu</th>{isAdmin&&<th style={S.th}>Aksi</th>}</tr></thead>
                 <tbody>
@@ -5207,7 +5207,7 @@ export default function Home() {
         {tab === 'users' && isAdmin && (
           <>
             <div style={S.box}>
-              <h3 style={{color:'#F59E0B',marginBottom:16,fontSize:16}}>Tambah Member</h3>
+              <h3 style={{color:'#F59E0B',marginBottom:16,fontSize:17,fontWeight:700}}>Tambah Member</h3>
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr auto',gap:10,alignItems:'end'}}>
                 <div><label style={{display:'block',fontSize:13,color:'#9ca3af',marginBottom:6}}>Username</label><input style={S.input} value={newUser} onChange={e=>setNewUser(e.target.value)} /></div>
                 <div><label style={{display:'block',fontSize:13,color:'#9ca3af',marginBottom:6}}>Password</label><input style={S.input} value={newPass} onChange={e=>setNewPass(e.target.value)} /></div>
@@ -5217,7 +5217,7 @@ export default function Home() {
               {userMsg && <p style={{marginTop:12,fontSize:13,color:userMsg.includes('Error')?'#ef4444':'#10b981'}}>{userMsg}</p>}
             </div>
             <div style={S.box}>
-              <h3 style={{color:'#F59E0B',marginBottom:16,fontSize:16}}>Daftar User</h3>
+              <h3 style={{color:'#F59E0B',marginBottom:16,fontSize:17,fontWeight:700}}>Daftar User</h3>
               <p style={{color:'#9ca3af',fontSize:12,marginBottom:12}}>Edit target grup harian per member langsung di kolom Target. Tekan Enter atau klik di luar untuk simpan.</p>
               <table style={{width:'100%',borderCollapse:'collapse'}}>
                 <thead><tr><th style={S.th}>Username</th><th style={S.th}>Nama</th><th style={S.th}>Role</th><th style={S.th}>Target Grup/Hari</th><th style={S.th}>Dibuat</th><th style={S.th}>Aksi</th></tr></thead>
@@ -5257,7 +5257,7 @@ export default function Home() {
 
             {/* BACKUP & RESTORE */}
             <div style={S.box}>
-              <h3 style={{color:'#F59E0B',marginBottom:8,fontSize:16}}>💾 Backup & Restore</h3>
+              <h3 style={{color:'#F59E0B',marginBottom:8,fontSize:17,fontWeight:700}}>💾 Backup & Restore</h3>
               <p style={{color:'#9ca3af',fontSize:12,marginBottom:16}}>
                 Backup semua data (users, groups, bot_accounts, posting_tracker, target_notes, dll) ke file JSON.
                 Simpan file ini ke Google Drive / komputer untuk jaga-jaga.
