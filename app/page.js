@@ -5461,9 +5461,30 @@ export default function Home() {
 
           return (
             <>
-              {/* Filter + stats */}
+              {/* Header */}
+              <div style={{display:'flex',gap:12,alignItems:'center',marginBottom:16,flexWrap:'wrap'}}>
+                <h3 style={{margin:0,color:'#22C55E',fontSize:18,fontWeight:700}}>📋 Activity Timeline</h3>
+                <span style={{fontSize:12,color:'#9CA3AF'}}>Bot + member submissions, sorted terbaru</span>
+              </div>
+
+              {/* Filter + summary stats — Phase 3F polish */}
+              <div className="responsive-stats fade-in-stagger" style={{marginBottom:16}}>
+                <div className="card-hover" style={{...S.stat,textAlign:'center'}}>
+                  <div style={{fontSize:11,color:'#9CA3AF',textTransform:'uppercase',letterSpacing:1.2,fontWeight:500,marginBottom:8}}>Total Aktivitas</div>
+                  <div style={{...S.num,color:'#22C55E'}}><CountUp value={allEntries.length} /></div>
+                </div>
+                <div className="card-hover" style={{...S.stat,textAlign:'center'}}>
+                  <div style={{fontSize:11,color:'#9CA3AF',textTransform:'uppercase',letterSpacing:1.2,fontWeight:500,marginBottom:8}}>👤 Member</div>
+                  <div style={{...S.num,color:'#F59E0B'}}><CountUp value={memberEntries.length} /></div>
+                </div>
+                <div className="card-hover" style={{...S.stat,textAlign:'center'}}>
+                  <div style={{fontSize:11,color:'#9CA3AF',textTransform:'uppercase',letterSpacing:1.2,fontWeight:500,marginBottom:8}}>🤖 Bot</div>
+                  <div style={{...S.num,color:'#22C55E'}}><CountUp value={botEntries.length} /></div>
+                </div>
+              </div>
+
               <div style={{display:'flex',gap:10,marginBottom:16,flexWrap:'wrap',alignItems:'center'}}>
-                <input style={{...S.input,width:220,fontSize:11}} placeholder="🔍 Cari member / grup..." value={searchActivity} onChange={e=>setSearchActivity(e.target.value)}/>
+                <input style={{...S.input,width:240,fontSize:12}} placeholder="🔍 Cari member / grup..." value={searchActivity} onChange={e=>setSearchActivity(e.target.value)}/>
                 <div style={{display:'flex',gap:6}}>
                   {[
                     { id: 'all', label: `Semua (${allEntries.length})` },
@@ -5471,38 +5492,43 @@ export default function Home() {
                     { id: 'bot', label: `🤖 Bot (${botEntries.length})` },
                   ].map(f => (
                     <button key={f.id} onClick={()=>setActivityFilter(f.id)} style={{
-                      padding:'8px 14px',fontSize:11,borderRadius:4,border:'1px solid #1f2937',cursor:'pointer',
-                      background: activityFilter === f.id ? '#0c4a6e' : '#111827',
-                      color: activityFilter === f.id ? '#86EFAC' : '#9ca3af',
-                      fontWeight: activityFilter === f.id ? 700 : 400,
+                      padding:'8px 14px',fontSize:11,borderRadius:8,cursor:'pointer',
+                      background: activityFilter === f.id ? 'rgba(34,197,94,0.12)' : 'transparent',
+                      color: activityFilter === f.id ? '#22C55E' : '#9CA3AF',
+                      border: '1px solid ' + (activityFilter === f.id ? 'rgba(34,197,94,0.35)' : 'rgba(255,255,255,0.08)'),
+                      fontWeight: activityFilter === f.id ? 600 : 400,
+                      transition: 'all 150ms cubic-bezier(0.22,1,0.36,1)',
                     }}>{f.label}</button>
                   ))}
                 </div>
-                <span style={{fontSize:11,color:'#6b7280',marginLeft:'auto'}}>Menampilkan {Math.min(filtered.length, 200)} dari {filtered.length} entri</span>
+                <span style={{fontSize:11,color:'#9CA3AF',marginLeft:'auto'}}>Menampilkan {Math.min(filtered.length, 200)} dari {filtered.length} entri</span>
               </div>
 
-              <div style={{background:'#111827',borderRadius:12,overflow:'hidden',border:'1px solid #1f2937'}}>
+              <div className="card-hover" style={{...S.box,padding:0,overflow:'hidden',marginBottom:0}}>
                 {filtered.slice(0, 200).map(e => (
-                  <div key={e.key} style={{padding:'12px 16px',borderBottom:'1px solid #1f2937',display:'flex',justifyContent:'space-between',alignItems:'center',gap:12}}>
+                  <div key={e.key} style={{padding:'14px 18px',borderBottom:'1px solid rgba(255,255,255,0.06)',display:'flex',justifyContent:'space-between',alignItems:'center',gap:12,transition:'background 150ms cubic-bezier(0.22,1,0.36,1)'}}
+                    onMouseEnter={ev=>ev.currentTarget.style.background='rgba(34,197,94,0.04)'}
+                    onMouseLeave={ev=>ev.currentTarget.style.background='transparent'}>
                     <div style={{flex:1,minWidth:0}}>
-                      <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:3}}>
+                      <div style={{display:'flex',alignItems:'center',gap:8,marginBottom:4}}>
                         <span style={{fontSize:14}}>{e.icon}</span>
                         <span style={{
-                          padding:'2px 8px',
-                          borderRadius:3,
+                          padding:'3px 8px',
+                          borderRadius:6,
                           fontSize:9,
-                          fontWeight:700,
+                          fontWeight:600,
                           textTransform:'uppercase',
                           letterSpacing:1,
-                          background: e.type === 'bot' ? '#1e3a5f' : '#064e3b',
-                          color: e.type === 'bot' ? '#60a5fa' : '#6ee7b7',
+                          background: e.type === 'bot' ? 'rgba(99,102,241,0.12)' : 'rgba(34,197,94,0.12)',
+                          color: e.type === 'bot' ? '#818CF8' : '#22C55E',
+                          border: '1px solid ' + (e.type === 'bot' ? 'rgba(99,102,241,0.30)' : 'rgba(34,197,94,0.30)'),
                         }}>{e.type === 'bot' ? 'BOT' : 'MEMBER'}</span>
-                        {e.action && <span style={{fontSize:9,color:'#6b7280'}}>{e.action}</span>}
+                        {e.action && <span style={{fontSize:9,color:'#9CA3AF'}}>{e.action}</span>}
                       </div>
-                      <div style={{fontSize:13,color:'#e0f2fe',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{e.title}</div>
-                      {e.subtitle && <div style={{fontSize:10,color:'#6b7280',marginTop:2}}>{e.subtitle}</div>}
+                      <div style={{fontSize:13,color:'#E5E7EB',whiteSpace:'nowrap',overflow:'hidden',textOverflow:'ellipsis'}}>{e.title}</div>
+                      {e.subtitle && <div style={{fontSize:10,color:'#9CA3AF',marginTop:2}}>{e.subtitle}</div>}
                     </div>
-                    <div style={{textAlign:'right',fontSize:10,color:'#6b7280',minWidth:140,flexShrink:0}}>
+                    <div style={{textAlign:'right',fontSize:10,color:'#9CA3AF',minWidth:140,flexShrink:0}}>
                       {e.success ? (
                         <span style={{...S.badge('ok'),fontSize:9}}>OK</span>
                       ) : (
@@ -5510,11 +5536,11 @@ export default function Home() {
                       )}
                       <br/>
                       <span>{new Date(e.timestamp).toLocaleString('id-ID',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}</span>
-                      {e.link && <> · <a href={e.link} target="_blank" rel="noreferrer" style={{color:'#86EFAC',textDecoration:'none'}}>lihat</a></>}
+                      {e.link && <> · <a href={e.link} target="_blank" rel="noreferrer" style={{color:'#22C55E',textDecoration:'none',fontWeight:600}}>lihat</a></>}
                     </div>
                   </div>
                 ))}
-                {filtered.length === 0 && <div style={{padding:30,textAlign:'center',color:'#6b7280'}}>Belum ada aktivitas {activityFilter !== 'all' ? `untuk tipe ${activityFilter}` : ''}</div>}
+                {filtered.length === 0 && <div style={{padding:30,textAlign:'center',color:'#9CA3AF'}}>Belum ada aktivitas {activityFilter !== 'all' ? `untuk tipe ${activityFilter}` : ''}</div>}
               </div>
             </>
           );
