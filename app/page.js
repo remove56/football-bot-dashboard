@@ -5702,27 +5702,27 @@ export default function Home() {
           return (
             <>
               <div style={{display:'flex',gap:12,alignItems:'center',marginBottom:16,flexWrap:'wrap'}}>
-                <h3 style={{margin:0,color:'#22C55E'}}>⏰ Best Posting Time per Grup</h3>
-                <button onClick={() => loadBestTimeGroups()} style={{padding:'6px 14px',background:'#15803D',color:'#fff',border:'none',borderRadius:6,cursor:'pointer',fontSize:13}}>🔄 Refresh</button>
+                <h3 style={{margin:0,color:'#22C55E',fontSize:18,fontWeight:700}}>⏰ Best Posting Time per Grup</h3>
+                <button onClick={() => loadBestTimeGroups()} style={S.btn()}>🔄 Refresh</button>
               </div>
 
-              <p style={{fontSize:13,color:'#94a3b8',marginBottom:16}}>
+              <p style={{fontSize:13,color:'#9CA3AF',marginBottom:16}}>
                 Heatmap engagement score (likes + komentar×2 + share×3) per jam × hari.
                 Warna lebih hijau = engagement lebih tinggi. Bot scrape data tiap 6 jam, butuh 1-2 minggu data biar pattern keliatan.
               </p>
 
               {bestTimeGroups.length === 0 ? (
-                <div style={{padding:24,background:'#0f172a',borderRadius:8,textAlign:'center',color:'#94a3b8'}}>
+                <div style={{...S.box,textAlign:'center',color:'#9CA3AF'}}>
                   Belum ada data engagement. Bot harus posting dulu beberapa hari, lalu engagement-tracker akan scrape otomatis.
                 </div>
               ) : (
                 <>
-                  <div style={{marginBottom:16}}>
-                    <label style={{fontSize:13,color:'#94a3b8',marginRight:8}}>Pilih Grup:</label>
+                  <div style={{marginBottom:16,display:'flex',alignItems:'center',gap:10}}>
+                    <label style={{fontSize:13,color:'#9CA3AF'}}>Pilih Grup:</label>
                     <select
                       value={bestTimeSelectedGroup}
                       onChange={(e) => { setBestTimeSelectedGroup(e.target.value); loadBestTimeData(e.target.value); }}
-                      style={{padding:'6px 12px',background:'#1e293b',color:'#e2e8f0',border:'1px solid #334155',borderRadius:6,minWidth:280}}
+                      style={{...S.input,width:'auto',minWidth:300}}
                     >
                       {bestTimeGroups.map(g => (
                         <option key={g.group_id} value={g.group_id}>{g.group_name} ({g.post_count} post)</option>
@@ -5730,29 +5730,33 @@ export default function Home() {
                     </select>
                   </div>
 
-                  {bestTimeLoading && <div style={{color:'#94a3b8'}}>Loading...</div>}
+                  {bestTimeLoading && <div style={{color:'#9CA3AF'}}>Loading...</div>}
 
-                  {/* Heatmap 24 jam × 7 hari */}
-                  <div style={{overflowX:'auto',marginBottom:24}}>
-                    <table style={{borderCollapse:'collapse',fontSize:11}}>
+                  {/* Heatmap 24 jam × 7 hari — wrapped in S.box card */}
+                  <div className="card-hover" style={{...S.box,overflowX:'auto'}}>
+                    <div style={{marginBottom:12}}>
+                      <span className="hud-label">📊 Heatmap Engagement</span>
+                    </div>
+                    <table style={{borderCollapse:'separate',borderSpacing:2,fontSize:11,margin:'0 auto'}}>
                       <thead>
                         <tr>
-                          <th style={{padding:6,color:'#94a3b8',textAlign:'right'}}>Jam</th>
-                          {DOW_LABELS.map(d => <th key={d} style={{padding:6,color:'#94a3b8',width:50,textAlign:'center'}}>{d}</th>)}
+                          <th style={{padding:6,color:'#9CA3AF',textAlign:'right',fontWeight:600}}>Jam</th>
+                          {DOW_LABELS.map(d => <th key={d} style={{padding:6,color:'#9CA3AF',width:54,textAlign:'center',fontWeight:600,textTransform:'uppercase',letterSpacing:1}}>{d}</th>)}
                         </tr>
                       </thead>
                       <tbody>
                         {Array.from({length:24}, (_, h) => (
                           <tr key={h}>
-                            <td style={{padding:'2px 8px',color:'#64748b',textAlign:'right',fontFamily:'monospace'}}>{String(h).padStart(2,'0')}:00</td>
+                            <td style={{padding:'2px 8px',color:'#9CA3AF',textAlign:'right',fontFamily:'ui-monospace,monospace',fontSize:10}}>{String(h).padStart(2,'0')}:00</td>
                             {Array.from({length:7}, (_, d) => {
                               const cell = cellMap[`${h}-${d}`];
                               const score = cell?.engagement_score || 0;
                               return (
                                 <td key={d} title={cell ? `${cell.post_count} post — likes ${cell.avg_likes} | comments ${cell.avg_comments} | shares ${cell.avg_shares}` : 'No data'} style={{
-                                  padding:0, height:28, width:50, textAlign:'center',
-                                  background: cellColor(score), color:'#fff', fontSize:10, fontFamily:'monospace',
-                                  border:'1px solid #0f172a',
+                                  padding:0, height:30, width:54, textAlign:'center',
+                                  background: cellColor(score), color:'#fff', fontSize:10, fontWeight:600, fontFamily:'ui-monospace,monospace',
+                                  borderRadius:4, transition:'transform 150ms cubic-bezier(0.22,1,0.36,1)',
+                                  cursor: cell ? 'pointer' : 'default',
                                 }}>
                                   {cell ? Math.round(score) : ''}
                                 </td>
@@ -5764,9 +5768,11 @@ export default function Home() {
                     </table>
                   </div>
 
-                  {/* Best Hours summary */}
-                  <div style={{padding:16,background:'#0f172a',borderRadius:8,border:'1px solid #15803D'}}>
-                    <h4 style={{margin:'0 0 12px 0',color:'#22C55E',fontSize:14}}>🏆 Top 3 Jam Terbaik (gabungan semua hari)</h4>
+                  {/* Best Hours summary — Phase 3E polish dgn CountUp */}
+                  <div className="card-hover" style={{...S.box,marginTop:16,marginBottom:0,borderColor:'rgba(34,197,94,0.30)'}}>
+                    <div style={{marginBottom:12}}>
+                      <span className="hud-label">🏆 Top 3 Jam Terbaik</span>
+                    </div>
                     {bestTimeData.bestHours.length === 0 ? (
                       <p style={{fontSize:13,color:'#94a3b8',margin:0}}>Data belum cukup (butuh min. 3 post per slot jam).</p>
                     ) : (
@@ -5878,28 +5884,47 @@ export default function Home() {
           return (
             <>
               <div style={{display:'flex',gap:12,alignItems:'center',marginBottom:16,flexWrap:'wrap'}}>
-                <h3 style={{margin:0,color:'#22C55E'}}>🅰️🅱️ Caption A/B Test Analysis</h3>
-                <button onClick={loadCaptionAB} style={{padding:'6px 14px',background:'#15803D',color:'#fff',border:'none',borderRadius:6,cursor:'pointer',fontSize:13}}>🔄 Refresh</button>
-                <span style={{fontSize:12,color:'#94a3b8'}}>{captionAB.totalSamples} sampel total (30 hari)</span>
+                <h3 style={{margin:0,color:'#22C55E',fontSize:18,fontWeight:700}}>🅰️🅱️ Caption A/B Test Analysis</h3>
+                <button onClick={loadCaptionAB} style={S.btn()}>🔄 Refresh</button>
               </div>
 
-              <p style={{fontSize:13,color:'#94a3b8',marginBottom:16}}>
+              <p style={{fontSize:13,color:'#9CA3AF',marginBottom:16}}>
                 Bot otomatis pilih random dari 50 template + 50 promo. Tabel ini ranking
                 template/promo berdasarkan engagement score (likes + komentar×2 + share×3).
                 Butuh minimal 3 sampel per kombinasi untuk muncul. Data akan akurat setelah 1-2 minggu posting.
               </p>
 
-              {captionABLoading && <div style={{color:'#94a3b8'}}>Loading...</div>}
+              {/* Summary stats — Phase 3E polish */}
+              <div className="responsive-stats fade-in-stagger" style={{marginBottom:20}}>
+                <div className="card-hover" style={{...S.stat,textAlign:'center'}}>
+                  <div style={{fontSize:11,color:'#9CA3AF',textTransform:'uppercase',letterSpacing:1.2,fontWeight:500,marginBottom:8}}>Total Sampel (30d)</div>
+                  <div style={{...S.num,color:'#22C55E'}}><CountUp value={captionAB.totalSamples} duration={900} /></div>
+                </div>
+                <div className="card-hover" style={{...S.stat,textAlign:'center'}}>
+                  <div style={{fontSize:11,color:'#9CA3AF',textTransform:'uppercase',letterSpacing:1.2,fontWeight:500,marginBottom:8}}>Templates Ranked</div>
+                  <div style={{...S.num,color:'#F59E0B'}}><CountUp value={captionAB.templates?.length || 0} /></div>
+                </div>
+                <div className="card-hover" style={{...S.stat,textAlign:'center'}}>
+                  <div style={{fontSize:11,color:'#9CA3AF',textTransform:'uppercase',letterSpacing:1.2,fontWeight:500,marginBottom:8}}>Promos Ranked</div>
+                  <div style={{...S.num,color:'#F59E0B'}}><CountUp value={captionAB.promos?.length || 0} /></div>
+                </div>
+                <div className="card-hover" style={{...S.stat,textAlign:'center'}}>
+                  <div style={{fontSize:11,color:'#9CA3AF',textTransform:'uppercase',letterSpacing:1.2,fontWeight:500,marginBottom:8}}>Top Score</div>
+                  <div style={{...S.num,color:'#22C55E'}}><CountUp value={captionAB.templates?.[0]?.avg_engagement || 0} /></div>
+                </div>
+              </div>
+
+              {captionABLoading && <div style={{color:'#9CA3AF'}}>Loading...</div>}
 
               {captionAB.totalSamples === 0 ? (
-                <div style={{padding:24,background:'#0f172a',borderRadius:8,textAlign:'center',color:'#94a3b8'}}>
+                <div style={{...S.box,textAlign:'center',color:'#9CA3AF'}}>
                   Belum ada data. Bot harus posting beberapa hari + engagement-tracker scrape data engagement-nya.
                 </div>
               ) : (
-                <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:24}}>
+                <div className="responsive-grid-2 fade-in-stagger" style={{gap:16}}>
                   {/* Template ranking */}
-                  <div>
-                    <h4 style={{color:'#22C55E',marginBottom:8,fontSize:14}}>📋 Template Caption Ranking (50 templates)</h4>
+                  <div className="card-hover" style={{...S.box,marginBottom:0}}>
+                    <h4 style={{color:'#22C55E',marginBottom:12,fontSize:14,fontWeight:700}}>📋 Template Caption Ranking (50 templates)</h4>
                     <table style={{width:'100%',borderCollapse:'collapse',fontSize:12}}>
                       <thead>
                         <tr style={{background:'#1e293b',color:'#94a3b8'}}>
@@ -5929,8 +5954,8 @@ export default function Home() {
                   </div>
 
                   {/* Promo ranking */}
-                  <div>
-                    <h4 style={{color:'#22C55E',marginBottom:8,fontSize:14}}>📢 Promo Text Ranking (50 promos)</h4>
+                  <div className="card-hover" style={{...S.box,marginBottom:0}}>
+                    <h4 style={{color:'#22C55E',marginBottom:12,fontSize:14,fontWeight:700}}>📢 Promo Text Ranking (50 promos)</h4>
                     <table style={{width:'100%',borderCollapse:'collapse',fontSize:12}}>
                       <thead>
                         <tr style={{background:'#1e293b',color:'#94a3b8'}}>
