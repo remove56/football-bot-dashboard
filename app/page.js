@@ -416,7 +416,7 @@ function LoginScreen({ onLogin }) {
 // ============================================================
 // MAIN APP
 // ============================================================
-// ── HUD Star Field component (canvas, animated stars drifting) ──
+// ── HUD Star Field — agresif: 320 bintang regular + 6 shooting stars ──
 function HudStarField() {
   const ref = React.useRef(null);
   React.useEffect(() => {
@@ -425,25 +425,75 @@ function HudStarField() {
     let raf;
     const resize = () => { cv.width = window.innerWidth; cv.height = window.innerHeight; };
     resize(); window.addEventListener('resize', resize);
-    const stars = Array.from({ length: 140 }, () => ({
+
+    // Regular stars — 320 (was 140), 3x kecepatan (was 0.06 → 0.20 max)
+    const stars = Array.from({ length: 320 }, () => ({
       x: Math.random() * cv.width,
       y: Math.random() * cv.height,
-      r: Math.random() * 1.4 + 0.3,
-      vy: Math.random() * 0.06 + 0.015,
-      o: Math.random() * 0.5 + 0.2,
-      tw: (Math.random() - 0.5) * 0.015,
+      r: Math.random() * 1.8 + 0.3,
+      vy: Math.random() * 0.20 + 0.05,    // 3x lebih cepat
+      o: Math.random() * 0.6 + 0.25,
+      tw: (Math.random() - 0.5) * 0.025,  // twinkle lebih agresif
+      // 20% bintang dapat warna biru terang, sisanya cyan biasa
+      hue: Math.random() < 0.2 ? '34, 197, 94' : '34, 211, 238',
     }));
+
+    // Shooting stars — sesekali melintas diagonal kiri→kanan, bawah→atas
+    const shootingStars = Array.from({ length: 6 }, () => ({
+      x: -50, y: 0, vx: 0, vy: 0, life: 0, maxLife: 0,
+    }));
+    const spawnShootingStar = (s) => {
+      s.x = Math.random() * cv.width * 0.4;
+      s.y = -20 + Math.random() * cv.height * 0.5;
+      s.vx = 8 + Math.random() * 10;
+      s.vy = 4 + Math.random() * 6;
+      s.life = 0;
+      s.maxLife = 60 + Math.random() * 60;
+    };
+    shootingStars.forEach(s => { spawnShootingStar(s); s.life = Math.random() * s.maxLife; });
+
     const draw = () => {
       ctx.clearRect(0, 0, cv.width, cv.height);
+
+      // Regular stars
       stars.forEach(s => {
         s.y += s.vy;
-        s.o += s.tw; if (s.o > 0.85 || s.o < 0.15) s.tw *= -1;
-        if (s.y > cv.height) { s.y = 0; s.x = Math.random() * cv.width; }
-        ctx.fillStyle = `rgba(34, 211, 238, ${s.o})`;
+        s.o += s.tw; if (s.o > 0.95 || s.o < 0.1) s.tw *= -1;
+        if (s.y > cv.height) { s.y = -5; s.x = Math.random() * cv.width; }
+        ctx.fillStyle = `rgba(${s.hue}, ${s.o})`;
         ctx.beginPath();
         ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
         ctx.fill();
       });
+
+      // Shooting stars (bintang jatuh dengan trail)
+      shootingStars.forEach(s => {
+        s.x += s.vx;
+        s.y += s.vy;
+        s.life++;
+        if (s.life > s.maxLife || s.x > cv.width + 50 || s.y > cv.height + 50) {
+          spawnShootingStar(s);
+          return;
+        }
+        const fade = s.life < 10 ? s.life / 10 : s.life > s.maxLife - 20 ? (s.maxLife - s.life) / 20 : 1;
+        // Trail: gradient line
+        const trailLen = 60;
+        const grd = ctx.createLinearGradient(s.x, s.y, s.x - s.vx * 6, s.y - s.vy * 6);
+        grd.addColorStop(0, `rgba(34, 211, 238, ${fade * 0.9})`);
+        grd.addColorStop(1, 'rgba(34, 211, 238, 0)');
+        ctx.strokeStyle = grd;
+        ctx.lineWidth = 1.6;
+        ctx.beginPath();
+        ctx.moveTo(s.x, s.y);
+        ctx.lineTo(s.x - s.vx * 6, s.y - s.vy * 6);
+        ctx.stroke();
+        // Head: bright dot
+        ctx.fillStyle = `rgba(255, 255, 255, ${fade})`;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, 1.6, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
       raf = requestAnimationFrame(draw);
     };
     draw();
@@ -456,7 +506,8 @@ export default function Home() {
   const [user, setUser] = useState(null);
   const [tab, setTab] = useState('');
   // HUD mode: normal | hud-a | hud-b — persists in localStorage, applied via body className
-  const [hudMode, setHudMode] = useState('normal');
+  // Default = 'hud-b' (mode utama), tapi respect saved preference user.
+  const [hudMode, setHudMode] = useState('hud-b');
   useEffect(() => {
     const saved = localStorage.getItem('fb-dash-hudmode');
     if (saved === 'hud-a' || saved === 'hud-b' || saved === 'normal') setHudMode(saved);
