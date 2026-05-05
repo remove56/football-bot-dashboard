@@ -92,6 +92,40 @@ function CountUp({ value, duration = 800 }) {
   return display.toLocaleString('id-ID');
 }
 
+// ============================================================
+// VIDEO URL DETECTION — Phase 4
+// Detect apakah URL kemungkinan video (true) atau gambar (false) atau ambiguous (null).
+// Pattern-based, zero network call. Used untuk validate Submit Postingan field "Video".
+// ============================================================
+function classifyMediaUrl(url) {
+  if (!url) return null;
+  const u = url.toLowerCase().trim();
+
+  // === REJECT clear image patterns ===
+  if (/\.(jpg|jpeg|png|gif|webp|bmp|tiff|svg|ico|heic|heif)(\?|#|$)/.test(u)) return 'image';
+  if (/facebook\.com\/.*\/photos?\//.test(u)) return 'image';   // FB photo album URLs
+  if (/facebook\.com\/photo(\?|\/|$)/.test(u)) return 'image';  // facebook.com/photo?fbid=...
+  if (/imgur\.com\/[a-z0-9]+(\.|$)/.test(u) && !/\/(gallery|video|gifv)/.test(u)) return 'image';
+  if (/i\.imgur\.com|i\.redd\.it|images\.unsplash\.com/.test(u)) return 'image';
+  if (/[?&]type=3/.test(u) && /facebook\.com/.test(u)) return 'image'; // FB photo type=3
+
+  // === ACCEPT clear video patterns ===
+  if (/\.(mp4|mov|webm|mkv|avi|m4v|flv|wmv)(\?|#|$)/.test(u)) return 'video';
+  if (/facebook\.com\/(reel|reels)\//.test(u)) return 'video';
+  if (/facebook\.com\/.*\/videos?\//.test(u)) return 'video';
+  if (/facebook\.com\/watch\b/.test(u)) return 'video';
+  if (/youtube\.com\/(watch|shorts|embed)/.test(u) || /youtu\.be\//.test(u)) return 'video';
+  if (/tiktok\.com\/.*\/video\//.test(u) || /vm\.tiktok\.com|vt\.tiktok\.com/.test(u)) return 'video';
+  if (/instagram\.com\/(reel|reels|tv)\//.test(u)) return 'video';
+  if (/twitter\.com\/.*\/status\/.*\/video|x\.com\/.*\/status\/.*\/video/.test(u)) return 'video';
+  if (/vimeo\.com\/\d+/.test(u)) return 'video';
+  if (/dailymotion\.com\/video\//.test(u)) return 'video';
+
+  // === AMBIGUOUS (Facebook generic post URL — could be image OR video) ===
+  // Member harus follow rules; bot bisa cek server-side via Content-Type kalau perlu
+  return null;
+}
+
 const LEAGUE_COLORS = {'La Liga':'#22C55E','Premier League':'#60a5fa','Serie A':'#86EFAC','Bundesliga':'#16A34A','Ligue 1':'#38bdf8','Liga 1':'#7dd3fc','Timnas':'#0ea5e9','Pemain':'#a5f3fc'};
 
 // ============================================================
@@ -1124,6 +1158,19 @@ export default function Home() {
     if (!ptLink.trim() || !ptGroup) { setPtMsg('Link dan grup wajib diisi!'); return; }
 
     const linkTrimmed = ptLink.trim();
+
+    // ── CEK 0: Validate media type sesuai field type (Phase 4) ──
+    // Reject obvious mismatch (image link masuk Video field, atau sebaliknya)
+    const detectedType = classifyMediaUrl(linkTrimmed);
+    if (ptType === 'video' && detectedType === 'image') {
+      setPtMsg('❌ DITOLAK: Link ini terdeteksi sebagai GAMBAR (jpg/png/photo). Field "Video" hanya untuk link video (FB Reels, YouTube, TikTok, .mp4, dll).');
+      return;
+    }
+    if ((ptType === 'gambar1' || ptType === 'gambar2') && detectedType === 'video') {
+      setPtMsg('❌ DITOLAK: Link ini terdeteksi sebagai VIDEO (Reels/YouTube/.mp4). Field "Gambar" hanya untuk link gambar/foto. Pilih "Video" di Jenis kalau mau submit video.');
+      return;
+    }
+
     const fingerprint = normalizeContentUrl(linkTrimmed);
 
     // ── CEK 1: Exact URL match di posting_tracker (semua tanggal) ──
@@ -4294,42 +4341,82 @@ export default function Home() {
               </div>
             )}
 
-            {/* Form submit */}
-            <div style={S.box}>
-              <h3 style={{color:'#F59E0B',marginBottom:8,fontSize:17,fontWeight:700}}>Submit Postingan</h3>
-              <p style={{color:'#9ca3af',fontSize:12,marginBottom:16}}>Target per grup: <strong>4 siklus</strong> (2 gambar + 1 video = 1 siklus)</p>
-              <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:10,marginBottom:10}}>
-                <div><label style={{display:'block',fontSize:12,color:'#9ca3af',marginBottom:4}}>Grup</label>
-                  <select style={S.input} value={ptGroup} onChange={e=>setPtGroup(e.target.value)}>
-                    <option value="">Pilih Grup</option>
-                    {groups.map(g=><option key={g.id} value={g.id}>{g.name} ({g.club})</option>)}
-                  </select>
+            {/* Form submit — Phase 4 dgn validasi tipe media */}
+            {(() => {
+              // Visual hint berdasarkan ptType yang dipilih
+              const isVideoMode = ptType === 'video';
+              const detectedType = ptLink.trim() ? classifyMediaUrl(ptLink.trim()) : null;
+              // Mismatch warning: detected type ≠ selected type
+              const mismatch = detectedType && (
+                (isVideoMode && detectedType === 'image') ||
+                (!isVideoMode && detectedType === 'video')
+              );
+              const placeholderText = isVideoMode
+                ? '🎥 Link video saja: FB Reels, YouTube, TikTok, .mp4, dll'
+                : '🖼️ Link gambar/post FB: facebook.com/groups/.../posts/... atau /photos/...';
+              const accentColor = isVideoMode ? '#F59E0B' : '#22C55E';
+
+              return (
+                <div style={S.box}>
+                  <h3 style={{color:'#F59E0B',marginBottom:8,fontSize:17,fontWeight:700}}>Submit Postingan</h3>
+                  <p style={{color:'#9ca3af',fontSize:12,marginBottom:16}}>Target per grup: <strong>4 siklus</strong> (2 gambar + 1 video = 1 siklus)</p>
+                  <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr',gap:10,marginBottom:10}}>
+                    <div><label style={{display:'block',fontSize:12,color:'#9ca3af',marginBottom:4}}>Grup</label>
+                      <select style={S.input} value={ptGroup} onChange={e=>setPtGroup(e.target.value)}>
+                        <option value="">Pilih Grup</option>
+                        {groups.map(g=><option key={g.id} value={g.id}>{g.name} ({g.club})</option>)}
+                      </select>
+                    </div>
+                    <div><label style={{display:'block',fontSize:12,color:'#9ca3af',marginBottom:4}}>Siklus ke-</label>
+                      <select style={S.input} value={ptCycle} onChange={e=>setPtCycle(parseInt(e.target.value))}>
+                        <option value={1}>Siklus 1</option><option value={2}>Siklus 2</option>
+                        <option value={3}>Siklus 3</option><option value={4}>Siklus 4</option>
+                      </select>
+                    </div>
+                    <div><label style={{display:'block',fontSize:12,color:'#9ca3af',marginBottom:4}}>Jenis</label>
+                      <select style={{...S.input,borderColor:accentColor,color:accentColor,fontWeight:600}} value={ptType} onChange={e=>setPtType(e.target.value)}>
+                        <option value="gambar1" style={{color:'#E5E7EB'}}>🖼️ Gambar 1</option>
+                        <option value="gambar2" style={{color:'#E5E7EB'}}>🖼️ Gambar 2</option>
+                        <option value="video" style={{color:'#E5E7EB'}}>🎥 Video</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div style={{display:'grid',gridTemplateColumns:'1fr auto auto',gap:10,alignItems:'end'}}>
+                    <div>
+                      <label style={{display:'block',fontSize:12,color:'#9ca3af',marginBottom:4}}>
+                        Link {isVideoMode ? 'Video' : 'Gambar/Postingan'}
+                        <span style={{marginLeft:6,padding:'1px 6px',borderRadius:4,fontSize:9,fontWeight:700,background:isVideoMode?'rgba(245,158,11,0.15)':'rgba(34,197,94,0.15)',color:accentColor,border:`1px solid ${accentColor}40`,letterSpacing:0.5}}>
+                          {isVideoMode ? 'VIDEO ONLY' : 'IMAGE/POST'}
+                        </span>
+                      </label>
+                      <input
+                        style={{...S.input,borderColor:mismatch?'#EF4444':(detectedType?accentColor:'rgba(255,255,255,0.08)')}}
+                        placeholder={placeholderText}
+                        value={ptLink}
+                        onChange={e=>setPtLink(e.target.value)}
+                      />
+                      {mismatch && (
+                        <p style={{marginTop:6,fontSize:11,color:'#EF4444',display:'flex',alignItems:'center',gap:4}}>
+                          ⚠️ Link terdeteksi sebagai <strong>{detectedType === 'image' ? 'GAMBAR' : 'VIDEO'}</strong> tapi lo pilih jenis "{isVideoMode ? 'Video' : ptType === 'gambar1' ? 'Gambar 1' : 'Gambar 2'}". Submit akan ditolak.
+                        </p>
+                      )}
+                      {!mismatch && detectedType && (
+                        <p style={{marginTop:6,fontSize:11,color:'#22C55E'}}>
+                          ✓ Link terdeteksi sebagai <strong>{detectedType.toUpperCase()}</strong> — sesuai dengan jenis pilihan.
+                        </p>
+                      )}
+                    </div>
+                    <button onClick={submitPostLink} disabled={mismatch} style={{...S.btn('#065f46'),padding:'10px 24px',opacity:mismatch?0.5:1,cursor:mismatch?'not-allowed':'pointer'}}>Submit</button>
+                    <button onClick={deletePostField} style={{...S.btn('#991b1b'),padding:'10px 18px'}} title="Hapus slot yang dipilih di atas (Grup + Siklus + Jenis)">Hapus</button>
+                  </div>
+                  <div style={{display:'flex',gap:10,alignItems:'center',marginTop:10}}>
+                    <label style={{fontSize:12,color:'#9ca3af'}}>Tanggal:</label>
+                    <input type="date" style={{...S.input,width:180}} value={ptPeriod} onChange={e=>{setPtPeriod(e.target.value);loadPostTracker(e.target.value)}} />
+                  </div>
+                  {ptMsg && <p style={{marginTop:8,fontSize:13,color:ptMsg.includes('Error')||ptMsg.includes('DITOLAK')?'#ef4444':'#10b981'}}>{ptMsg}</p>}
                 </div>
-                <div><label style={{display:'block',fontSize:12,color:'#9ca3af',marginBottom:4}}>Siklus ke-</label>
-                  <select style={S.input} value={ptCycle} onChange={e=>setPtCycle(parseInt(e.target.value))}>
-                    <option value={1}>Siklus 1</option><option value={2}>Siklus 2</option>
-                    <option value={3}>Siklus 3</option><option value={4}>Siklus 4</option>
-                  </select>
-                </div>
-                <div><label style={{display:'block',fontSize:12,color:'#9ca3af',marginBottom:4}}>Jenis</label>
-                  <select style={S.input} value={ptType} onChange={e=>setPtType(e.target.value)}>
-                    <option value="gambar1">Gambar 1</option><option value="gambar2">Gambar 2</option>
-                    <option value="video">Video</option>
-                  </select>
-                </div>
-              </div>
-              <div style={{display:'grid',gridTemplateColumns:'1fr auto auto',gap:10,alignItems:'end'}}>
-                <div><label style={{display:'block',fontSize:12,color:'#9ca3af',marginBottom:4}}>Link Postingan</label>
-                  <input style={S.input} placeholder="https://www.facebook.com/groups/.../posts/..." value={ptLink} onChange={e=>setPtLink(e.target.value)} /></div>
-                <button onClick={submitPostLink} style={{...S.btn('#065f46'),padding:'10px 24px'}}>Submit</button>
-                <button onClick={deletePostField} style={{...S.btn('#991b1b'),padding:'10px 18px'}} title="Hapus slot yang dipilih di atas (Grup + Siklus + Jenis)">Hapus</button>
-              </div>
-              <div style={{display:'flex',gap:10,alignItems:'center',marginTop:10}}>
-                <label style={{fontSize:12,color:'#9ca3af'}}>Tanggal:</label>
-                <input type="date" style={{...S.input,width:180}} value={ptPeriod} onChange={e=>{setPtPeriod(e.target.value);loadPostTracker(e.target.value)}} />
-              </div>
-              {ptMsg && <p style={{marginTop:8,fontSize:13,color:ptMsg.includes('Error')?'#ef4444':'#10b981'}}>{ptMsg}</p>}
-            </div>
+              );
+            })()}
 
             {/* Tabel tracking per grup */}
             <div style={{...S.box,padding:0,overflow:'auto'}}>
