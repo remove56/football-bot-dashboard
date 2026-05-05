@@ -23,6 +23,8 @@ export default function RootLayout({ children }) {
             --accent:         #22d3ee;  /* cyan-400 */
             --accent-hover:   #06b6d4;  /* cyan-500 */
             --accent-bg:      rgba(34, 211, 238, 0.10);
+            --accent-magenta: #d946ef;  /* fuchsia-500 — HUD secondary accent */
+            --accent-magenta-bg: rgba(217, 70, 239, 0.10);
             --success:        #10b981;  /* emerald-500 */
             --warning:        #f59e0b;  /* amber-500 */
             --danger:         #ef4444;  /* red-500 */
@@ -103,6 +105,69 @@ export default function RootLayout({ children }) {
             50% { box-shadow: 0 0 0 4px rgba(16, 185, 129, 0); }
           }
           .chat-message-row:hover .msg-delete-btn { opacity: 1 !important; }
+
+          /* ============================================================
+             HUD AESTHETIC — Phase 1B experimental (Overview tab only)
+             Cyan corner brackets via 8 background-image lines per panel.
+             No HTML changes needed: just add className="hud-panel".
+             Magenta variant: className="hud-panel hud-panel--magenta".
+             ============================================================ */
+          .hud-panel {
+            position: relative;
+            padding: 18px;
+            background-color: var(--bg-surface);
+            background-image:
+              linear-gradient(var(--accent), var(--accent)),
+              linear-gradient(var(--accent), var(--accent)),
+              linear-gradient(var(--accent), var(--accent)),
+              linear-gradient(var(--accent), var(--accent)),
+              linear-gradient(var(--accent), var(--accent)),
+              linear-gradient(var(--accent), var(--accent)),
+              linear-gradient(var(--accent), var(--accent)),
+              linear-gradient(var(--accent), var(--accent));
+            background-size:
+              16px 2px, 2px 16px,
+              16px 2px, 2px 16px,
+              16px 2px, 2px 16px,
+              16px 2px, 2px 16px;
+            background-position:
+              top left, top left,
+              top right, top right,
+              bottom left, bottom left,
+              bottom right, bottom right;
+            background-repeat: no-repeat;
+            border: 1px solid var(--border);
+            border-radius: 2px;
+          }
+          .hud-panel--magenta {
+            background-image:
+              linear-gradient(var(--accent-magenta), var(--accent-magenta)),
+              linear-gradient(var(--accent-magenta), var(--accent-magenta)),
+              linear-gradient(var(--accent-magenta), var(--accent-magenta)),
+              linear-gradient(var(--accent-magenta), var(--accent-magenta)),
+              linear-gradient(var(--accent-magenta), var(--accent-magenta)),
+              linear-gradient(var(--accent-magenta), var(--accent-magenta)),
+              linear-gradient(var(--accent-magenta), var(--accent-magenta)),
+              linear-gradient(var(--accent-magenta), var(--accent-magenta));
+          }
+          .hud-label {
+            display: inline-block;
+            padding: 3px 10px;
+            background: var(--accent-bg);
+            color: var(--accent);
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1.8px;
+            border: 1px solid var(--border-accent);
+            border-radius: 2px;
+            line-height: 1.4;
+          }
+          .hud-label--magenta {
+            background: var(--accent-magenta-bg);
+            color: var(--accent-magenta);
+            border-color: rgba(217, 70, 239, 0.25);
+          }
 
           /* ============================================================
              LAYOUT HELPERS — used by page.js dashboard markup

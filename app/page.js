@@ -2,6 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import bcrypt from 'bcryptjs';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 // ============================================================
 // STYLES
@@ -3474,11 +3475,11 @@ export default function Home() {
         {tab === 'overview' && isAdmin && (
           <>
             {/* BOT HEALTH MONITOR */}
-            <div style={{...S.box,marginBottom:24,padding:'16px 20px',border:'1px solid #0891b2'}}>
-              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:12,flexWrap:'wrap',gap:8}}>
+            <div className="hud-panel" style={{marginBottom:24}}>
+              <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14,flexWrap:'wrap',gap:8}}>
                 <div>
-                  <div style={{fontSize:13,color:'#67e8f9',fontWeight:800,textTransform:'uppercase',letterSpacing:1}}>🤖 Bot Health Monitor</div>
-                  <div style={{fontSize:11,color:'#9ca3af',marginTop:4}}>Status worker bot yang jalan di komputer lokal. Auto-refresh tiap 30 detik.</div>
+                  <span className="hud-label">▣ Bot Health Monitor</span>
+                  <div style={{fontSize:11,color:'#94a3b8',marginTop:8}}>Status worker bot yang jalan di komputer lokal. Auto-refresh tiap 30 detik.</div>
                 </div>
                 <button onClick={loadBotHealth} disabled={botHealthLoading} style={{...S.btn('#164e63'),padding:'8px 14px',fontSize:11}}>
                   {botHealthLoading ? '⏳' : '🔄'} Refresh
@@ -3555,23 +3556,67 @@ export default function Home() {
               )}
             </div>
 
+            {/* STATS GRID — HUD panel per metric */}
             <div className="responsive-stats" style={{marginBottom:24}}>
-              <div style={S.stat}><div style={S.num}>{groups.length}</div><div style={S.label}>Grup</div></div>
-              <div style={S.stat}><div style={S.num}>{clubs.length}</div><div style={S.label}>Klub</div></div>
-              <div style={S.stat}><div style={S.num}>{todayPosts}</div><div style={S.label}>Post Hari Ini</div></div>
-              <div style={S.stat}><div style={S.num}>{totalSuccess}</div><div style={S.label}>Total Berhasil</div></div>
-              <div style={S.stat}><div style={S.num}>{links.length}</div><div style={S.label}>Link Disubmit</div></div>
-              <div style={S.stat}><div style={S.num}>{users.length}</div><div style={S.label}>Users</div></div>
-            </div>
-            <div style={S.box}>
-              <h3 style={{color:'#FFD700',marginBottom:16,fontSize:16}}>Aktivitas Terakhir</h3>
-              {activity.slice(0, 8).map((a, i) => (
-                <div key={i} style={{padding:'10px 14px',borderBottom:'1px solid #1f2937',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                  <div><span style={{...S.badge(a.type==='video'?'member':'ok'),marginRight:6}}>{a.type||'news'}</span><span style={{fontSize:13}}>{(a.title||'').substring(0,60)}</span></div>
-                  <div style={{textAlign:'right',fontSize:11,color:'#6b7280'}}><span style={S.badge(a.success?'ok':'fail')}>{a.success?'OK':'GAGAL'}</span> {a.team||''}</div>
+              {[
+                { label:'Grup',           value:groups.length },
+                { label:'Klub',           value:clubs.length },
+                { label:'Post Hari Ini',  value:todayPosts },
+                { label:'Total Berhasil', value:totalSuccess },
+                { label:'Link Disubmit',  value:links.length },
+                { label:'Users',          value:users.length },
+              ].map((m, i) => (
+                <div key={m.label} className={'hud-panel' + (i % 2 === 1 ? ' hud-panel--magenta' : '')} style={{textAlign:'center'}}>
+                  <div style={{fontSize:10,color:'#64748b',textTransform:'uppercase',letterSpacing:1.8,fontWeight:700,marginBottom:10}}>{m.label}</div>
+                  <div style={S.num}>{m.value}</div>
                 </div>
               ))}
-              {activity.length===0 && <p style={{color:'#6b7280',fontSize:13}}>Belum ada aktivitas</p>}
+            </div>
+
+            {/* BAR CHART — Bot performance hari ini (Recharts) */}
+            {botHealth.length > 0 && (
+              <div className="hud-panel" style={{marginBottom:24}}>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14,flexWrap:'wrap',gap:8}}>
+                  <div>
+                    <span className="hud-label">◢ Bot Performance Today</span>
+                    <div style={{fontSize:11,color:'#94a3b8',marginTop:8}}>Success vs failed task per worker — real-time dari heartbeat.</div>
+                  </div>
+                </div>
+                <ResponsiveContainer width="100%" height={220}>
+                  <BarChart
+                    data={botHealth.map(w => ({
+                      name: w.worker_name || w.worker_id,
+                      Success: w.total_success_today || 0,
+                      Failed: w.total_failed_today || 0,
+                    }))}
+                    margin={{ top: 8, right: 16, left: 0, bottom: 8 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
+                    <XAxis dataKey="name" stroke="#64748b" fontSize={11} tickLine={false} axisLine={{ stroke: '#1e293b' }} />
+                    <YAxis stroke="#64748b" fontSize={11} tickLine={false} axisLine={{ stroke: '#1e293b' }} allowDecimals={false} />
+                    <Tooltip
+                      contentStyle={{ background:'#0f172a', border:'1px solid #22d3ee', borderRadius:4, fontSize:12 }}
+                      cursor={{ fill: 'rgba(34, 211, 238, 0.06)' }}
+                    />
+                    <Bar dataKey="Success" fill="#22d3ee" radius={[2, 2, 0, 0]} />
+                    <Bar dataKey="Failed" fill="#d946ef" radius={[2, 2, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            )}
+
+            {/* AKTIVITAS TERAKHIR — magenta HUD panel */}
+            <div className="hud-panel hud-panel--magenta">
+              <div style={{marginBottom:14}}>
+                <span className="hud-label hud-label--magenta">◇ Aktivitas Terakhir</span>
+              </div>
+              {activity.slice(0, 8).map((a, i) => (
+                <div key={i} style={{padding:'10px 4px',borderBottom:'1px solid #1e293b',display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                  <div><span style={{...S.badge(a.type==='video'?'member':'ok'),marginRight:6}}>{a.type||'news'}</span><span style={{fontSize:13}}>{(a.title||'').substring(0,60)}</span></div>
+                  <div style={{textAlign:'right',fontSize:11,color:'#94a3b8'}}><span style={S.badge(a.success?'ok':'fail')}>{a.success?'OK':'GAGAL'}</span> {a.team||''}</div>
+                </div>
+              ))}
+              {activity.length===0 && <p style={{color:'#64748b',fontSize:13,margin:'12px 0 0'}}>Belum ada aktivitas</p>}
             </div>
           </>
         )}
