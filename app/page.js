@@ -129,6 +129,11 @@ function classifyMediaUrl(url) {
   if (/imgur\.com\/[a-z0-9]+(\.|$)/.test(u) && !/\/(gallery|video|gifv)/.test(u)) return 'image';
   if (/i\.imgur\.com|i\.redd\.it|images\.unsplash\.com/.test(u)) return 'image';
   if (/[?&]type=3/.test(u) && /facebook\.com/.test(u)) return 'image'; // FB photo type=3
+  // Phase 4 — User rule: FB post URL (groups/.../posts/, share/p/, permalink) selalu IMAGE,
+  // gak boleh masuk V column. Workflow: video harus pakai direct link (Reels, YouTube, dll).
+  if (/facebook\.com\/groups\/[^\/]+\/posts\//.test(u)) return 'image';
+  if (/facebook\.com\/share\/p\//.test(u)) return 'image';
+  if (/facebook\.com\/permalink\.php/.test(u)) return 'image';
 
   // === ACCEPT clear video patterns ===
   if (/\.(mp4|mov|webm|mkv|avi|m4v|flv|wmv)(\?|#|$)/.test(u)) return 'video';
