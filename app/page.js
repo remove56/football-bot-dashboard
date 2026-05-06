@@ -129,11 +129,8 @@ function classifyMediaUrl(url) {
   if (/imgur\.com\/[a-z0-9]+(\.|$)/.test(u) && !/\/(gallery|video|gifv)/.test(u)) return 'image';
   if (/i\.imgur\.com|i\.redd\.it|images\.unsplash\.com/.test(u)) return 'image';
   if (/[?&]type=3/.test(u) && /facebook\.com/.test(u)) return 'image'; // FB photo type=3
-  // Phase 4 — User rule: FB post URL (groups/.../posts/, share/p/, permalink) selalu IMAGE,
-  // gak boleh masuk V column. Workflow: video harus pakai direct link (Reels, YouTube, dll).
-  if (/facebook\.com\/groups\/[^\/]+\/posts\//.test(u)) return 'image';
-  if (/facebook\.com\/share\/p\//.test(u)) return 'image';
-  if (/facebook\.com\/permalink\.php/.test(u)) return 'image';
+  // NOTE: rule /posts/, /share/p/, /permalink dihapus — terlalu broad (FB post bisa video).
+  // Server-side OG verify juga dihapus — false positive (FB tag image post sebagai video).
 
   // === ACCEPT clear video patterns ===
   if (/\.(mp4|mov|webm|mkv|avi|m4v|flv|wmv)(\?|#|$)/.test(u)) return 'video';
@@ -1277,8 +1274,10 @@ export default function Home() {
 
     const linkTrimmed = ptLink.trim();
 
-    // ── CEK 0a: Client regex check (Phase 4 / B) ──
-    // Reject obvious mismatch (image link masuk Video field, atau sebaliknya)
+    // ── CEK 0: Client regex check ONLY ──
+    // Reject HANYA mismatch yang OBVIOUS dari pattern URL (jpg/png/photo di V,
+    // atau Reels/YouTube/.mp4 di Gambar). Server-side OG verify DIBATALKAN karena
+    // false positive (FB sering tag image post sebagai video meta).
     const detectedType = classifyMediaUrl(linkTrimmed);
     if (ptType === 'video' && detectedType === 'image') {
       setPtMsg('❌ DITOLAK: Link ini terdeteksi sebagai GAMBAR (jpg/png/photo). Field "Video" hanya untuk link video (FB Reels, YouTube, TikTok, .mp4, dll).');
@@ -1287,37 +1286,6 @@ export default function Home() {
     if ((ptType === 'gambar1' || ptType === 'gambar2') && detectedType === 'video') {
       setPtMsg('❌ DITOLAK: Link ini terdeteksi sebagai VIDEO (Reels/YouTube/.mp4). Field "Gambar" hanya untuk link gambar/foto. Pilih "Video" di Jenis kalau mau submit video.');
       return;
-    }
-
-    // ── CEK 0b: Server-side OG verify (Phase 4 / A) ──
-    // Untuk URL ambigu (FB /posts/, /share/, dll yang client gak bisa tebak),
-    // fetch og:type / og:video meta. Skip kalau client udah confident (video atau image).
-    if (detectedType === null && /facebook\.com|fb\.com/.test(linkTrimmed.toLowerCase())) {
-      setPtVerifying(true);
-      setPtMsg('🔍 Memverifikasi link via Facebook (1-3 detik)...');
-      try {
-        const res = await fetch('/api/classify-media', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url: linkTrimmed }),
-        });
-        const result = await res.json();
-        // Server confident result → enforce
-        if (ptType === 'video' && result.type === 'image') {
-          setPtVerifying(false);
-          setPtMsg(`❌ DITOLAK: Server verify → link ini POSTINGAN GAMBAR (${result.reason}). Field "Video" hanya untuk video. Cek lagi link di FB.`);
-          return;
-        }
-        if ((ptType === 'gambar1' || ptType === 'gambar2') && result.type === 'video') {
-          setPtVerifying(false);
-          setPtMsg(`❌ DITOLAK: Server verify → link ini POSTINGAN VIDEO (${result.reason}). Field "Gambar" hanya untuk gambar/foto. Pilih "Video" di Jenis.`);
-          return;
-        }
-        // Unknown atau match → lanjut (graceful: gak block kalau server gak bisa pastiin)
-      } catch {
-        // Server error → lanjut (graceful, biar gak block submit hanya karena network)
-      }
-      setPtVerifying(false);
     }
 
     const fingerprint = normalizeContentUrl(linkTrimmed);
