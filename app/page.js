@@ -4639,6 +4639,59 @@ export default function Home() {
               </table>
             </div>
 
+            {/* Summary akun bot FB (admin) */}
+            {isAdmin && (() => {
+              // Hitung post per akun bot dari postTracker (filter period & non-null posted_by_bot)
+              const botStats = {};
+              for (const p of postTracker) {
+                const bot = p.posted_by_bot;
+                if (!bot) continue;
+                if (!botStats[bot]) botStats[bot] = { name: bot, total: 0, g1: 0, g2: 0, v: 0, groups: new Set() };
+                if (p.gambar1_link) { botStats[bot].g1++; botStats[bot].total++; }
+                if (p.gambar2_link) { botStats[bot].g2++; botStats[bot].total++; }
+                if (p.video_link) { botStats[bot].v++; botStats[bot].total++; }
+                botStats[bot].groups.add(p.group_name);
+              }
+              const sorted = Object.values(botStats).sort((a,b) => b.total - a.total);
+              const FB_LIMIT = 20; // anti-spam limit per akun per hari
+              return (
+                <div style={{...S.box,marginTop:24}}>
+                  <h3 style={{color:'#22D3EE',marginBottom:8,fontSize:17,fontWeight:700}}>🤖 Performa Akun Bot FB — {new Date(ptPeriod).toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})}</h3>
+                  <p style={{color:'#9ca3af',fontSize:12,marginBottom:16}}>Counter post per akun bot FB hari ini. Limit aman {FB_LIMIT}/hari per akun (anti-spam FB). Data dari kolom <code style={{background:'#1f2937',padding:'2px 6px',borderRadius:3,fontSize:11}}>posted_by_bot</code>.</p>
+                  <table style={{width:'100%',borderCollapse:'collapse'}}>
+                    <thead><tr><th style={S.th}>#</th><th style={S.th}>Akun Bot FB</th><th style={S.th}>Total Post</th><th style={S.th}>G1</th><th style={S.th}>G2</th><th style={S.th}>V</th><th style={S.th}>Grup</th><th style={S.th}>Status (vs limit {FB_LIMIT})</th></tr></thead>
+                    <tbody>
+                      {sorted.map((b, i) => {
+                        const pct = Math.min(100, Math.round((b.total / FB_LIMIT) * 100));
+                        const color = b.total >= FB_LIMIT ? '#EF4444' : b.total >= FB_LIMIT - 5 ? '#F59E0B' : '#22C55E';
+                        const statusLabel = b.total >= FB_LIMIT ? '⚠ LIMIT!' : b.total >= FB_LIMIT - 5 ? '⚡ Heavy' : '✓ OK';
+                        return (
+                          <tr key={b.name}>
+                            <td style={S.td}>{i+1}</td>
+                            <td style={{...S.td,fontWeight:600,color:'#22D3EE'}}>{b.name}</td>
+                            <td style={{...S.td,fontWeight:700,fontSize:14,color}}>{b.total}</td>
+                            <td style={S.td}>{b.g1}</td>
+                            <td style={S.td}>{b.g2}</td>
+                            <td style={S.td}>{b.v}</td>
+                            <td style={S.td}>{b.groups.size}</td>
+                            <td style={S.td}>
+                              <div style={{display:'flex',alignItems:'center',gap:6}}>
+                                <div style={{width:80,height:6,background:'#1f2937',borderRadius:3,overflow:'hidden'}}>
+                                  <div style={{width:`${pct}%`,height:'100%',background:color,borderRadius:3,transition:'width 0.3s'}}/>
+                                </div>
+                                <span style={{fontSize:11,color,fontWeight:600}}>{statusLabel}</span>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                      {sorted.length === 0 && <tr><td colSpan={8} style={{...S.td,textAlign:'center',color:'#6b7280'}}>Belum ada post bot hari ini (atau bot belum restart setelah migration kolom posted_by_bot)</td></tr>}
+                    </tbody>
+                  </table>
+                </div>
+              );
+            })()}
+
             {/* Summary member (admin) */}
             {isAdmin && (
               <div style={{...S.box,marginTop:24}}>
