@@ -332,14 +332,27 @@ function getDeadlineCountdown() {
 // LOGIN SCREEN
 // ============================================================
 function LoginScreen({ onLogin }) {
+  const [mode, setMode] = useState('login'); // 'login' | 'signup'
   const [u, setU] = useState('');
   const [p, setP] = useState('');
+  const [pConfirm, setPConfirm] = useState('');
+  const [email, setEmail] = useState('');
+  const [fullName, setFullName] = useState('');
   const [err, setErr] = useState('');
+  const [msg, setMsg] = useState(''); // success message
+  const [busy, setBusy] = useState(false);
 
   const login = async () => {
+    setErr(''); setMsg('');
     // Dual-mode login: cek password_hash dulu, fallback ke plaintext (auto-migrate).
     const { data } = await supabase.from('users').select('*').eq('username', u).single();
     if (!data) { setErr('Username atau password salah'); return; }
+
+    // Block login kalau belum approved
+    if (data.is_approved === false) {
+      setErr('Akun lo belum di-approve admin. Tunggu konfirmasi ya.');
+      return;
+    }
 
     // Path 1: punya password_hash → bcrypt verify
     if (data.password_hash) {
@@ -367,6 +380,40 @@ function LoginScreen({ onLogin }) {
     setErr('Username atau password salah');
   };
 
+  const signup = async () => {
+    setErr(''); setMsg('');
+    if (!u || !p) { setErr('Username dan password wajib diisi'); return; }
+    if (p !== pConfirm) { setErr('Konfirmasi password tidak cocok'); return; }
+    if (p.length < 4) { setErr('Password minimal 4 karakter'); return; }
+    setBusy(true);
+    try {
+      const res = await fetch('/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username: u,
+          password: p,
+          email: email || undefined,
+          full_name: fullName || undefined,
+        }),
+      });
+      const result = await res.json();
+      if (!res.ok) {
+        setErr(result.error || 'Pendaftaran gagal');
+      } else {
+        setMsg(result.message || 'Pendaftaran berhasil! Tunggu approval admin.');
+        // Reset form
+        setU(''); setP(''); setPConfirm(''); setEmail(''); setFullName('');
+        // Setelah 5 detik, balik ke login mode
+        setTimeout(() => { setMode('login'); setMsg(''); }, 5000);
+      }
+    } catch (e) {
+      setErr(`Network error: ${e.message}`);
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <div style={{display:'flex',justifyContent:'center',alignItems:'center',minHeight:'100vh',padding:24,background:'#020617'}}>
       <div className="login-card" style={{
@@ -386,34 +433,86 @@ function LoginScreen({ onLogin }) {
             borderRadius:12,fontSize:28,
           }}>⚽</div>
           <h1 style={{margin:0,fontSize:22,fontWeight:700,letterSpacing:-0.3,color:'#e0f2fe'}}>Football Bot Dashboard</h1>
-          <p style={{margin:'6px 0 0',color:'#64748b',fontSize:13}}>Sign in to your admin account</p>
+          <p style={{margin:'6px 0 0',color:'#64748b',fontSize:13}}>{mode === 'login' ? 'Sign in to your account' : 'Create new account'}</p>
         </div>
+
+        {/* Mode toggle */}
+        <div style={{display:'flex',gap:6,marginBottom:20,padding:4,background:'#0a1224',border:'1px solid #1e293b',borderRadius:8}}>
+          <button onClick={()=>{setMode('login');setErr('');setMsg('');}} style={{flex:1,padding:'8px 12px',background:mode==='login'?'#22C55E':'transparent',color:mode==='login'?'#020617':'#94a3b8',border:'none',borderRadius:6,fontSize:13,fontWeight:600,cursor:'pointer'}}>Sign In</button>
+          <button onClick={()=>{setMode('signup');setErr('');setMsg('');}} style={{flex:1,padding:'8px 12px',background:mode==='signup'?'#22D3EE':'transparent',color:mode==='signup'?'#020617':'#94a3b8',border:'none',borderRadius:6,fontSize:13,fontWeight:600,cursor:'pointer'}}>Sign Up</button>
+        </div>
+
         {err && (
           <div style={{
             background:'rgba(239,68,68,0.10)',color:'#fca5a5',padding:'10px 12px',
             borderRadius:6,marginBottom:16,fontSize:13,border:'1px solid rgba(239,68,68,0.3)',
           }}>{err}</div>
         )}
+        {msg && (
+          <div style={{
+            background:'rgba(34,197,94,0.10)',color:'#86efac',padding:'10px 12px',
+            borderRadius:6,marginBottom:16,fontSize:13,border:'1px solid rgba(34,197,94,0.3)',
+          }}>{msg}</div>
+        )}
+
+        {/* Sign Up extra fields (Full Name + Email) */}
+        {mode === 'signup' && (
+          <>
+            <div style={{marginBottom:16}}>
+              <label style={{display:'block',fontSize:12,color:'#94a3b8',marginBottom:6,fontWeight:500}}>Nama Lengkap (opsional)</label>
+              <input
+                style={{...S.input,background:'#0a1224',border:'1px solid #1e293b',borderRadius:6,padding:'10px 12px',width:'100%'}}
+                value={fullName} onChange={e=>setFullName(e.target.value)} placeholder="Budi Santoso"
+              />
+            </div>
+            <div style={{marginBottom:16}}>
+              <label style={{display:'block',fontSize:12,color:'#94a3b8',marginBottom:6,fontWeight:500}}>Email (opsional)</label>
+              <input
+                style={{...S.input,background:'#0a1224',border:'1px solid #1e293b',borderRadius:6,padding:'10px 12px',width:'100%'}}
+                type="email" value={email} onChange={e=>setEmail(e.target.value)} placeholder="email@example.com"
+              />
+            </div>
+          </>
+        )}
+
         <div style={{marginBottom:16}}>
-          <label style={{display:'block',fontSize:12,color:'#94a3b8',marginBottom:6,fontWeight:500}}>Username</label>
+          <label style={{display:'block',fontSize:12,color:'#94a3b8',marginBottom:6,fontWeight:500}}>Username {mode==='signup' && <span style={{color:'#64748b',fontSize:11}}>(huruf kecil, angka, underscore, 3-30 char)</span>}</label>
           <input
             style={{...S.input,background:'#0a1224',border:'1px solid #1e293b',borderRadius:6,padding:'10px 12px',width:'100%'}}
-            value={u} onChange={e=>setU(e.target.value)} onKeyDown={e=>e.key==='Enter'&&login()}
+            value={u} onChange={e=>setU(e.target.value)} onKeyDown={e=>e.key==='Enter'&&(mode==='login'?login():signup())}
           />
         </div>
-        <div style={{marginBottom:24}}>
-          <label style={{display:'block',fontSize:12,color:'#94a3b8',marginBottom:6,fontWeight:500}}>Password</label>
+        <div style={{marginBottom: mode==='signup' ? 16 : 24}}>
+          <label style={{display:'block',fontSize:12,color:'#94a3b8',marginBottom:6,fontWeight:500}}>Password {mode==='signup' && <span style={{color:'#64748b',fontSize:11}}>(min 4 karakter)</span>}</label>
           <input
             style={{...S.input,background:'#0a1224',border:'1px solid #1e293b',borderRadius:6,padding:'10px 12px',width:'100%'}}
-            type="password" value={p} onChange={e=>setP(e.target.value)} onKeyDown={e=>e.key==='Enter'&&login()}
+            type="password" value={p} onChange={e=>setP(e.target.value)} onKeyDown={e=>e.key==='Enter'&&(mode==='login'?login():signup())}
           />
         </div>
-        <button onClick={login} style={{
+        {mode === 'signup' && (
+          <div style={{marginBottom:24}}>
+            <label style={{display:'block',fontSize:12,color:'#94a3b8',marginBottom:6,fontWeight:500}}>Konfirmasi Password</label>
+            <input
+              style={{...S.input,background:'#0a1224',border:'1px solid #1e293b',borderRadius:6,padding:'10px 12px',width:'100%'}}
+              type="password" value={pConfirm} onChange={e=>setPConfirm(e.target.value)} onKeyDown={e=>e.key==='Enter'&&signup()}
+            />
+          </div>
+        )}
+
+        <button onClick={mode==='login' ? login : signup} disabled={busy} style={{
           width:'100%',padding:'12px 16px',
-          background:'#22C55E',
-          border:'none',borderRadius:6,color:'#020617',fontSize:14,fontWeight:600,cursor:'pointer',
+          background: mode==='login' ? '#22C55E' : '#22D3EE',
+          border:'none',borderRadius:6,color:'#020617',fontSize:14,fontWeight:600,
+          cursor: busy ? 'not-allowed' : 'pointer', opacity: busy ? 0.5 : 1,
           letterSpacing:0.2,
-        }}>Sign In</button>
+        }}>{busy ? 'Loading...' : (mode==='login' ? 'Sign In' : 'Sign Up')}</button>
+
+        {mode === 'signup' && (
+          <p style={{margin:'14px 0 0',fontSize:11,color:'#64748b',textAlign:'center',lineHeight:1.5}}>
+            ⚠️ Akun baru perlu di-approve admin sebelum bisa login.<br/>
+            Tunggu konfirmasi setelah daftar.
+          </p>
+        )}
       </div>
     </div>
   );
@@ -721,7 +820,7 @@ export default function Home() {
       setLinks(l || []);
       const { data: a } = await supabase.from('activity_log').select('*').order('created_at', { ascending: false }).limit(200);
       setActivity(a || []);
-      const { data: u } = await supabase.from('users').select('id,username,name,role,daily_target,created_at');
+      const { data: u } = await supabase.from('users').select('id,username,name,role,daily_target,created_at,is_approved,email,full_name');
       setUsers(u || []);
       // Load reels tasks
       const { data: rt } = await supabase.from('reels_tasks').select('*').order('created_at', { ascending: false }).limit(50);
@@ -5504,6 +5603,50 @@ export default function Home() {
         {/* USER MANAGEMENT (admin) */}
         {tab === 'users' && isAdmin && (
           <>
+            {/* PENDING APPROVAL — daftar user baru yang belum di-approve */}
+            {(() => {
+              const pendingUsers = users.filter(u => u.is_approved === false);
+              if (pendingUsers.length === 0) return null;
+              const approveUser = async (uid) => {
+                await supabase.from('users').update({
+                  is_approved: true,
+                  approved_at: new Date().toISOString(),
+                  approved_by: user?.id || 'admin',
+                }).eq('id', uid);
+                loadData();
+              };
+              const rejectUser = async (uid, username) => {
+                if (!confirm(`Hapus pendaftaran "${username}"? User gak akan bisa login.`)) return;
+                await supabase.from('users').delete().eq('id', uid);
+                loadData();
+              };
+              return (
+                <div style={{...S.box, border:'1px solid #F59E0B'}}>
+                  <h3 style={{color:'#F59E0B',marginBottom:8,fontSize:17,fontWeight:700}}>⏳ Pending Approval ({pendingUsers.length})</h3>
+                  <p style={{color:'#9ca3af',fontSize:12,marginBottom:16}}>User baru yang udah daftar via Sign Up tapi belum di-approve. Approve = bisa login. Reject = hapus pendaftaran.</p>
+                  <table style={{width:'100%',borderCollapse:'collapse'}}>
+                    <thead><tr><th style={S.th}>Username</th><th style={S.th}>Nama Lengkap</th><th style={S.th}>Email</th><th style={S.th}>Daftar</th><th style={S.th}>Aksi</th></tr></thead>
+                    <tbody>
+                      {pendingUsers.map(p => (
+                        <tr key={p.id} style={{background:'rgba(245,158,11,0.05)'}}>
+                          <td style={{...S.td,fontWeight:600,color:'#F59E0B'}}>{p.username}</td>
+                          <td style={S.td}>{p.full_name || p.name || '-'}</td>
+                          <td style={{...S.td,fontSize:12,color:'#94a3b8'}}>{p.email || '-'}</td>
+                          <td style={{...S.td,fontSize:12,color:'#6b7280'}}>{p.created_at?new Date(p.created_at).toLocaleString('id-ID',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):''}</td>
+                          <td style={S.td}>
+                            <div style={{display:'flex',gap:6}}>
+                              <button onClick={()=>approveUser(p.id)} style={{...S.btn('#065f46'),padding:'6px 14px',fontSize:11}}>✓ Approve</button>
+                              <button onClick={()=>rejectUser(p.id, p.username)} style={{...S.btn('#7f1d1d'),padding:'6px 14px',fontSize:11}}>✗ Reject</button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              );
+            })()}
+
             <div style={S.box}>
               <h3 style={{color:'#F59E0B',marginBottom:16,fontSize:17,fontWeight:700}}>Tambah Member</h3>
               <div style={{display:'grid',gridTemplateColumns:'1fr 1fr 1fr auto',gap:10,alignItems:'end'}}>
