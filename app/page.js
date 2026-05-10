@@ -759,6 +759,10 @@ export default function Home() {
   // Theme dipaksa cosmic-fusion untuk SEMUA user (single theme system)
   const [appearOffline, setAppearOffline] = useState(false); // user can hide their online status
   const [onlineUsers, setOnlineUsers] = useState({}); // { userId: last_active_at }
+  // Bot pause state — toggle via /api/bot/pause, bot-worker poll tiap 30s
+  const [botPaused, setBotPaused] = useState(false);
+  const [botPausedBy, setBotPausedBy] = useState(null);
+  const [botPauseLoading, setBotPauseLoading] = useState(false);
   const chatMediaRecorderRef = useRef(null);
   const chatRecordTimerRef = useRef(null);
   const prevChatUnreadRef = useRef(null); // null = belum init, biar first load nggak beep
@@ -2366,6 +2370,45 @@ export default function Home() {
     });
   }, [chatMessages, user, chatOpen]);
 
+  // Bot pause toggle — POST /api/bot/pause, bot-worker poll tiap 30s
+  const toggleBotPause = async () => {
+    if (botPauseLoading) return;
+    const willPause = !botPaused;
+    if (willPause && !confirm('PAUSE bot worker?\n\nBot akan stop pickup task baru. Task yang lagi running tetep selesai.\nResume kapan aja dengan klik tombol yg sama.\n\nLanjutin?')) return;
+    setBotPauseLoading(true);
+    try {
+      const r = await fetch('/api/bot/pause', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paused: willPause, by: user?.username || 'admin', reason: willPause ? 'manual via dashboard' : null }),
+      });
+      const j = await r.json();
+      if (j.error) throw new Error(j.error);
+      setBotPaused(j.paused);
+      setBotPausedBy(j.paused_by);
+    } catch (e) {
+      alert('Gagal toggle pause: ' + e.message);
+    } finally {
+      setBotPauseLoading(false);
+    }
+  };
+
+  // Fetch initial bot pause state on mount + poll tiap 30s biar reflect kalau di-toggle dari device lain
+  useEffect(() => {
+    if (!user) return;
+    const fetchPause = async () => {
+      try {
+        const r = await fetch('/api/bot/pause');
+        const j = await r.json();
+        setBotPaused(!!j.paused);
+        setBotPausedBy(j.paused_by);
+      } catch (e) { /* silent */ }
+    };
+    fetchPause();
+    const interval = setInterval(fetchPause, 30000);
+    return () => clearInterval(interval);
+  }, [user]);
+
   const toggleSoundEnabled = () => {
     const newVal = !soundEnabled;
     setSoundEnabled(newVal);
@@ -2450,6 +2493,26 @@ export default function Home() {
       setGroupHealth(json.groups || []);
     } catch (e) { /* silent */ }
     finally { setGroupHealthLoading(false); }
+  };
+
+  // System Health tab data — load 3 endpoints parallel
+  const [sysHealthLoading, setSysHealthLoading] = useState(false);
+  const [sysHealthAccounts, setSysHealthAccounts] = useState([]);
+  const [sysHealthIssues, setSysHealthIssues] = useState([]);
+  const [sysHealthCosts, setSysHealthCosts] = useState(null);
+  const loadSystemHealth = async () => {
+    setSysHealthLoading(true);
+    try {
+      const [accRes, issRes, costRes] = await Promise.all([
+        fetch('/api/health/accounts').then(r => r.json()).catch(() => ({ accounts: [] })),
+        fetch('/api/issues/top?limit=20').then(r => r.json()).catch(() => ({ issues: [] })),
+        fetch('/api/costs/summary').then(r => r.json()).catch(() => null),
+      ]);
+      setSysHealthAccounts(accRes.accounts || []);
+      setSysHealthIssues(issRes.issues || []);
+      setSysHealthCosts(costRes);
+    } catch (e) { /* silent */ }
+    finally { setSysHealthLoading(false); }
   };
 
   const loadCaptionAB = async () => {
@@ -2759,6 +2822,7 @@ export default function Home() {
     { id: 'besttime', label: '⏰ Best Time' },
     { id: 'grouphealth', label: '💚 Group Health' },
     { id: 'captionab', label: '🅰️🅱️ A/B Caption' },
+    { id: 'syshealth', label: '🩺 System Health' },
     { id: 'settings', label: '⚙️ Pengaturan' },
   ];
   const memberTabs = [
@@ -2861,9 +2925,39 @@ export default function Home() {
           <a onClick={()=>setGuideOpen(true)} style={{color:'#a5f3fc',cursor:'pointer',fontSize:12}} title="Panduan Pemakaian">❓</a>
           {isAdmin && <a href="/preview-hud" target="_blank" rel="noopener" style={{color:'#22D3EE',cursor:'pointer',fontSize:12,textDecoration:'none'}} title="Buka tampilan HUD Mode di tab baru (preview)">🔗 HUD</a>}
           <a onClick={()=>setPwModal(true)} style={{color:'#86EFAC',cursor:'pointer',fontSize:12}} title="Ganti Password">🔑</a>
+          {isAdmin && (
+            <a
+              onClick={toggleBotPause}
+              style={{
+                color: botPaused ? '#facc15' : '#10b981',
+                cursor: botPauseLoading ? 'wait' : 'pointer',
+                fontSize: 12,
+                fontWeight: botPaused ? 700 : 400,
+                opacity: botPauseLoading ? 0.5 : 1,
+              }}
+              title={botPaused ? `Bot PAUSED${botPausedBy ? ` by ${botPausedBy}` : ''} — klik untuk RESUME` : 'Bot RUNNING — klik untuk PAUSE'}
+            >
+              {botPauseLoading ? '⏳' : (botPaused ? '⏸️ PAUSED' : '▶️ RUNNING')}
+            </a>
+          )}
           <a onClick={logout} style={{color:'#ef4444',cursor:'pointer'}}>Logout</a>
         </div>
       </div>
+
+      {/* PAUSED BANNER — visual indikator banner kuning kalau bot lagi paused */}
+      {botPaused && isAdmin && (
+        <div style={{
+          background: 'linear-gradient(90deg, #facc15 0%, #fbbf24 100%)',
+          color: '#78350f',
+          padding: '8px 16px',
+          fontSize: 13,
+          fontWeight: 600,
+          textAlign: 'center',
+          borderBottom: '2px solid #ca8a04',
+        }}>
+          ⏸️ Bot worker PAUSED{botPausedBy ? ` by ${botPausedBy}` : ''}. Task pending tidak akan di-pickup. Klik tombol PAUSED di header untuk resume.
+        </div>
+      )}
 
       {/* DROPDOWN NOTIFIKASI */}
       {notifOpen && (
@@ -3749,7 +3843,7 @@ export default function Home() {
 
       {/* TABS */}
       <div style={S.tabs} className="dash-tabs">
-        {tabs.map(t => <div key={t.id} style={S.tab(tab===t.id)} onClick={() => { setTab(t.id); if(t.id==='weekly') loadWeeklyStats(wsYear, wsMonth); if(t.id==='posttrack') loadPostTracker(ptPeriod); if(t.id==='botqueue') loadTaskQueue(); if(t.id==='users') loadAutoBackups(); if(t.id==='settings') loadSystemStats(); if(t.id==='besttime') { loadBestTimeGroups(); if(bestTimeSelectedGroup) loadBestTimeData(bestTimeSelectedGroup); } if(t.id==='grouphealth') loadGroupHealth(); if(t.id==='captionab') loadCaptionAB(); }}>{t.label}</div>)}
+        {tabs.map(t => <div key={t.id} style={S.tab(tab===t.id)} onClick={() => { setTab(t.id); if(t.id==='weekly') loadWeeklyStats(wsYear, wsMonth); if(t.id==='posttrack') loadPostTracker(ptPeriod); if(t.id==='botqueue') loadTaskQueue(); if(t.id==='users') loadAutoBackups(); if(t.id==='settings') loadSystemStats(); if(t.id==='besttime') { loadBestTimeGroups(); if(bestTimeSelectedGroup) loadBestTimeData(bestTimeSelectedGroup); } if(t.id==='grouphealth') loadGroupHealth(); if(t.id==='captionab') loadCaptionAB(); if(t.id==='syshealth') loadSystemHealth(); }}>{t.label}</div>)}
       </div>
 
       <div style={S.main} className="dash-main">
@@ -6449,6 +6543,165 @@ export default function Home() {
             </>
           );
         })()}
+
+        {/* SYSTEM HEALTH TAB (admin) — Account Health + Issues + API Costs */}
+        {tab === 'syshealth' && isAdmin && (
+          <>
+            <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:14}}>
+              <div>
+                <h2 style={{margin:0,color:'#fb923c',fontSize:18,fontWeight:700}}>🩺 System Health</h2>
+                <p style={{margin:'4px 0 0 0',fontSize:12,color:'#9ca3af'}}>
+                  Composite health score 16 akun, top failure patterns, API cost burn — populated by cron daily 02:00.
+                </p>
+              </div>
+              <button onClick={loadSystemHealth} disabled={sysHealthLoading} style={S.btn()}>
+                {sysHealthLoading ? '⏳ Loading...' : '🔄 Refresh'}
+              </button>
+            </div>
+
+            {/* Card 1: Account Health */}
+            <div style={{background:'#0f172a',border:'1px solid #1e293b',borderRadius:8,padding:14,marginBottom:14}}>
+              <h3 style={{margin:'0 0 12px 0',fontSize:15,color:'#a5f3fc'}}>👥 Akun Bot Health (16 akun)</h3>
+              {sysHealthAccounts.length === 0 ? (
+                <p style={{fontSize:12,color:'#64748b'}}>Belum ada data. Cron daily 02:00 WIB populate snapshot.</p>
+              ) : (
+                <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill, minmax(220px, 1fr))',gap:8}}>
+                  {sysHealthAccounts.map(a => {
+                    const tierColor = {
+                      safe: '#10b981',
+                      caution: '#fbbf24',
+                      danger: '#f97316',
+                      rest_now: '#ef4444',
+                      no_data: '#64748b',
+                    }[a.risk_tier] || '#64748b';
+                    return (
+                      <div key={a.account_id} style={{background:'#1e293b',border:`2px solid ${tierColor}`,borderRadius:6,padding:10}}>
+                        <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline'}}>
+                          <strong style={{color:'#e5e7eb',fontSize:13}}>{a.account_name}</strong>
+                          <span style={{color:tierColor,fontSize:11,fontWeight:700}}>
+                            {a.health_score !== null ? `${a.health_score}/100` : 'N/A'}
+                          </span>
+                        </div>
+                        <div style={{fontSize:11,color:tierColor,marginTop:2,fontWeight:600,textTransform:'uppercase'}}>
+                          {a.risk_tier.replace('_', ' ')}
+                        </div>
+                        <div style={{fontSize:10,color:'#9ca3af',marginTop:6}}>
+                          Posts: {a.total_posts} • Cookie: {a.cookie_age_days ?? '?'}d
+                        </div>
+                        {a.failure_rate_7d > 0 && (
+                          <div style={{fontSize:10,color:'#fbbf24',marginTop:2}}>
+                            Fail 7d: {(a.failure_rate_7d*100).toFixed(0)}%
+                          </div>
+                        )}
+                        {a.checkpoint_count_30d > 0 && (
+                          <div style={{fontSize:10,color:'#ef4444',marginTop:2}}>
+                            Checkpoint 30d: {a.checkpoint_count_30d}×
+                          </div>
+                        )}
+                        {a.recommended_action && (
+                          <div style={{fontSize:10,color:'#fbbf24',marginTop:4,fontStyle:'italic'}}>
+                            → {a.recommended_action}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Card 2: Top Issues */}
+            <div style={{background:'#0f172a',border:'1px solid #1e293b',borderRadius:8,padding:14,marginBottom:14}}>
+              <h3 style={{margin:'0 0 12px 0',fontSize:15,color:'#fca5a5'}}>🔴 Top Issues (open failure patterns)</h3>
+              {sysHealthIssues.length === 0 ? (
+                <p style={{fontSize:12,color:'#64748b'}}>Tidak ada open failure pattern. Bot jalan smooth.</p>
+              ) : (
+                <table style={{width:'100%',fontSize:12,borderCollapse:'collapse'}}>
+                  <thead>
+                    <tr style={{borderBottom:'1px solid #1e293b'}}>
+                      <th style={{textAlign:'left',padding:'6px 4px',color:'#9ca3af',fontWeight:600}}>Signature</th>
+                      <th style={{textAlign:'center',padding:'6px 4px',color:'#9ca3af',fontWeight:600}}>Severity</th>
+                      <th style={{textAlign:'right',padding:'6px 4px',color:'#9ca3af',fontWeight:600}}>Count</th>
+                      <th style={{textAlign:'left',padding:'6px 4px',color:'#9ca3af',fontWeight:600}}>Akun affected</th>
+                      <th style={{textAlign:'left',padding:'6px 4px',color:'#9ca3af',fontWeight:600}}>Last seen</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {sysHealthIssues.map((iss, i) => {
+                      const sevColor = { critical:'#ef4444', high:'#f97316', medium:'#fbbf24', low:'#94a3b8' }[iss.severity] || '#94a3b8';
+                      return (
+                        <tr key={i} style={{borderBottom:'1px solid #1e293b'}}>
+                          <td style={{padding:'8px 4px',color:'#e5e7eb',fontFamily:'monospace',fontSize:11}}>{iss.error_signature}</td>
+                          <td style={{padding:'8px 4px',textAlign:'center'}}>
+                            <span style={{background:sevColor,color:'#fff',padding:'2px 8px',borderRadius:3,fontSize:10,fontWeight:700,textTransform:'uppercase'}}>
+                              {iss.severity}
+                            </span>
+                          </td>
+                          <td style={{padding:'8px 4px',textAlign:'right',color:'#fb923c',fontWeight:700}}>{iss.occurrence_count}</td>
+                          <td style={{padding:'8px 4px',color:'#9ca3af',fontSize:10}}>{(iss.affected_accounts || []).length}</td>
+                          <td style={{padding:'8px 4px',color:'#64748b',fontSize:11}}>{iss.last_seen ? new Date(iss.last_seen).toLocaleString('id-ID') : '-'}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              )}
+            </div>
+
+            {/* Card 3: API Costs */}
+            <div style={{background:'#0f172a',border:'1px solid #1e293b',borderRadius:8,padding:14,marginBottom:14}}>
+              <h3 style={{margin:'0 0 12px 0',fontSize:15,color:'#86efac'}}>💸 API Costs (Translator Burn Awareness)</h3>
+              {!sysHealthCosts || !sysHealthCosts.summary_7d ? (
+                <p style={{fontSize:12,color:'#64748b'}}>Belum ada data. Translator akan log cost setiap call setelah migration + worker restart.</p>
+              ) : (
+                <>
+                  <div style={{display:'grid',gridTemplateColumns:'repeat(3, 1fr)',gap:10,marginBottom:14}}>
+                    <div style={{background:'#1e293b',padding:10,borderRadius:6}}>
+                      <div style={{fontSize:11,color:'#9ca3af'}}>Last 7 days</div>
+                      <div style={{fontSize:18,color:'#86efac',fontWeight:700}}>${sysHealthCosts.summary_7d.total_usd.toFixed(2)}</div>
+                      <div style={{fontSize:10,color:'#64748b'}}>Rp {sysHealthCosts.summary_7d.total_idr.toLocaleString('id-ID')} • {sysHealthCosts.summary_7d.total_calls} calls</div>
+                    </div>
+                    <div style={{background:'#1e293b',padding:10,borderRadius:6}}>
+                      <div style={{fontSize:11,color:'#9ca3af'}}>Projected monthly</div>
+                      <div style={{fontSize:18,color:'#fbbf24',fontWeight:700}}>${sysHealthCosts.projection_monthly.total_usd.toFixed(2)}</div>
+                      <div style={{fontSize:10,color:'#64748b'}}>Rp {sysHealthCosts.projection_monthly.total_idr.toLocaleString('id-ID')}</div>
+                    </div>
+                    <div style={{background:'#1e293b',padding:10,borderRadius:6}}>
+                      <div style={{fontSize:11,color:'#9ca3af'}}>Last 30 days calls</div>
+                      <div style={{fontSize:18,color:'#a5f3fc',fontWeight:700}}>{sysHealthCosts.total_calls_30d.toLocaleString('id-ID')}</div>
+                    </div>
+                  </div>
+                  {sysHealthCosts.services_7d && sysHealthCosts.services_7d.length > 0 && (
+                    <table style={{width:'100%',fontSize:12,borderCollapse:'collapse'}}>
+                      <thead>
+                        <tr style={{borderBottom:'1px solid #1e293b'}}>
+                          <th style={{textAlign:'left',padding:'6px 4px',color:'#9ca3af'}}>Service</th>
+                          <th style={{textAlign:'right',padding:'6px 4px',color:'#9ca3af'}}>Chars</th>
+                          <th style={{textAlign:'right',padding:'6px 4px',color:'#9ca3af'}}>USD</th>
+                          <th style={{textAlign:'right',padding:'6px 4px',color:'#9ca3af'}}>IDR</th>
+                          <th style={{textAlign:'right',padding:'6px 4px',color:'#9ca3af'}}>Success%</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {sysHealthCosts.services_7d.map((s,i) => (
+                          <tr key={i} style={{borderBottom:'1px solid #1e293b'}}>
+                            <td style={{padding:'6px 4px',color:'#e5e7eb'}}>{s.service}</td>
+                            <td style={{padding:'6px 4px',textAlign:'right',color:'#9ca3af'}}>{s.total_chars.toLocaleString('id-ID')}</td>
+                            <td style={{padding:'6px 4px',textAlign:'right',color:s.total_usd > 0 ? '#fbbf24' : '#64748b'}}>${s.total_usd.toFixed(4)}</td>
+                            <td style={{padding:'6px 4px',textAlign:'right',color:s.total_idr > 0 ? '#fbbf24' : '#64748b'}}>Rp {s.total_idr.toLocaleString('id-ID')}</td>
+                            <td style={{padding:'6px 4px',textAlign:'right',color:s.success_rate >= 0.9 ? '#10b981' : (s.success_rate >= 0.5 ? '#fbbf24' : '#ef4444')}}>
+                              {(s.success_rate * 100).toFixed(0)}%
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  )}
+                </>
+              )}
+            </div>
+          </>
+        )}
 
         {/* PENGATURAN TAB (admin) */}
         {tab === 'settings' && isAdmin && (
