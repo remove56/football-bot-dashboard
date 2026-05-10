@@ -20,9 +20,11 @@ export async function GET() {
   try {
     // Ambil snapshot terbaru per account_id (lateral join workaround:
     // 1. distinct account_id, lalu fetch latest per akun)
+    // Return SEMUA account_type (grup, reels, both, ig, tiktok, x) — bukan cuma grup.
+    // Dashboard akan group by type, tiap type punya section sendiri dengan tombol pause per-akun.
     const { data: accounts } = await supabase.from('bot_accounts')
-      .select('account_id, account_name, is_active, total_posts, paused, paused_at, paused_by, pause_reason')
-      .eq('account_type', 'grup')
+      .select('account_id, account_name, account_type, is_active, total_posts, paused, paused_at, paused_by, pause_reason')
+      .order('account_type')
       .order('account_name');
 
     if (!accounts || accounts.length === 0) {
@@ -48,6 +50,7 @@ export async function GET() {
       return {
         account_id: acc.account_id,
         account_name: acc.account_name,
+        account_type: acc.account_type, // grup/reels/both/ig/tiktok/x
         is_active: acc.is_active,
         total_posts: acc.total_posts,
         paused: !!acc.paused,

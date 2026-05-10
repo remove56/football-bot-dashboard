@@ -6585,14 +6585,42 @@ export default function Home() {
               </button>
             </div>
 
-            {/* Card 1: Account Health */}
-            <div style={{background:'#0f172a',border:'1px solid #1e293b',borderRadius:8,padding:14,marginBottom:14}}>
-              <h3 style={{margin:'0 0 12px 0',fontSize:15,color:'#a5f3fc'}}>👥 Akun Bot Health (16 akun)</h3>
-              {sysHealthAccounts.length === 0 ? (
-                <p style={{fontSize:12,color:'#64748b'}}>Belum ada data. Cron daily 02:00 WIB populate snapshot.</p>
-              ) : (
+            {/* Card 1: Account Health — group by account_type (grup, reels, both, ig, tiktok, x) */}
+            {(() => {
+              // Group accounts by account_type
+              const TYPE_LABELS = {
+                grup: '👥 FB Grup', reels: '🎬 FB Reels', both: '🎬 FB Reels+Grup',
+                ig: '📷 Instagram', tiktok: '🎵 TikTok', x: '🐦 X (Twitter)',
+              };
+              const TYPE_ORDER = ['grup', 'reels', 'both', 'ig', 'tiktok', 'x'];
+              const grouped = {};
+              for (const a of sysHealthAccounts) {
+                const t = a.account_type || 'unknown';
+                if (!grouped[t]) grouped[t] = [];
+                grouped[t].push(a);
+              }
+              const typeKeys = TYPE_ORDER.filter(t => grouped[t]).concat(
+                Object.keys(grouped).filter(t => !TYPE_ORDER.includes(t))
+              );
+              if (sysHealthAccounts.length === 0) {
+                return (
+                  <div style={{background:'#0f172a',border:'1px solid #1e293b',borderRadius:8,padding:14,marginBottom:14}}>
+                    <h3 style={{margin:'0 0 12px 0',fontSize:15,color:'#a5f3fc'}}>👥 Akun Bot Health</h3>
+                    <p style={{fontSize:12,color:'#64748b'}}>Belum ada data. Cron daily 02:00 WIB populate snapshot.</p>
+                  </div>
+                );
+              }
+              return typeKeys.map(typeKey => {
+                const accs = grouped[typeKey];
+                const label = TYPE_LABELS[typeKey] || `❓ ${typeKey}`;
+                const pausedCount = accs.filter(a => a.paused).length;
+                return (
+                  <div key={typeKey} style={{background:'#0f172a',border:'1px solid #1e293b',borderRadius:8,padding:14,marginBottom:14}}>
+                    <h3 style={{margin:'0 0 12px 0',fontSize:15,color:'#a5f3fc'}}>
+                      {label} ({accs.length} akun{pausedCount > 0 ? `, ${pausedCount} paused` : ''})
+                    </h3>
                 <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill, minmax(220px, 1fr))',gap:8}}>
-                  {sysHealthAccounts.map(a => {
+                  {accs.map(a => {
                     // Border color: pause WINS over health tier (visual urgency)
                     const tierColor = a.paused ? '#facc15' : ({
                       safe: '#10b981',
@@ -6661,8 +6689,10 @@ export default function Home() {
                     );
                   })}
                 </div>
-              )}
-            </div>
+                  </div>
+                );
+              });
+            })()}
 
             {/* Card 2: Top Issues */}
             <div style={{background:'#0f172a',border:'1px solid #1e293b',borderRadius:8,padding:14,marginBottom:14}}>
