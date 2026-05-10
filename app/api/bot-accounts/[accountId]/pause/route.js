@@ -12,10 +12,25 @@
  */
 import { createClient } from '@supabase/supabase-js';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
 );
+
+// Verify the requesting username is an admin (server-side check, gak trust client).
+// Pattern existing dashboard: client pass username via body. Server query users table.
+async function verifyAdmin(username) {
+  if (!username) return false;
+  const { data } = await supabase
+    .from('users')
+    .select('role, is_approved')
+    .eq('username', String(username).trim().toLowerCase())
+    .maybeSingle();
+  return !!(data && data.role === 'admin' && data.is_approved !== false);
+}
 
 export async function GET(req, { params }) {
   try {
@@ -50,7 +65,12 @@ export async function POST(req, { params }) {
     const body = await req.json();
     const paused = !!body.paused;
     const reason = String(body.reason || '').substring(0, 500);
-    const by = String(body.by || 'admin').substring(0, 100);
+    const by = String(body.by || '').substring(0, 100);
+
+    // SECURITY: verify caller is admin (server-side check)
+    if (!(await verifyAdmin(by))) {
+      return Response.json({ error: 'Unauthorized: admin role required' }, { status: 403 });
+    }
 
     const updates = paused
       ? { paused: true, paused_at: new Date().toISOString(), paused_by: by, pause_reason: reason }

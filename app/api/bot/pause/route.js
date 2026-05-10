@@ -18,6 +18,16 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
 );
 
+async function verifyAdmin(username) {
+  if (!username) return false;
+  const { data } = await supabase
+    .from('users')
+    .select('role, is_approved')
+    .eq('username', String(username).trim().toLowerCase())
+    .maybeSingle();
+  return !!(data && data.role === 'admin' && data.is_approved !== false);
+}
+
 export async function GET() {
   try {
     const { data } = await supabase.from('app_config').select('value').eq('key', 'bot_paused').maybeSingle();
@@ -37,7 +47,12 @@ export async function POST(req) {
     const body = await req.json();
     const paused = !!body.paused;
     const reason = String(body.reason || '').substring(0, 500);
-    const by = String(body.by || 'admin').substring(0, 100);
+    const by = String(body.by || '').substring(0, 100);
+
+    // SECURITY: verify caller is admin
+    if (!(await verifyAdmin(by))) {
+      return Response.json({ error: 'Unauthorized: admin role required' }, { status: 403 });
+    }
 
     const newValue = paused
       ? { paused: true, paused_at: new Date().toISOString(), paused_by: by, reason }
