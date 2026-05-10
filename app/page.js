@@ -2500,6 +2500,7 @@ export default function Home() {
   const [sysHealthAccounts, setSysHealthAccounts] = useState([]);
   const [sysHealthIssues, setSysHealthIssues] = useState([]);
   const [sysHealthCosts, setSysHealthCosts] = useState(null);
+  const [accPauseLoading, setAccPauseLoading] = useState({}); // { accountId: bool }
   const loadSystemHealth = async () => {
     setSysHealthLoading(true);
     try {
@@ -2513,6 +2514,31 @@ export default function Home() {
       setSysHealthCosts(costRes);
     } catch (e) { /* silent */ }
     finally { setSysHealthLoading(false); }
+  };
+
+  // Per-account pause toggle
+  const toggleAccountPause = async (accountId, currentPaused) => {
+    if (accPauseLoading[accountId]) return;
+    const willPause = !currentPaused;
+    if (willPause && !confirm(`PAUSE akun ${accountId}?\n\nAkun ini gak akan dikasih task baru sampai lo resume.\nAkun lain tetep jalan normal.\n\nLanjutin?`)) return;
+    setAccPauseLoading(prev => ({ ...prev, [accountId]: true }));
+    try {
+      const r = await fetch(`/api/bot-accounts/${accountId}/pause`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paused: willPause, by: user?.username || 'admin', reason: willPause ? 'manual via dashboard' : null }),
+      });
+      const j = await r.json();
+      if (j.error) throw new Error(j.error);
+      // Update state lokal
+      setSysHealthAccounts(prev => prev.map(a => a.account_id === accountId
+        ? { ...a, paused: j.paused, paused_at: j.paused_at, paused_by: j.paused_by, pause_reason: j.pause_reason }
+        : a));
+    } catch (e) {
+      alert('Gagal toggle pause akun: ' + e.message);
+    } finally {
+      setAccPauseLoading(prev => ({ ...prev, [accountId]: false }));
+    }
   };
 
   const loadCaptionAB = async () => {
@@ -6567,15 +6593,17 @@ export default function Home() {
               ) : (
                 <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill, minmax(220px, 1fr))',gap:8}}>
                   {sysHealthAccounts.map(a => {
-                    const tierColor = {
+                    // Border color: pause WINS over health tier (visual urgency)
+                    const tierColor = a.paused ? '#facc15' : ({
                       safe: '#10b981',
                       caution: '#fbbf24',
                       danger: '#f97316',
                       rest_now: '#ef4444',
                       no_data: '#64748b',
-                    }[a.risk_tier] || '#64748b';
+                    }[a.risk_tier] || '#64748b');
+                    const isPauseLoading = !!accPauseLoading[a.account_id];
                     return (
-                      <div key={a.account_id} style={{background:'#1e293b',border:`2px solid ${tierColor}`,borderRadius:6,padding:10}}>
+                      <div key={a.account_id} style={{background:'#1e293b',border:`2px solid ${tierColor}`,borderRadius:6,padding:10,opacity:a.paused?0.7:1}}>
                         <div style={{display:'flex',justifyContent:'space-between',alignItems:'baseline'}}>
                           <strong style={{color:'#e5e7eb',fontSize:13}}>{a.account_name}</strong>
                           <span style={{color:tierColor,fontSize:11,fontWeight:700}}>
@@ -6583,7 +6611,7 @@ export default function Home() {
                           </span>
                         </div>
                         <div style={{fontSize:11,color:tierColor,marginTop:2,fontWeight:600,textTransform:'uppercase'}}>
-                          {a.risk_tier.replace('_', ' ')}
+                          {a.paused ? '⏸️ PAUSED' : a.risk_tier.replace('_', ' ')}
                         </div>
                         <div style={{fontSize:10,color:'#9ca3af',marginTop:6}}>
                           Posts: {a.total_posts} • Cookie: {a.cookie_age_days ?? '?'}d
@@ -6598,11 +6626,37 @@ export default function Home() {
                             Checkpoint 30d: {a.checkpoint_count_30d}×
                           </div>
                         )}
-                        {a.recommended_action && (
+                        {a.recommended_action && !a.paused && (
                           <div style={{fontSize:10,color:'#fbbf24',marginTop:4,fontStyle:'italic'}}>
                             → {a.recommended_action}
                           </div>
                         )}
+                        {a.paused && a.paused_by && (
+                          <div style={{fontSize:10,color:'#facc15',marginTop:4,fontStyle:'italic'}}>
+                            By: {a.paused_by}
+                          </div>
+                        )}
+                        {/* Per-account pause/resume button */}
+                        <button
+                          onClick={() => toggleAccountPause(a.account_id, a.paused)}
+                          disabled={isPauseLoading}
+                          style={{
+                            marginTop: 8,
+                            width: '100%',
+                            padding: '4px 8px',
+                            fontSize: 10,
+                            fontWeight: 600,
+                            background: a.paused ? '#facc15' : '#1e293b',
+                            color: a.paused ? '#78350f' : '#a5f3fc',
+                            border: `1px solid ${a.paused ? '#facc15' : '#334155'}`,
+                            borderRadius: 4,
+                            cursor: isPauseLoading ? 'wait' : 'pointer',
+                            opacity: isPauseLoading ? 0.5 : 1,
+                          }}
+                          title={a.paused ? 'Klik untuk RESUME akun ini' : 'Klik untuk PAUSE akun ini (akun lain tetep jalan)'}
+                        >
+                          {isPauseLoading ? '⏳ ...' : (a.paused ? '▶️ RESUME' : '⏸️ PAUSE')}
+                        </button>
                       </div>
                     );
                   })}

@@ -16,7 +16,7 @@ export async function GET() {
     // Ambil snapshot terbaru per account_id (lateral join workaround:
     // 1. distinct account_id, lalu fetch latest per akun)
     const { data: accounts } = await supabase.from('bot_accounts')
-      .select('account_id, account_name, is_active, total_posts')
+      .select('account_id, account_name, is_active, total_posts, paused, paused_at, paused_by, pause_reason')
       .eq('account_type', 'grup')
       .order('account_name');
 
@@ -45,6 +45,10 @@ export async function GET() {
         account_name: acc.account_name,
         is_active: acc.is_active,
         total_posts: acc.total_posts,
+        paused: !!acc.paused,
+        paused_at: acc.paused_at,
+        paused_by: acc.paused_by,
+        pause_reason: acc.pause_reason,
         health_score: snap?.health_score ?? null,
         risk_tier: snap?.risk_tier ?? 'no_data',
         cookie_age_days: snap?.cookie_age_days ?? null,
