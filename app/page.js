@@ -2516,11 +2516,13 @@ export default function Home() {
     finally { setSysHealthLoading(false); }
   };
 
-  // Per-account pause toggle
-  const toggleAccountPause = async (accountId, currentPaused) => {
+  // Per-account pause toggle. Optional 3rd arg: account info untuk friendly confirm message.
+  const toggleAccountPause = async (accountId, currentPaused, accountInfo = {}) => {
     if (accPauseLoading[accountId]) return;
     const willPause = !currentPaused;
-    if (willPause && !confirm(`PAUSE akun ${accountId}?\n\nAkun ini gak akan dikasih task baru sampai lo resume.\nAkun lain tetep jalan normal.\n\nLanjutin?`)) return;
+    const friendlyName = accountInfo.account_name || accountId;
+    const typeLabel = accountInfo.account_type ? ` (${accountInfo.account_type})` : '';
+    if (willPause && !confirm(`PAUSE akun "${friendlyName}"${typeLabel}?\n\nID: ${accountId}\n\nAkun ini gak akan dikasih task baru sampai lo resume.\nAkun lain tetep jalan normal.\n\nLanjutin?`)) return;
     setAccPauseLoading(prev => ({ ...prev, [accountId]: true }));
     try {
       const r = await fetch(`/api/bot-accounts/${accountId}/pause`, {
@@ -6666,7 +6668,7 @@ export default function Home() {
                         )}
                         {/* Per-account pause/resume button */}
                         <button
-                          onClick={() => toggleAccountPause(a.account_id, a.paused)}
+                          onClick={() => toggleAccountPause(a.account_id, a.paused, a)}
                           disabled={isPauseLoading}
                           style={{
                             marginTop: 8,
