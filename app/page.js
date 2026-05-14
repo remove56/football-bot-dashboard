@@ -1285,6 +1285,20 @@ export default function Home() {
     loadTaskQueue();
   };
 
+  // Cancel task yang lagi running. Worker akan deteksi status='cancelled'
+  // di checkpoint berikutnya (~5-30 detik tergantung step) dan abort cleanly.
+  // Beda dengan deleteTask: keep row buat audit + worker bisa lihat status change.
+  const cancelTask = async (id, label) => {
+    if (!confirm(`Batalkan task "${label || id}" yang lagi running?\n\nBot akan stop di checkpoint berikutnya (max ~30 detik) dan kembali ke standby.`)) return;
+    const { error } = await supabase.from('task_queue').update({
+      status: 'cancelled',
+      completed_at: new Date().toISOString(),
+      error_message: `Cancelled by admin via dashboard at ${new Date().toLocaleString('id-ID')}`,
+    }).eq('id', id);
+    if (error) { alert(`Gagal cancel: ${error.message}`); return; }
+    loadTaskQueue();
+  };
+
   const clearDoneTasks = async () => {
     if (!confirm('Hapus semua tugas yang sudah selesai?')) return;
     await supabase.from('task_queue').delete().eq('status', 'done');
@@ -2811,6 +2825,17 @@ export default function Home() {
     });
     if (error) setReelsMsg('Error: ' + error.message);
     else { setReelsMsg(`Tugas reels dibuat untuk ${accountName} → ${selectedPlatforms.join(' + ')}!`); loadReelsTasks(); }
+  };
+
+  const cancelReelsTask = async (id, label) => {
+    if (!confirm(`Batalkan reels task "${label || id}" yang lagi running?\n\nBot akan stop di checkpoint berikutnya (max ~30 detik). Video yg lagi di-generate tetap selesai tapi gak akan di-post.`)) return;
+    const { error } = await supabase.from('reels_tasks').update({
+      status: 'cancelled',
+      completed_at: new Date().toISOString(),
+      error_message: `Cancelled by admin via dashboard at ${new Date().toLocaleString('id-ID')}`,
+    }).eq('id', id);
+    if (error) { alert(`Gagal cancel: ${error.message}`); return; }
+    loadReelsTasks();
   };
 
   const deleteReelsTask = async (id) => {
@@ -5275,6 +5300,7 @@ export default function Home() {
                 <span style={{color:'#60a5fa'}}>Running: {taskQueue.filter(t=>t.status==='running').length}</span>
                 <span style={{color:'#10b981'}}>Done: {taskQueue.filter(t=>t.status==='done').length}</span>
                 <span style={{color:'#ef4444'}}>Failed: {taskQueue.filter(t=>t.status==='failed').length}</span>
+                <span style={{color:'#9ca3af'}}>Cancelled: {taskQueue.filter(t=>t.status==='cancelled').length}</span>
               </div>
 
               <table style={{width:'100%',borderCollapse:'collapse'}}>
@@ -5287,9 +5313,14 @@ export default function Home() {
                       <td style={S.td}>{t.group_name}</td>
                       <td style={{...S.td,fontSize:12,color:'#9ca3af'}}>{t.club}</td>
                       <td style={S.td}><span style={S.badge(t.task_type==='full'?'ok':t.task_type==='news'?'approved':'member')}>{t.task_type==='full'?'2G+1V':t.task_type==='news'?'2 Berita':'1 Video'}</span></td>
-                      <td style={S.td}><span style={S.badge(t.status==='done'?'ok':t.status==='running'?'approved':t.status==='failed'?'fail':'pending')}>{t.status}</span></td>
+                      <td style={S.td}><span style={S.badge(t.status==='done'?'ok':t.status==='running'?'approved':t.status==='failed'?'fail':t.status==='cancelled'?'member':'pending')}>{t.status}</span></td>
                       <td style={{...S.td,fontSize:11,color:'#6b7280'}}>{t.completed_at?new Date(t.completed_at).toLocaleString('id-ID'):t.started_at?'Running...':new Date(t.created_at).toLocaleString('id-ID')}</td>
-                      <td style={S.td}>{t.status!=='running'&&<button onClick={()=>deleteTask(t.id)} style={{...S.btn('#7f1d1d'),padding:'3px 8px',fontSize:11}}>Hapus</button>}</td>
+                      <td style={S.td}>
+                        {t.status==='running'
+                          ? <button onClick={()=>cancelTask(t.id, `${t.member_name} → ${t.group_name}`)} style={{...S.btn('#b45309'),padding:'3px 8px',fontSize:11}} title="Stop bot — abort di checkpoint berikutnya">⏹ Cancel</button>
+                          : <button onClick={()=>deleteTask(t.id)} style={{...S.btn('#7f1d1d'),padding:'3px 8px',fontSize:11}}>Hapus</button>
+                        }
+                      </td>
                     </tr>
                   ))}
                   {taskQueue.length===0 && <tr><td colSpan={8} style={{...S.td,textAlign:'center',color:'#6b7280'}}>Belum ada tugas. Buat tugas di atas.</td></tr>}
@@ -5509,14 +5540,17 @@ export default function Home() {
                         </td>
                         <td style={{...S.td,fontSize:12,color:'#9ca3af'}}>{t.keyword || 'random'}</td>
                         <td style={S.td}>
-                          <span style={S.badge(t.status === 'done' ? 'ok' : t.status === 'failed' ? 'fail' : t.status === 'running' ? 'approved' : 'pending')}>
+                          <span style={S.badge(t.status === 'done' ? 'ok' : t.status === 'failed' ? 'fail' : t.status === 'running' ? 'approved' : t.status === 'cancelled' ? 'member' : 'pending')}>
                             {t.status}
                           </span>
                         </td>
                         <td style={{...S.td,fontSize:10,color:'#6b7280',maxWidth:150}}>{resultInfo.substring(0, 50)}</td>
                         <td style={{...S.td,fontSize:12,color:'#6b7280'}}>{new Date(t.created_at).toLocaleString('id-ID')}</td>
                         <td style={S.td}>
-                          <button onClick={()=>deleteReelsTask(t.id)} style={{...S.btn('#7f1d1d'),fontSize:11,padding:'4px 8px'}}>Hapus</button>
+                          {t.status === 'running'
+                            ? <button onClick={()=>cancelReelsTask(t.id, `${t.account_name} (${platforms.join('+')})`)} style={{...S.btn('#b45309'),fontSize:11,padding:'4px 8px'}} title="Stop reels worker — abort di checkpoint berikutnya">⏹ Cancel</button>
+                            : <button onClick={()=>deleteReelsTask(t.id)} style={{...S.btn('#7f1d1d'),fontSize:11,padding:'4px 8px'}}>Hapus</button>
+                          }
                         </td>
                       </tr>
                       );
