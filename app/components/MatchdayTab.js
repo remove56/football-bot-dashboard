@@ -13,28 +13,8 @@ import React, { useState, useEffect } from 'react';
  */
 
 const S = {
-  // Marquee scrolling bar
-  marqueeBar: {
-    background: 'linear-gradient(90deg, rgba(34,197,94,0.20), rgba(245,158,11,0.20), rgba(34,197,94,0.20))',
-    border: '1px solid rgba(34,211,238,0.35)',
-    borderRadius: 4,
-    padding: '14px 0',
-    overflow: 'hidden',
-    marginBottom: 20,
-    position: 'relative',
-    boxShadow: '0 0 24px rgba(34,211,238,0.15), inset 0 0 24px rgba(34,197,94,0.06)',
-  },
-  marqueeInner: {
-    display: 'inline-block',
-    whiteSpace: 'nowrap',
-    fontSize: 16,
-    fontWeight: 700,
-    color: '#E5E7EB',
-    paddingLeft: '100%',
-    animation: 'matchdayScroll 60s linear infinite',
-    fontFamily: 'Menlo, Consolas, "Courier New", monospace',
-    letterSpacing: 0.5,
-  },
+  // Marquee dipindah ke MatchdayMarquee.js (always-visible di luar tab)
+
   vs: { color: '#F59E0B', fontWeight: 900, padding: '0 8px' },
 
   // Stat cards
@@ -168,43 +148,15 @@ export default function MatchdayTab() {
     return <div style={{ ...S.empty, color: '#EF4444' }}>Error: {error}</div>;
   }
 
-  const fixtures = data.fixtures || [];
   const groups = data.groups || [];
   const stats = data.stats || { total: 0, with_suggested_account: 0, no_suggested_account: 0 };
   const updatedAt = data.updated_at
     ? new Date(data.updated_at).toLocaleString('id-ID', { timeZone: 'Asia/Jakarta', hour12: false })
     : '-';
 
-  // Build marquee text (HTML string with vs styling)
-  const marqueeFragments = fixtures.map((f, idx) => (
-    <span key={f.match_id || idx}>
-      🔥 {formatKickoff(f.kickoff)}&nbsp;&nbsp;
-      {f.home}<span style={S.vs}>VS</span>{f.away}
-      &nbsp;&nbsp;📍 {f.venue || '—'}
-      &nbsp;&nbsp;[{f.competition}]
-      &nbsp;&nbsp;⚽⚽⚽&nbsp;&nbsp;
-    </span>
-  ));
-
   return (
     <div>
-      <style>{`
-        @keyframes matchdayScroll {
-          0%   { transform: translate(0, 0); }
-          100% { transform: translate(-100%, 0); }
-        }
-      `}</style>
-
-      {/* Marquee running text */}
-      <div style={S.marqueeBar}>
-        <div style={S.marqueeInner}>
-          {fixtures.length > 0 ? marqueeFragments :
-            '⚽ Belum ada matchday card siap. Run: bun scripts/run-match-scheduler.js --hours 48 --mark ⚽'
-          }
-        </div>
-      </div>
-
-      {/* Meta + refresh */}
+      {/* Meta + refresh — marquee sekarang di luar tab (always visible top dashboard) */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
         <div style={S.meta}>
           Last updated: {updatedAt} WIB · Auto-refresh: 30s
