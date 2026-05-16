@@ -7,12 +7,8 @@ import React, { useState, useEffect } from 'react';
  * Auto-refresh data tiap 60 detik.
  */
 
-const KEYFRAMES = `
-  @keyframes matchdayMarqueeScroll {
-    0%   { transform: translateX(0); }
-    100% { transform: translateX(-50%); }
-  }
-`;
+// NOTE: @keyframes matchdayMarqueeScroll defined globally di app/layout.js
+// (sama pattern dgn bellPulse, onlinePulse, dll). Component cuma reference name-nya.
 
 const S = {
   bar: {
@@ -116,14 +112,11 @@ export default function MatchdayMarquee() {
   )];
 
   return (
-    <>
-      <style dangerouslySetInnerHTML={{ __html: KEYFRAMES }} />
-      <div style={S.bar}>
-        <div style={S.prefix}>⚽ MATCHDAY HARI INI</div>
-        <div style={S.scrollWrap}>
-          <div style={S.scrollContent}>{doubledItems}</div>
-        </div>
+    <div style={S.bar}>
+      <div style={S.prefix}>⚽ MATCHDAY HARI INI</div>
+      <div style={S.scrollWrap}>
+        <div style={S.scrollContent}>{doubledItems}</div>
       </div>
-    </>
+    </div>
   );
 }

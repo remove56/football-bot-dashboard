@@ -272,6 +272,12 @@ export default function RootLayout({ children }) {
             50%      { box-shadow: 0 0 0 6px rgba(34, 197, 94, 0); }
           }
 
+          /* Matchday ticker scroll — horizontal infinite loop */
+          @keyframes matchdayMarqueeScroll {
+            0%   { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+          }
+
           .chat-message-row:hover .msg-delete-btn { opacity: 1 !important; }
 
           /* ============================================================
