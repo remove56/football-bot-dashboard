@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import bcrypt from 'bcryptjs';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import MatchdayTab from './components/MatchdayTab';
 
 // ============================================================
 // STYLES
@@ -2863,6 +2864,7 @@ export default function Home() {
   const isAdmin = user.role === 'admin';
   const adminTabs = [
     { id: 'overview', label: 'Overview' },
+    { id: 'matchday', label: '⚽ Matchday' },
     { id: 'analytics', label: 'Analytics' },
     { id: 'weekly', label: 'Data Mingguan' },
     { id: 'posttrack', label: 'Tracking Postingan' },
@@ -3940,6 +3942,19 @@ export default function Home() {
             </div>
           );
         })()}
+
+        {/* MATCHDAY TAB — Phase 5.1 ticker + ready groups (all manual) */}
+        {tab === 'matchday' && isAdmin && (
+          <div className="hud-panel" style={{marginBottom:24}}>
+            <div style={{marginBottom:14}}>
+              <span className="hud-label">▣ Matchday Ticker</span>
+              <div style={{fontSize:11,color:'#94a3b8',marginTop:8}}>
+                Running text scheduling + list grup matchday ready. SEMUA MODE MANUAL — kamu post sendiri.
+              </div>
+            </div>
+            <MatchdayTab />
+          </div>
+        )}
 
         {/* OVERVIEW (admin) */}
         {tab === 'overview' && isAdmin && (
