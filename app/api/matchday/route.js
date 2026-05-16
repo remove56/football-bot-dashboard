@@ -97,6 +97,7 @@ export async function GET() {
 
     return NextResponse.json({
       updated_at: new Date().toISOString(),
+      api_version: '5.2.1', // bumped 2026-05-17 force Vercel redeploy
       fixtures,
       groups: enrichedGroups,
       stats,
