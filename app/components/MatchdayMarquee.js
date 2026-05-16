@@ -1,14 +1,11 @@
 'use client';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 /**
- * MatchdayMarquee — running text scrolling at top of dashboard.
- * Always visible (di luar tab), kasih reminder visual matchday hari ini.
- * Auto-refresh data tiap 60 detik.
+ * MatchdayMarquee — running text scrolling.
+ * Pakai JavaScript-driven animation (requestAnimationFrame), bukan CSS keyframes.
+ * Reliable di semua browser + bypass Next.js style transform issues.
  */
-
-// NOTE: @keyframes matchdayMarqueeScroll defined globally di app/layout.js
-// (sama pattern dgn bellPulse, onlinePulse, dll). Component cuma reference name-nya.
 
 const S = {
   bar: {
@@ -41,7 +38,7 @@ const S = {
     pointerEvents: 'none',
   },
   scrollWrap: {
-    paddingLeft: '180px', // space at the LEFT (di luar animation, di parent wrapper)
+    paddingLeft: '180px',
     overflow: 'hidden',
   },
   scrollContent: {
@@ -52,12 +49,8 @@ const S = {
     color: '#E5E7EB',
     fontFamily: 'Menlo, Consolas, "Courier New", monospace',
     letterSpacing: 0.3,
-    // Animation set via individual properties (more reliable in inline styles)
-    animationName: 'matchdayMarqueeScroll',
-    animationDuration: '40s',
-    animationTimingFunction: 'linear',
-    animationIterationCount: 'infinite',
     willChange: 'transform',
+    transform: 'translateX(0)',
   },
   vs: { color: '#F59E0B', fontWeight: 900, padding: '0 6px' },
   item: { paddingRight: 40 },
@@ -74,6 +67,7 @@ function formatKickoff(iso) {
 export default function MatchdayMarquee() {
   const [fixtures, setFixtures] = useState([]);
   const [loading, setLoading] = useState(true);
+  const scrollRef = useRef(null);
 
   const fetchData = async () => {
     try {
@@ -94,6 +88,39 @@ export default function MatchdayMarquee() {
     return () => clearInterval(id);
   }, []);
 
+  // JS-driven scroll animation — manipulate transform tiap frame
+  useEffect(() => {
+    if (fixtures.length === 0) return;
+    const el = scrollRef.current;
+    if (!el) return;
+
+    const speed = 60; // pixels per second
+    let offset = 0;
+    let lastTime;
+    let rafId;
+
+    function tick(now) {
+      if (lastTime === undefined) lastTime = now;
+      const dt = (now - lastTime) / 1000;
+      lastTime = now;
+      offset -= speed * dt;
+
+      // Reset saat lewatin 50% width (karena content di-doubled, 50% = 1 set full)
+      const halfWidth = el.scrollWidth / 2;
+      if (Math.abs(offset) >= halfWidth && halfWidth > 0) {
+        offset = 0;
+      }
+
+      el.style.transform = `translateX(${offset}px)`;
+      rafId = requestAnimationFrame(tick);
+    }
+
+    rafId = requestAnimationFrame(tick);
+    return () => {
+      if (rafId) cancelAnimationFrame(rafId);
+    };
+  }, [fixtures]);
+
   if (loading && fixtures.length === 0) return null;
   if (fixtures.length === 0) return null;
 
@@ -106,16 +133,17 @@ export default function MatchdayMarquee() {
     </span>
   ));
 
-  // Duplicate items untuk seamless loop (-50% translation = exactly one full set)
-  const doubledItems = [...itemElements, ...itemElements.map((el, i) =>
-    React.cloneElement(el, { key: `dup-${i}` })
-  )];
+  // Duplicate items untuk seamless loop
+  const doubledItems = [
+    ...itemElements,
+    ...itemElements.map((el, i) => React.cloneElement(el, { key: `dup-${i}` })),
+  ];
 
   return (
     <div style={S.bar}>
       <div style={S.prefix}>⚽ MATCHDAY HARI INI</div>
       <div style={S.scrollWrap}>
-        <div style={S.scrollContent}>{doubledItems}</div>
+        <div ref={scrollRef} style={S.scrollContent}>{doubledItems}</div>
       </div>
     </div>
   );
