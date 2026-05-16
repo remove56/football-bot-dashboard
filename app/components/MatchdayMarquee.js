@@ -7,6 +7,13 @@ import React, { useState, useEffect } from 'react';
  * Auto-refresh data tiap 60 detik.
  */
 
+const KEYFRAMES = `
+  @keyframes matchdayMarqueeScroll {
+    0%   { transform: translateX(0); }
+    100% { transform: translateX(-50%); }
+  }
+`;
+
 const S = {
   bar: {
     background: 'linear-gradient(90deg, rgba(11,17,32,0.85), rgba(17,24,39,0.85), rgba(11,17,32,0.85))',
@@ -26,8 +33,8 @@ const S = {
     bottom: 0,
     display: 'flex',
     alignItems: 'center',
-    padding: '0 16px',
-    background: 'linear-gradient(90deg, rgba(34,197,94,0.30), rgba(34,197,94,0))',
+    padding: '0 24px 0 16px',
+    background: 'linear-gradient(90deg, rgba(11,17,32,0.95) 70%, rgba(11,17,32,0) 100%)',
     color: '#22C55E',
     fontFamily: 'Menlo, Consolas, "Courier New", monospace',
     fontSize: 11,
@@ -35,26 +42,29 @@ const S = {
     letterSpacing: 1.5,
     textTransform: 'uppercase',
     zIndex: 2,
+    pointerEvents: 'none',
   },
-  inner: {
+  scrollWrap: {
+    paddingLeft: '180px', // space at the LEFT (di luar animation, di parent wrapper)
+    overflow: 'hidden',
+  },
+  scrollContent: {
     display: 'inline-block',
     whiteSpace: 'nowrap',
     fontSize: 14,
     fontWeight: 600,
     color: '#E5E7EB',
-    paddingLeft: '180px', // space for prefix label
-    animation: 'matchdayMarqueeScroll 45s linear infinite',
     fontFamily: 'Menlo, Consolas, "Courier New", monospace',
     letterSpacing: 0.3,
+    // Animation set via individual properties (more reliable in inline styles)
+    animationName: 'matchdayMarqueeScroll',
+    animationDuration: '40s',
+    animationTimingFunction: 'linear',
+    animationIterationCount: 'infinite',
+    willChange: 'transform',
   },
   vs: { color: '#F59E0B', fontWeight: 900, padding: '0 6px' },
-  empty: {
-    padding: '10px 24px 10px 180px',
-    color: '#9CA3AF',
-    fontSize: 13,
-    fontStyle: 'italic',
-    fontFamily: 'Menlo, Consolas, "Courier New", monospace',
-  },
+  item: { paddingRight: 40 },
 };
 
 function formatKickoff(iso) {
@@ -76,7 +86,7 @@ export default function MatchdayMarquee() {
       const json = await res.json();
       setFixtures(json.fixtures || []);
     } catch (e) {
-      // silent fail — marquee non-critical
+      // silent fail
     } finally {
       setLoading(false);
     }
@@ -84,35 +94,36 @@ export default function MatchdayMarquee() {
 
   useEffect(() => {
     fetchData();
-    const id = setInterval(fetchData, 60000); // 60s refresh
+    const id = setInterval(fetchData, 60000);
     return () => clearInterval(id);
   }, []);
 
-  if (loading && fixtures.length === 0) return null; // hide while initial load
-  if (fixtures.length === 0) return null; // hide kalau no fixtures
+  if (loading && fixtures.length === 0) return null;
+  if (fixtures.length === 0) return null;
 
-  const items = fixtures.flatMap((f, idx) => [
-    <span key={`fx-${idx}`}>
+  const itemElements = fixtures.map((f, idx) => (
+    <span key={`fx-${idx}`} style={S.item}>
       🔥 {formatKickoff(f.kickoff)} WIB&nbsp;
       <strong>{f.home}</strong><span style={S.vs}>VS</span><strong>{f.away}</strong>
       &nbsp;📍 {f.venue || '—'}&nbsp;[{f.competition}]
-    </span>,
-    <span key={`sep-${idx}`}>&nbsp;&nbsp;&nbsp;⚽&nbsp;&nbsp;&nbsp;</span>,
-  ]);
+      &nbsp;&nbsp;⚽
+    </span>
+  ));
 
-  // Repeat items 2x untuk seamless loop
-  const doubledItems = [...items, ...items];
+  // Duplicate items untuk seamless loop (-50% translation = exactly one full set)
+  const doubledItems = [...itemElements, ...itemElements.map((el, i) =>
+    React.cloneElement(el, { key: `dup-${i}` })
+  )];
 
   return (
-    <div style={S.bar}>
-      <style>{`
-        @keyframes matchdayMarqueeScroll {
-          0%   { transform: translate(0, 0); }
-          100% { transform: translate(-50%, 0); }
-        }
-      `}</style>
-      <div style={S.prefix}>⚽ MATCHDAY HARI INI</div>
-      <div style={S.inner}>{doubledItems}</div>
-    </div>
+    <>
+      <style dangerouslySetInnerHTML={{ __html: KEYFRAMES }} />
+      <div style={S.bar}>
+        <div style={S.prefix}>⚽ MATCHDAY HARI INI</div>
+        <div style={S.scrollWrap}>
+          <div style={S.scrollContent}>{doubledItems}</div>
+        </div>
+      </div>
+    </>
   );
 }
