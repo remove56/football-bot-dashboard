@@ -266,9 +266,14 @@ export default function MatchdayTab() {
                   <td style={S.td}>{info.home} <span style={S.vs}>vs</span> {info.away}</td>
                   <td style={S.td}>{formatKickoff(info.kickoff)}</td>
                   <td style={S.td}>
-                    {g.card_path
-                      ? <a style={S.link} href={`file:///${g.card_path.replace(/\\/g, '/')}`} target="_blank" rel="noreferrer">📷 Lihat</a>
-                      : '-'
+                    {g.card_url
+                      ? <a style={S.link} href={g.card_url} target="_blank" rel="noreferrer">📷 Lihat</a>
+                      : (g.card_path
+                          ? <span style={{ color: '#9CA3AF', fontStyle: 'italic', fontSize: 11 }}>
+                              upload pending — re-run scheduler
+                            </span>
+                          : '-'
+                        )
                     }
                   </td>
                 </tr>

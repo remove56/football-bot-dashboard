@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import bcrypt from 'bcryptjs';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import MatchdayTab from './components/MatchdayTab';
+import MatchdayMarquee from './components/MatchdayMarquee';
 
 // ============================================================
 // STYLES
@@ -3895,6 +3896,9 @@ export default function Home() {
           </div>
         </div>
       )}
+
+      {/* MATCHDAY MARQUEE — always visible below header (di luar tab system) */}
+      <MatchdayMarquee />
 
       {/* TABS */}
       <div style={S.tabs} className="dash-tabs">

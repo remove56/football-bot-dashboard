@@ -79,6 +79,7 @@ export async function GET() {
       suggested_account_id: g.primary_account_id,
       suggested_account_name: g.primary_account_id ? (accMap[g.primary_account_id] || null) : null,
       card_path: g.matchday_card_path,
+      card_url: g.matchday_match_info?.card_url || null, // Phase 5.2: storage URL
       match_info: g.matchday_match_info,
       prepared_at: g.matchday_prepared_at,
       status: 'manual',
