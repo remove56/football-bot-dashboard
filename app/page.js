@@ -3952,7 +3952,7 @@ export default function Home() {
 
         {/* COOKIES STATUS TAB — Phase 6.2 (admin only — sensitive info) */}
         {tab === 'cookies' && isAdmin && (
-          <div className="hud-panel" style={{marginBottom:24,background:'transparent'}}>
+          <div className="hud-panel" style={{marginBottom:24}}>
             <div style={{marginBottom:14}}>
               <span className="hud-label">▣ Cookies Status Monitor</span>
               <div style={{fontSize:11,color:'#94a3b8',marginTop:8}}>
@@ -3967,7 +3967,7 @@ export default function Home() {
         {/* MATCHDAY TAB — Phase 5.1 ticker + ready groups (all manual)
             Tersedia untuk admin + member (semua bisa lihat schedule + card siap) */}
         {tab === 'matchday' && (
-          <div className="hud-panel" style={{marginBottom:24,background:'transparent'}}>
+          <div className="hud-panel" style={{marginBottom:24}}>
             <div style={{marginBottom:14}}>
               <span className="hud-label">▣ Matchday Schedule</span>
               <div style={{fontSize:11,color:'#94a3b8',marginTop:8}}>
