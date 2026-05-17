@@ -2883,6 +2883,7 @@ export default function Home() {
   ];
   const memberTabs = [
     { id: 'groups', label: 'Daftar Grup' },
+    { id: 'matchday', label: '⚽ Matchday' },
     { id: 'weekly', label: 'Data Mingguan' },
     { id: 'posttrack', label: 'Tracking Postingan' },
   ];
@@ -3947,13 +3948,14 @@ export default function Home() {
           );
         })()}
 
-        {/* MATCHDAY TAB — Phase 5.1 ticker + ready groups (all manual) */}
-        {tab === 'matchday' && isAdmin && (
+        {/* MATCHDAY TAB — Phase 5.1 ticker + ready groups (all manual)
+            Tersedia untuk admin + member (semua bisa lihat schedule + card siap) */}
+        {tab === 'matchday' && (
           <div className="hud-panel" style={{marginBottom:24}}>
             <div style={{marginBottom:14}}>
-              <span className="hud-label">▣ Matchday Ticker</span>
+              <span className="hud-label">▣ Matchday Schedule</span>
               <div style={{fontSize:11,color:'#94a3b8',marginTop:8}}>
-                Running text scheduling + list grup matchday ready. SEMUA MODE MANUAL — kamu post sendiri.
+                List grup matchday ready + jadwal pertandingan. MODE MANUAL — post via akun bot masing-masing.
               </div>
             </div>
             <MatchdayTab />
