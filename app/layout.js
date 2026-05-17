@@ -334,7 +334,7 @@ export default function RootLayout({ children }) {
           .hud-panel {
             position: relative;
             padding: 18px;
-            background-color: var(--surface);
+            background-color: transparent;
             border: 1px solid var(--border);
             border-radius: var(--radius);
             box-shadow: var(--shadow-sm);
