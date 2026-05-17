@@ -192,6 +192,17 @@ export default function CookiesStatusTab() {
         ))}
       </div>
 
+      {/* Info banner — penjelasan kenapa File Age yg utama */}
+      <div style={{
+        marginBottom: 12, padding: '10px 14px',
+        background: 'rgba(34,211,238,0.08)', border: '1px solid rgba(34,211,238,0.25)', borderRadius: 4,
+        fontSize: 11, color: '#9CA3AF', lineHeight: 1.6,
+      }}>
+        <strong style={{ color: '#22D3EE' }}>ℹ️ Indikator utama: File Age</strong> (umur sejak cookies di-refresh).
+        FB biasa <strong>invalidate session 14-30 hari</strong> walau cookie spec masih panjang.
+        Refresh proaktif saat file age <strong>≥14 hari</strong>.
+      </div>
+
       {/* Table */}
       <table style={S.table}>
         <thead>
@@ -199,9 +210,8 @@ export default function CookiesStatusTab() {
             <th style={S.th}>Status</th>
             <th style={S.th}>Account ID</th>
             <th style={S.th}>Akun Bot</th>
-            <th style={S.th}>Cookies Refreshed</th>
             <th style={S.th}>File Age</th>
-            <th style={S.th}>xs Expires In</th>
+            <th style={S.th}>Cookies Refreshed</th>
             <th style={S.th}>Last Validated</th>
             <th style={S.th}>Test Result</th>
             <th style={S.th}>Total Posts</th>
@@ -209,28 +219,37 @@ export default function CookiesStatusTab() {
           </tr>
         </thead>
         <tbody>
-          {accounts.map(a => (
-            <tr key={a.id}>
-              <td style={S.td}>
-                <span style={S.badge(a.status)}>{STATUS_COLORS[a.status]?.label || a.status}</span>
-              </td>
-              <td style={S.td}><span style={S.code}>{a.id}</span></td>
-              <td style={S.td}>{a.name}</td>
-              <td style={S.td}>{formatRelative(a.cookies_refreshed_at)}</td>
-              <td style={S.td}>{a.file_age_days !== null ? a.file_age_days + 'd' : '—'}</td>
-              <td style={S.td}>{formatExpireIn(a.xs_expires_in_hours)}</td>
-              <td style={S.td}>{formatRelative(a.cookies_last_validated_at)}</td>
-              <td style={S.td}>
-                {a.cookies_last_validation_result === 'valid' ? <span style={{ color: '#22C55E' }}>✓ valid</span>
-                  : a.cookies_last_validation_result === 'invalid' ? <span style={{ color: '#EF4444' }}>✗ invalid</span>
-                  : <span style={{ color: '#9CA3AF', fontStyle: 'italic' }}>not tested</span>}
-              </td>
-              <td style={S.td}>{a.total_posts || 0}</td>
-              <td style={{ ...S.td, fontSize: 10, color: '#9CA3AF', maxWidth: 220 }}>
-                {a.pause_reason ? a.pause_reason.substring(0, 80) + (a.pause_reason.length > 80 ? '…' : '') : '—'}
-              </td>
-            </tr>
-          ))}
+          {accounts.map(a => {
+            // Color-code file age cell
+            const ageDays = a.file_age_days;
+            const ageColor = ageDays === null ? '#9CA3AF'
+              : ageDays >= 20 ? '#EF4444'
+              : ageDays >= 14 ? '#F59E0B'
+              : '#22C55E';
+            return (
+              <tr key={a.id}>
+                <td style={S.td}>
+                  <span style={S.badge(a.status)}>{STATUS_COLORS[a.status]?.label || a.status}</span>
+                </td>
+                <td style={S.td}><span style={S.code}>{a.id}</span></td>
+                <td style={S.td}>{a.name}</td>
+                <td style={{ ...S.td, color: ageColor, fontWeight: 700 }}>
+                  {ageDays !== null ? ageDays + 'd' : '—'}
+                </td>
+                <td style={S.td}>{formatRelative(a.cookies_refreshed_at)}</td>
+                <td style={S.td}>{formatRelative(a.cookies_last_validated_at)}</td>
+                <td style={S.td}>
+                  {a.cookies_last_validation_result === 'valid' ? <span style={{ color: '#22C55E' }}>✓ valid</span>
+                    : a.cookies_last_validation_result === 'invalid' ? <span style={{ color: '#EF4444' }}>✗ invalid</span>
+                    : <span style={{ color: '#9CA3AF', fontStyle: 'italic' }}>not tested</span>}
+                </td>
+                <td style={S.td}>{a.total_posts || 0}</td>
+                <td style={{ ...S.td, fontSize: 10, color: '#9CA3AF', maxWidth: 220 }}>
+                  {a.pause_reason ? a.pause_reason.substring(0, 80) + (a.pause_reason.length > 80 ? '…' : '') : '—'}
+                </td>
+              </tr>
+            );
+          })}
         </tbody>
       </table>
 
