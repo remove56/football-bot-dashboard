@@ -5,6 +5,7 @@ import bcrypt from 'bcryptjs';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import MatchdayTab from './components/MatchdayTab';
 import MatchdayMarquee from './components/MatchdayMarquee';
+import CookiesStatusTab from './components/CookiesStatusTab';
 
 // ============================================================
 // STYLES
@@ -2879,6 +2880,7 @@ export default function Home() {
     { id: 'grouphealth', label: '💚 Group Health' },
     { id: 'captionab', label: '🅰️🅱️ A/B Caption' },
     { id: 'syshealth', label: '🩺 System Health' },
+    { id: 'cookies', label: '🍪 Cookies' },
     { id: 'settings', label: '⚙️ Pengaturan' },
   ];
   const memberTabs = [
@@ -3947,6 +3949,20 @@ export default function Home() {
             </div>
           );
         })()}
+
+        {/* COOKIES STATUS TAB — Phase 6.2 (admin only — sensitive info) */}
+        {tab === 'cookies' && isAdmin && (
+          <div className="hud-panel" style={{marginBottom:24}}>
+            <div style={{marginBottom:14}}>
+              <span className="hud-label">▣ Cookies Status Monitor</span>
+              <div style={{fontSize:11,color:'#94a3b8',marginTop:8}}>
+                Status cookies semua akun bot. Auto-scan tiap pagi 05:00 WIB + active test mingguan Sabtu.
+                Notif otomatis 1 hari sebelum expire.
+              </div>
+            </div>
+            <CookiesStatusTab />
+          </div>
+        )}
 
         {/* MATCHDAY TAB — Phase 5.1 ticker + ready groups (all manual)
             Tersedia untuk admin + member (semua bisa lihat schedule + card siap) */}
