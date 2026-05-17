@@ -19,20 +19,19 @@ const STATUS_COLORS = {
 const S = {
   statsRow: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 10, marginBottom: 18 },
   stat: (color) => ({
-    background: 'rgba(17,24,39,0.55)',
+    background: 'transparent',
     border: `1px solid ${color}`,
     borderLeft: `4px solid ${color}`,
     borderRadius: 4,
     padding: '12px 14px',
-    backdropFilter: 'blur(8px)',
   }),
   statNum: { fontSize: 24, fontWeight: 900, color: '#E5E7EB', lineHeight: 1, fontFamily: 'Menlo, Consolas, monospace' },
   statLabel: { fontSize: 10, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: 1, marginTop: 4 },
   table: {
     width: '100%',
     borderCollapse: 'collapse',
-    background: 'rgba(17,24,39,0.45)',
-    border: '1px solid rgba(34,211,238,0.30)',
+    background: 'transparent',  // ← transparan, tembus ke hud-panel bg
+    border: '1px solid rgba(34,211,238,0.20)',
     borderRadius: 4,
     overflow: 'hidden',
   },
@@ -44,15 +43,16 @@ const S = {
     color: '#22D3EE',
     textTransform: 'uppercase',
     letterSpacing: 1,
-    background: 'rgba(11,17,32,0.55)',
-    borderBottom: '1px solid rgba(34,211,238,0.30)',
+    background: 'transparent',
+    borderBottom: '1px solid rgba(34,211,238,0.25)',
     fontFamily: 'Menlo, Consolas, monospace',
   },
   td: {
     padding: '10px 12px',
     fontSize: 12,
     color: '#E5E7EB',
-    borderBottom: '1px solid rgba(255,255,255,0.06)',
+    borderBottom: '1px solid rgba(255,255,255,0.04)',
+    background: 'transparent',
   },
   badge: (status) => {
     const c = STATUS_COLORS[status] || STATUS_COLORS.ok;
@@ -93,7 +93,7 @@ const S = {
   legend: {
     marginTop: 14,
     padding: 12,
-    background: 'rgba(17,24,39,0.45)',
+    background: 'transparent',
     border: '1px solid rgba(255,255,255,0.08)',
     borderRadius: 4,
     fontSize: 11,

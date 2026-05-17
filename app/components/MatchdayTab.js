@@ -20,26 +20,23 @@ const S = {
   // Stat cards
   statsRow: { display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 14, marginBottom: 20 },
   stat: (color) => ({
-    background: 'rgba(17,24,39,0.55)',
+    background: 'transparent',
     border: `1px solid ${color}`,
     borderLeft: `4px solid ${color}`,
     borderRadius: 4,
     padding: '14px 18px',
-    boxShadow: 'inset 0 0 18px rgba(34,211,238,0.04)',
-    backdropFilter: 'blur(8px)',
   }),
   statNum: { fontSize: 32, fontWeight: 900, color: '#E5E7EB', lineHeight: 1, fontFamily: 'Menlo, Consolas, "Courier New", monospace' },
   statLabel: { fontSize: 11, color: '#9CA3AF', textTransform: 'uppercase', letterSpacing: 1, marginTop: 6 },
 
-  // Table
+  // Table — transparan biar konsisten dgn tabel Grup
   table: {
     width: '100%',
     borderCollapse: 'collapse',
-    background: 'rgba(17,24,39,0.45)',
-    border: '1px solid rgba(34,211,238,0.30)',
+    background: 'transparent',
+    border: '1px solid rgba(34,211,238,0.20)',
     borderRadius: 4,
     overflow: 'hidden',
-    backdropFilter: 'blur(8px)',
   },
   th: {
     padding: '12px 14px',
@@ -49,15 +46,16 @@ const S = {
     color: '#22D3EE',
     textTransform: 'uppercase',
     letterSpacing: 1.2,
-    background: 'rgba(11,17,32,0.55)',
-    borderBottom: '1px solid rgba(34,211,238,0.30)',
+    background: 'transparent',
+    borderBottom: '1px solid rgba(34,211,238,0.25)',
     fontFamily: 'Menlo, Consolas, "Courier New", monospace',
   },
   td: {
     padding: '12px 14px',
     fontSize: 13,
     color: '#E5E7EB',
-    borderBottom: '1px solid rgba(255,255,255,0.06)',
+    borderBottom: '1px solid rgba(255,255,255,0.04)',
+    background: 'transparent',
   },
   badgeManual: {
     display: 'inline-block',
@@ -85,7 +83,7 @@ const S = {
   helpBox: {
     marginTop: 18,
     padding: 14,
-    background: 'rgba(17,24,39,0.45)',
+    background: 'transparent',
     border: '1px solid rgba(255,255,255,0.08)',
     borderRadius: 4,
     fontSize: 12,
