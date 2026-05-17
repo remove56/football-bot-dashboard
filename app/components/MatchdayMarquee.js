@@ -68,6 +68,7 @@ export default function MatchdayMarquee() {
   const [fixtures, setFixtures] = useState([]);
   const [loading, setLoading] = useState(true);
   const scrollRef = useRef(null);
+  const isPausedRef = useRef(false);  // ← pause flag, dipakai di tick loop
 
   const fetchData = async () => {
     try {
@@ -103,15 +104,18 @@ export default function MatchdayMarquee() {
       if (lastTime === undefined) lastTime = now;
       const dt = (now - lastTime) / 1000;
       lastTime = now;
-      offset -= speed * dt;
 
-      // Reset saat lewatin 50% width (karena content di-doubled, 50% = 1 set full)
-      const halfWidth = el.scrollWidth / 2;
-      if (Math.abs(offset) >= halfWidth && halfWidth > 0) {
-        offset = 0;
+      // Skip advance offset kalau lagi di-pause (mouse hover). lastTime tetap
+      // di-update biar pas resume tidak loncat besar (smooth resume).
+      if (!isPausedRef.current) {
+        offset -= speed * dt;
+        const halfWidth = el.scrollWidth / 2;
+        if (Math.abs(offset) >= halfWidth && halfWidth > 0) {
+          offset = 0;
+        }
+        el.style.transform = `translateX(${offset}px)`;
       }
 
-      el.style.transform = `translateX(${offset}px)`;
       rafId = requestAnimationFrame(tick);
     }
 
@@ -140,7 +144,12 @@ export default function MatchdayMarquee() {
   ];
 
   return (
-    <div style={S.bar}>
+    <div
+      style={S.bar}
+      onMouseEnter={() => { isPausedRef.current = true; }}
+      onMouseLeave={() => { isPausedRef.current = false; }}
+      title="Hover untuk pause scroll"
+    >
       <div style={S.prefix}>⚽ MATCHDAY HARI INI</div>
       <div style={S.scrollWrap}>
         <div ref={scrollRef} style={S.scrollContent}>{doubledItems}</div>
