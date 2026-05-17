@@ -22,6 +22,9 @@ import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 
 export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+export const fetchCache = 'force-no-store';
+export const runtime = 'nodejs';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -97,10 +100,16 @@ export async function GET() {
 
     return NextResponse.json({
       updated_at: new Date().toISOString(),
-      api_version: '5.2.1', // bumped 2026-05-17 force Vercel redeploy
+      api_version: '5.2.2',
       fixtures,
       groups: enrichedGroups,
       stats,
+    }, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+        'CDN-Cache-Control': 'no-store',
+        'Vercel-CDN-Cache-Control': 'no-store',
+      },
     });
   } catch (e) {
     return NextResponse.json({ error: e.message?.substring(0, 200) }, { status: 500 });
